@@ -28,3 +28,6 @@ venv/
 # OS
 .DS_Store
 **/backup/
+
+# 오케스트레이션 내부 산출물
+.omo/
