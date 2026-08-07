@@ -27,7 +27,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 
-from bss_preprocess import CAT_COLS, _to_category
+from bss_preprocess import CAT_COLS, _to_category, InteractionAdder
 
 DATA_DIR = "./data"
 ID = "row_id"
@@ -50,8 +50,15 @@ QA_MAX_ITER = 10     # cross-process QA용 소형 fit 반복 수
 
 
 def build_pipeline(**clf_kwargs):
-    """HGB 파이프라인. 범주형 변환은 bss_preprocess._to_category 모듈 함수 사용."""
+    """HGB 파이프라인 (3단계).
+
+    1. add_interact: base_state_li / count_cat / runner_risk 상호작용 피처 3종 추가
+       (InteractionAdder — 게이트 +55.36 검증, ID 인코딩 FAIL로 enc는 제외)
+    2. to_cat     : 7개 범주형 컬럼을 pandas category dtype으로 (bss_preprocess._to_category)
+    3. clf        : HistGradientBoostingClassifier(**clf_kwargs)
+    """
     return Pipeline([
+        ("add_interact", InteractionAdder()),
         ("to_cat", FunctionTransformer(_to_category)),
         ("clf", HistGradientBoostingClassifier(**clf_kwargs)),
     ])

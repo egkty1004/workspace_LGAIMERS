@@ -83,3 +83,20 @@
 5. 로그: backup/diag_enc_split.log, backup/diag_enc_split.csv
 
 **최종 범인 요약**: Wave B FAIL = **IDTargetEncoder(ID 인코딩) 전부** (missing 지시자 무죄, interact는 +55.36 순기능). 다음 단계: enc 제거(또는 시간 안정적 설계) + interact 유지 → 게이트 재검증.
+
+## Plan A 게이트 검증 (2026-08-08) — base(47)+interact(3) 정식 파이프라인 PASS
+
+**변경**: `bss_preprocess.py`에 InteractionAdder(모듈 레벨) 추가, `train_hgb.py` build_pipeline을 3단계(add_interact→to_cat→clf)로 확장. enc/missing 미사용 (ID 인코딩 FAIL 확정 + missing은 최소 변경 원칙). best_params overlay 비활성 유지.
+
+**게이트 결과 (기본 HGB_KWARGS, 2019~2023 → 2024)**:
+
+| 조건 | 컬럼 | n_iter_ | Brier(2024) | 2024 BSS |
+|---|---|---|---|---|
+| Wave A (base 47) | 47 | 247 | 0.248710 | **439.00** |
+| **Plan A (base+interact 50)** | 50 | **177** | **0.248572** | **494.36 (+55.36)** |
+
+- **PASS** (494.36 > 앵커 439.00) — `diag_stage_ablation.py`의 "+interact" 결과와 **정확히 일치** (정식 구현 검증 완료).
+- cross-process pickle 왕복 QA 통과 (PICKLE_ROUNDTRIP_OK 0.545342).
+- n_iter 247→177 감소 = 상호작용 피처가 수렴 촉진 (과적합 신호 완화).
+- 로그: backup/hgb_validate_interact.log
+- **다음 단계**: (1) --full 전체 재학습 + zip 재구성 + 평가 서버 시뮬레이션 → 제출, 또는 (2) 대회 후반에 튜닝과 함께 일괄 진행 (사용자 결정 대기).
