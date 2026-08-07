@@ -1,0 +1,29 @@
+# 데이터 (대용량 - GitHub 불가)
+데이터/
+**/data/
+
+# 강의 자료 (대용량 - 코드 아님)
+강의 자료/
+
+# 실험 산출물
+**/model/
+**/output/
+*.zip
+*.h5
+*.pth
+*.pt
+*.onnx
+
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# 환경
+.env
+*.local
+
+# OS
+.DS_Store
