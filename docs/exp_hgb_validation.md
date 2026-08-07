@@ -100,3 +100,13 @@
 - n_iter 247→177 감소 = 상호작용 피처가 수렴 촉진 (과적합 신호 완화).
 - 로그: backup/hgb_validate_interact.log
 - **다음 단계**: (1) --full 전체 재학습 + zip 재구성 + 평가 서버 시뮬레이션 → 제출, 또는 (2) 대회 후반에 튜닝과 함께 일괄 진행 (사용자 결정 대기).
+
+## Plan A 전체 재학습 + zip 재구성 (2026-08-08)
+
+- `--full` 전체(2019~2024) 재학습: 50컬럼 파이프라인, n_iter 381, 20.6s → `model/rf.pkl` 갱신
+- zip 재구성: model/ + script.py + **bss_preprocess.py**(InteractionAdder import 필요) + requirements.txt (5항목, 695KB)
+- 평가 서버 시뮬레이션: FORMAT_OK, row_id 순서 일치, 확률 [0.44, 0.55], 결측 0
+- 예측 평균 0.4917 — 2025 base rate 추정(0.47~0.49)과 부합
+- 추론 시간: 50k행 0.25s → 전체 245,789행 환산 1.23s (10분 예산 대비 여유 599초)
+- 로그: backup/hgb_full_interact.log | 시뮬레이션: submit_sim_planA/
+- **제출 대기**: baseline_submit.zip (베이스라인 실험용/) — 사용자가 DACON 업로드
