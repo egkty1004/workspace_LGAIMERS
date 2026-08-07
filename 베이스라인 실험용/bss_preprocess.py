@@ -5,6 +5,7 @@
   __main__ 블록이나 람다 안에서 정의하면 새 프로세스/평가 서버 로드 시
   AttributeError가 발생한다.
 - 반드시 모듈 레벨 함수로만 정의하고, train_hgb.py 등에서 import 하여 사용한다.
+- 9개 후보 중 pitcher_id/batter_id는 sklearn HGB 범주형 카디널리티 255 제한(실측 711/742 > 255)으로 수치형(int) 처리 — 사용자 승인 옵션 A.
 """
 
 CAT_COLS = [
