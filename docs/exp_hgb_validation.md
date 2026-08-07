@@ -38,3 +38,48 @@
 1. **prev 지시자 1종은 무해** (BSS 439.00 동일, n_iter 247 — HGB가 무시). → Wave B FAIL의 범인은 지시자 6종이 아니라 **다른 단계**(enc 또는 60컬럼 조합)일 가능성 — 기존 §3.2 결론 재검증 필요.
 2. **asof_n≤10 지시자는 오히려 해로움** (-21.82): 데이터 레벨에서 pitcher 결측 행의 70.9%가 asof_n>10 (데뷔 경기 20~100투구에서 asof_n 이미 큼) → 소표본 신호로 pitcher 결측 대체 **불가능**. batter는 asof_n==0과 완벽 1:1 (max 0) → 대체 가능.
 3. 로그: backup/diag_debut_ablation.log, backup/diag_debut_ablation.csv
+
+## 단계별 분리 검증 (2026-08-08) — FAIL 범인 pinpoint
+
+**질문**: Wave B 60컬럼 FAIL의 범인이 정확히 어떤 전처리 단계인가? (enc / missing / interact 분리)
+
+**게이트 결과 (기본 HGB_KWARGS)**:
+
+| 조합 | 피처 | n_iter | Brier24 | BSS24 | BSS23(in) |
+|---|---|---|---|---|---|
+| base (47) | 47 | 247 | 0.248710 | **439.00** | 2503.05 |
+| **+enc** (pitcher_enc/batter_enc) | 49 | 1000 | 0.273938 | **0.00** 🔴 | 135.80 |
+| +missing (8 지시자) | 55 | 247 | 0.248710 | **439.00** ✅ | 2503.05 |
+| **+interact** (3종) | 50 | 177 | 0.248572 | **494.36** 🟢 | 2014.78 |
+| enc+missing | 57 | 1000 | 0.273938 | 0.00 🔴 | 135.80 |
+| enc+interact | 52 | 1000 | 0.274034 | 0.00 🔴 | 483.75 |
+| missing+interact | 58 | 177 | 0.248572 | **494.36** 🟢 | 2014.78 |
+| all (60) | 60 | 1000 | 0.274034 | 0.00 🔴 | 483.75 |
+
+**결론**:
+1. **FAIL의 진짜 범인 = IDTargetEncoder(enc) 단독** — enc가 들어가면 무조건 0.00 (n_iter 1000 폭증, early stop 미발동).
+2. **missing 지시자 8종은 완전 무죄** (단독 439.00, n_iter 247 동일) — 기존 §3.2 "지시자 6종 범인" 결론 **정정**.
+3. **interact 3종은 +55.36 개선** (439.00 → 494.36) — 전처리 중 유일한 순기능. missing과 결합해도 개선 유지.
+4. 로그: backup/diag_stage_ablation.log, backup/diag_stage_ablation.csv
+
+## enc 분리 검증 (2026-08-08) — pitcher_enc/batter_enc 개별 판정
+
+**질문**: enc 단독이 범인인데, pitcher_enc와 batter_enc 중 어느 쪽(또는 둘 다)인가?
+
+| 조합 | 피처 | n_iter | Brier24 | BSS24 | BSS23(in) |
+|---|---|---|---|---|---|
+| base | 47 | 247 | 0.248710 | **439.00** | 2503.05 |
+| **pitcher_enc 단독** | 48 | 1000 | 0.256317 | **0.00** 🔴 | 1590.80 |
+| **batter_enc 단독** | 48 | 283 | 0.254273 | **0.00** 🔴 | 772.07 |
+| both_enc | 49 | 1000 | 0.273938 | 0.00 🔴 | 135.80 |
+| pitcher_enc+interact | 51 | 823 | 0.256708 | 0.00 🔴 | 1487.73 |
+| batter_enc+interact | 51 | 810 | 0.266029 | 0.00 🔴 | 2057.89 |
+
+**결론**:
+1. **pitcher_enc 단독으로도 FAIL** (Brier 0.2563 > 기준선 0.2498, n_iter 1000) — 이전 EDA의 "pitcher는 +0.026 유지라 무죄" 판정 **정정**. ID 인코딩 자체가 시간 일반화 실패.
+2. **batter_enc 단독도 FAIL** (Brier 0.2543).
+3. **범인 = TargetEncoder(ID 인코딩) 전체**: pitcher든 batter든 단독으로 게이트를 망침. 메커니즘: ID별 target 평균(spearman 1.0)이 in-sample 최강 신호 → HGB가 강하게 신뢰, 내부 검증(랜덤 10%)이 같은 분포라 early stop 미발동(n_iter 1000) → 2024에서 신호 드리프트/약화 → 상수 예측보다 나쁜 Brier.
+4. **interact는 enc와 결합하면 흡수됨** (개선 효과 사라짐).
+5. 로그: backup/diag_enc_split.log, backup/diag_enc_split.csv
+
+**최종 범인 요약**: Wave B FAIL = **IDTargetEncoder(ID 인코딩) 전부** (missing 지시자 무죄, interact는 +55.36 순기능). 다음 단계: enc 제거(또는 시간 안정적 설계) + interact 유지 → 게이트 재검증.

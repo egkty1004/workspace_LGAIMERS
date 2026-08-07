@@ -4,9 +4,10 @@
 > (2) Wave B 게이트 FAIL(2024 BSS 0.00)의 원인 pinpoint,
 > (3) 하이퍼파라미터 튜닝 파손 사후분석.
 > **검증일**: 2026-08-08 | **인터프리터**: aimers9 (sklearn 1.8.0, pandas 2.0.3, numpy 1.26.4)
-> **산출 스크립트**: `eda_full_profile.py` / `eda_fail_diag.py` / `diag_prep_stages.py` (베이스라인 실험용/)
-> **로그**: `backup/eda_full_profile.log` / `backup/eda_fail_diag.log` / `backup/profile_{train,trackman}.csv` / `backup/eda_{pitcher,batter}_enc_drift.csv` / `backup/eda_missing_signal.csv`
-> **방법론 검토**: Oracle 에이전트 재검증 완료 (2026-08-08) — §2.1/§2.2/§3.2/§5.2/§5.3/§7 반영. 결론 방향 유지, 근거 3건 정정 (이진 IQR 아티팩트, rate 0/1 컬럼별 해석, 결측=데뷔 경기).
+> **산출 스크립트**: `eda_full_profile.py` / `eda_fail_diag.py` / `diag_prep_stages.py` / `diag_stage_ablation.py` / `diag_enc_split.py` (베이스라인 실험용/)
+> **로그**: `backup/eda_full_profile.log` / `backup/eda_fail_diag.log` / `backup/profile_{train,trackman}.csv` / `backup/eda_{pitcher,batter}_enc_drift.csv` / `backup/eda_missing_signal.csv` / `backup/diag_stage_ablation.log` / `backup/diag_enc_split.log` / `backup/diag_debut_ablation.log`
+> **방법론 검토**: Oracle 에이전트 재검증 완료 (2026-08-08) — §2.1/§2.2/§5.2/§5.3 반영. 결론 방향 유지, 근거 3건 정정 (이진 IQR 아티팩트, rate 0/1 컬럼별 해석, 결측=데뷔 경기).
+> **FAIL 원인 확정**: 단계별 ablation (2026-08-08) — IDTargetEncoder(ID 인코딩) 전체가 유일한 FAIL 범인 (pitcher_enc/batter_enc 단독 각각 0.00). missing 지시자 8종 무죄(439.00 유지), interact 3종 +55.36 개선(494.36). 기존 "지시자 6종 + batter_enc" 결론 정정.
 
 ---
 
@@ -129,9 +130,11 @@
 
 - **핵심 단서**: Brier 0.274 > 기준선 r(1-r)=0.2498 → **상수 예측보다 나쁨**. 단순 과적합이 아니라 "피처가 2024에서 능동적으로 틀린 방향 예측"을 유도.
 
-### 3.2 원인 1: prev_game missing 지시자 신호 역전 (결정적)
+### 3.2 재검증: prev_game missing 지시자 — **무죄 판정** (2026-08-08 단계별 ablation)
 
-`asof_pitcher_prev1_game_success_rate` 결측 행의 target 평균 vs 비결측:
+**배경**: 기존에 "지시자 신호 역전(+0.027→-0.024)이 FAIL 원인"으로 의심했으나, **단계별 분리 검증으로 무죄 확정**.
+
+`asof_pitcher_prev1_game_success_rate` 결측 행의 target 평균 vs 비결측 (참고 데이터 — 역전 자체는 실재하지만 FAIL 원인이 아님):
 
 | season | missing 행 target | present 행 target | **delta** |
 |---|---|---|---|
@@ -142,43 +145,63 @@
 | 2023 | 0.4897 | 0.5001 | **-0.0104** |
 | 2024 | 0.4621 | 0.4865 | **-0.0244** |
 
-- 학습 데이터(2019~2023)의 5시즌 중 4개가 "+신호"(missing = 성공률 높음) → 모델이 "missing → 높은 성공률" 학습.
-- **2024에서는 정반대(-0.0244)** → missing 행(3,638행)에 체계적 과대 예측 → 상수보다 나쁜 Brier.
-- 원인은 전처리 버그가 아니라 **데이터의 시즌 드리프트**: 결측 인구(=데뷔 투수)의 target이 0.587(2019) → 0.462(2024)로, 전체 인구(0.564→0.487)보다 **가파르게 하락** — 역전은 구성 효과로 실재.
-- ⚠️ **Oracle 독립 재검증**: G1 결측 = "데뷔 경기"이므로 이 역전은 "신인 투수의 제구력 시즌 드리프트"로 해석해야 함. 단순히 "이력 없는 투수 성공률 하락"이 아니라, **데뷔 인구의 시즌별 성적 변화**가 원인.
-- `_missing` 지시자 6종(prev1/3/5_game success/middle)은 모두 동일 패턴 → 전부 같은 역전 신호.
-- 💡 **대안**: 결측 = `asof_pitcher_n`이 0(또는 소표본)인 행과 1:1 대응 구조이므로, **prev_game 6종 대신 asof_n 기반 신호로 대체 가능한지 2024 게이트 ablation으로 판정** — 성공하면 6종 컬럼을 안전하게 폐기 가능.
+- **게이트 실증 (결정적)**: `MissingIndicatorAdder` 8종만 추가하면 2024 BSS **439.00 유지** (n_iter 247 동일) — 지시자 역전 신호가 존재해도 HGB 게이트 성능을 해치지 않음. enc와 결합될 때만 FAIL (enc가 원인).
+- 역전은 실재하지만(결측 인구 target 0.587→0.462, 전체 0.564→0.487보다 가파름) **모델이 이를 활용하지 않거나 무해하게 처리**함.
+- Oracle 재검증: G1 결측 = "데이터셋 데뷔 경기"이며, 이는 "신인 인구의 시즌별 성적 변화"가 원인.
+- `asof_n` 기반 대체 ablation: pitcher는 asof_n>10인 결측이 70.9%라 **대체 불가** (asof_n≤10 지시자는 오히려 -21.82 해로움), batter는 asof_n==0과 1:1이라 대체 가능.
 
-### 3.3 원인 2: batter_enc 역전
+### 3.3 원인: IDTargetEncoder(enc) 전체 — pitcher_enc/batter_enc 단독 모두 FAIL (2026-08-08 enc 분리 검증)
 
-"이전 시즌(<s) batter_id 성공률"과 당해 시즌 target의 상관:
+**단계별 검증에서 enc가 유일한 FAIL 범인으로 확정된 후, pitcher/batter를 분리 검증**:
 
-| season | corr |
-|---|---|
-| 2022 | +0.0639 |
-| 2023 | **-0.0078** |
-| 2024 | **-0.0035** |
+| 조합 | n_iter | Brier24 | BSS24 |
+|---|---|---|---|
+| base | 247 | 0.2487 | **439.00** |
+| **pitcher_enc 단독** | 1000 | 0.2563 | **0.00** 🔴 |
+| **batter_enc 단독** | 283 | 0.2543 | **0.00** 🔴 |
+| both_enc | 1000 | 0.2739 | 0.00 🔴 |
+| pitcher_enc+interact | 823 | 0.2567 | 0.00 🔴 |
+| batter_enc+interact | 810 | 0.2660 | 0.00 🔴 |
 
-- 타자의 과거 성공률은 2023부터 예측력을 잃고 **역상관**으로 전환.
-- 2023→2024 연속 등장 batter 295명의 재현성 corr도 **+0.0817** (거의 무신호).
-- pitcher_enc는 2024에서도 +0.026 (약신호 유지, 재현성 corr +0.3553) — pitcher는 유지 가능, **batter_enc는 제거 대상**.
+- **pitcher_enc 단독으로도 FAIL** (Brier 0.2563 > 기준선 0.2498, n_iter 1000) — 기존 "pitcher는 +0.026 유지라 무죄" 판정 **정정**. ID 인코딩 자체가 시간 일반화 실패.
+- **batter_enc 단독도 FAIL** (Brier 0.2543, n_iter 283).
+- 배경 상관 데이터 (이유 설명용): 타자 과거 성공률은 2023부터 역상관(2023 -0.0078, 2024 -0.0035), pitcher는 +0.026 약신호 유지 — 하지만 **이런 약신호도 enc로 만들면 FAIL**.
+- **메커니즘**: ID별 target 평균(spearman 1.0)이 in-sample 최강 신호 → HGB가 강하게 신뢰 + 내부 검증(랜덤 10%)이 같은 분포라 early stop 미발동(n_iter 1000) → 2024에서 신호 드리프트/약화 → 상수 예측보다 나쁜 Brier.
+- interact와 결합해도 enc가 개선 효과를 흡수(0.00).
 
-### 3.4 유지 가능한 신호 (2024에서도 살아있음)
+### 3.4 단계별 검증 요약 — 범인과 순기능 (2026-08-08)
+
+**8조합 게이트 ablation 결과** (base 439.00 대비):
+
+| 조합 | BSS24 | 판정 |
+|---|---|---|
+| base (47) | 439.00 | 기준 |
+| +enc (pitcher_enc/batter_enc) | **0.00** | 🔴 **FAIL — 단독 범인** |
+| +missing (8 지시자) | 439.00 | ✅ 무죄 |
+| **+interact** (base_state_li/count_cat/runner_risk) | **494.36** | 🟢 **+55.36 개선** |
+| enc+missing | 0.00 | 🔴 enc 때문에 FAIL |
+| enc+interact | 0.00 | 🔴 enc 때문에 FAIL |
+| missing+interact | 494.36 | 🟢 개선 유지 |
+| all (60) | 0.00 | 🔴 enc 때문에 FAIL |
+
+**2024에서도 살아있는 안정 신호** (데이터 레벨):
 
 | 신호 | 2024 상태 |
 |---|---|
 | `count_cat` (count 단조: 3-2=0.457 < 0-0=0.486) | ✅ 2024에서도 단조 유지 |
 | `asof_pitcher_success_rate` (최근 컨디션) | ✅ 5분위 단조 (2024: 0.452→0.538) |
 | `asof_pitcher_reverse_rate` | ✅ (음의 방향 강신호) |
-| `base_state`/runner 상황 | ✅ 약하지만 안정 |
+| base_state/runner 상황 | ✅ 약하지만 안정 |
 
-### 3.5 FAIL 원인 요약
+### 3.5 FAIL 원인 요약 (최종)
 
-> **게이트 FAIL의 직접 원인은 하이퍼파라미터가 아니라 전처리 피처 2종의 2024 역전**:
-> ① prev_game missing 지시자 6종 (+0.027 → -0.024, 학습 중 4/5시즌이 반대 방향)
-> ② batter_enc (2023부터 역상관)
+> **게이트 FAIL의 직접 원인 = IDTargetEncoder(ID 인코딩) 전부** (2026-08-08 ablation으로 확정):
+> - pitcher_enc / batter_enc **단독 각각** 2024 BSS 0.00 (Brier 0.256/0.254 > 기준선 0.2498)
+> - enc가 포함된 모든 조합이 FAIL (n_iter 1000 early stop 미발동)
+> - **missing 지시자 8종: 무죄** (단독 439.00 유지 — 기존 의심 정정)
+> - **interact 3종: +55.36 순기능** (439.00 → 494.36) — 유일하게 통과한 전처리
 >
-> 기본 파라미터에서도 동일 FAIL(0.00)이므로 파라미터 무죄 확정. Interaction(count_cat/runner_risk/base_state_li)은 2024에서도 신호 유지 → 무죄.
+> 파라미터 무죄(기본값도 동일 FAIL)는 유지. 다음 단계: **enc 제거(또는 시간 안정적 재설계) + interact 유지** → 게이트 재검증.
 
 ---
 
@@ -220,24 +243,24 @@
 | 최근 컨디션 × ID 상호작용 | asof_pitcher_success_rate 최강 신호 | 후보 |
 | 역률·middle rate 결합 | reverse_rate -0.079 강신호 | 후보 |
 
-### 5.2 전처리 수정 방향 (FAIL 대응)
+### 5.2 전처리 수정 방향 (FAIL 대응 — 2026-08-08 ablation 확정 기준)
 
 | 단계 | 조치 | 근거 |
 |---|---|---|
-| `MissingIndicatorAdder` | **prev_game missing 지시자 제거** (또는 `asof_pitcher_n` 기반 신호로 대체 — 2024 게이트 ablation으로 판정) | 2024 역전 확정 (§3.2). 결측=데뷔 경기이므로 `asof_n` 소표본이 동일 정보 대체 가능 |
-| `IDTargetEncoder` | **batter_enc 제거**, pitcher_enc만 유지 | batter 역전 확정 (§3.3) |
-| `InteractionAdder` | base_state_li 비안정성 리스크 있으나 신호 유지 — 유지 또는 base_state_li만 제거 | §3.4 |
+| `IDTargetEncoder` | **enc 전체 제거** (pitcher_enc·batter_enc 모두) 또는 **시간 안정적 재설계** (시즌 가중·최근 시즌만·smooth 상향 등, 재검증 필수) | 🔴 pitcher_enc/batter_enc 단독 각각 FAIL 확정 (§3.3). ID 인코딩 자체가 시간 일반화 실패 |
+| `MissingIndicatorAdder` | **사용 가능 (무죄)** — 단독 439.00 유지. `asof_n` 기반 대체는 pitcher 불가(70.9%가 asof_n>10) | ✅ §3.2/§3.4 |
+| `InteractionAdder` | **유지** — +55.36 개선 (494.36). base_state_li 비안정성 리스크만 확인 | 🟢 §3.4 |
 | `asof_*` 원본 | 유지 + **최근 시즌 게이트 검증 필수** | ⚠️ "HGB NaN 네이티브 = 안전"이 아니라 "드리프트 신호이므로 검증 필수"가 정확한 근거 (Oracle 재검증) |
 
-**⚠️ HGB NaN 네이티브 처리의 한계 (Oracle 재검증)**: HGB는 NaN 브랜치를 내부적으로 학습한다 — Wave B의 명시적 지시자 FAIL과 **동일 메커니즘**. NaN 네이티브는 "안전해서"가 아니라 "드리프트 신호를 최근 시즌 게이트로 관리"해야 한다는 점에서 채택하는 것. 2025 추론 시점의 NaN 비율 불확실성도 존재.
+**⚠️ HGB NaN 네이티브 처리의 한계 (Oracle 재검증)**: HGB는 NaN 브랜치를 내부적으로 학습한다 — Wave B의 명시적 지시자 FAIL과 **동일 메커니즘**. NaN 네이티브는 "안전해서"가 아니라 "드리프트 신호를 최근 시즌 게이트로 관리"해야 한다는 점에서 채택하는 것. 2025 추론 시점의 NaN 비율 불확실성도 존재. 단, missing 지시자 8종은 게이트에서 무해로 실증됨(§3.2) — NaN 브랜치 자체가 문제라기보다 enc의 과도한 신뢰가 문제였다는 점에 유의.
 
 ### 5.3 리스크 노트
 
 1. **2025 드리프트**: test season=2025, target 평균 2019 0.5647 → 2024 0.4861 단조 하락. 2025도 하락 가정 시 base rate 표류 — season 보정 고려.
 2. **head-50k 샘플 편향**: head(n)은 2019 개막 초반 구간(결측 13.94% vs 전체 1.98%) — 샘플링 시 주의.
-3. **enc 무수축**: smooth="auto"가 이 데이터 규모에서 사실상 무수축 → cv=5 cross-fitting이 leakage 방어의 유일 버팀목. enc 유지 시 cross-fitting 필수.
-4. **결측(데뷔) 신호의 시즌 반전** (Oracle 재검증): 결측 인구 target +0.024(2019-22 평균) → −0.0174(2023-24 평균). **유일한 실질 모델링 리스크** — 최근 시즌 홀드아웃 검증으로 관리.
-5. **2025 NaN 비율 불확실성**: 2025 test의 데뷔 경기(결측) 비율이 학습과 다를 수 있음 — NaN 브랜치 의존도 낮추는 설계(asof_n 대체 등) 권장.
+3. **ID 인코딩은 폐기 확정** (enc 무수축·시간 일반화 실패 — §3.3). ID 정보를 쓰려면 enc 대신 시즌 가중·최근 시즌 기반 통계 등 시간 안정적 설계 필요.
+4. **결측(데뷔) 신호의 시즌 반전** (Oracle 재검증): 결측 인구 target +0.024(2019-22 평균) → −0.0174(2023-24 평균). 단, missing 지시자 게이트 무죄 실증(§3.2) — 반전이 있어도 모델 성능엔 영향 없음.
+5. **2025 NaN 비율 불확실성**: 2025 test의 데뷔 경기(결측) 비율이 학습과 다를 수 있음 — NaN 브랜치 의존도 낮추는 설계 권장.
 
 ---
 
@@ -258,13 +281,13 @@
 
 ## 7. 결론 및 다음 단계
 
-1. **원인 확정**: FAIL = prev_game missing 지시자 6종 + batter_enc의 2024 신호 역전 (파라미터 무죄).
+1. **원인 확정 (2026-08-08 ablation)**: FAIL = **IDTargetEncoder(ID 인코딩) 전체** — pitcher_enc/batter_enc 단독 각각 2024 BSS 0.00 (n_iter 1000 early stop 미발동, Brier > 기준선). 기존 의심이던 "prev_game missing 지시자 6종 + batter_enc"는 **정정**: missing 지시자 8종은 무죄(단독 439.00 유지), **interact 3종은 +55.36 개선**(494.36).
 2. **Oracle 재검증 반영 (2026-08-08)**: 결론 방향(이상치 제거 금지, imputation 금지)은 유지. 단, ① 이진/저차원 변수의 IQR "이상치 수치"는 산술 아티팩트로 삭제, ② "rate 0/1 = 소표본 노이즈 99.6%"는 커리어 success/ball/strike에만 성립(prev_game 0.4%, offspeed 85% 대표본 = 행동 신호), ③ 결측 메커니즘은 "시즌 첫 등장"이 아닌 **데이터셋 데뷔 경기**(복귀 투수 결측 0건/16,907행).
 3. **다음 단계 (제안)**:
-   - ① **prev_game 6종 vs `asof_pitcher_n` 대체 ablation** (2024 게이트, Oracle [High] 권고): `asof_n` 소표본/0이 결측과 동일 정보를 주는지 판정 → 성공 시 6종 안전 폐기
-   - ② `IDTargetEncoder`에서 batter_enc 제거, pitcher_enc만 유지 → `diag_prep_stages.py`로 재검증
-   - ③ 통과 시: 시간 순서 CV 기반 튜닝 → 전체 재학습 → zip → 제출
-4. **커밋**: 본 리포트 + EDA 스크립트 3종 + 백업 로그는 gitignore 대상(`**/backup/`) 확인 후 커밋.
+   - ① **enc 폐기 + interact 유지 파이프라인**으로 게이트 재검증: base(47) + MissingIndicator(선택) + InteractionAdder(3종) → 494.36(+55.36) 달성 확인
+   - ② 통과 시: 시간 순서 CV 기반 튜닝 → 전체 재학습 → zip → 제출
+   - ③ (선택) ID 정보를 쓰려면 enc 대신 시간 안정적 설계(시즌 가중·최근 시즌만) 탐색
+4. **커밋**: 본 리포트 + EDA 스크립트 + ablation 로그는 gitignore 대상(`**/backup/`) 확인 후 커밋.
 
 ---
 
