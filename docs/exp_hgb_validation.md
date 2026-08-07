@@ -11,3 +11,11 @@
 - 참고(G3): 로컬 검증 BSS(4xx)는 Public 549.51과 다른 r/프로토콜 — 직접 비교 불가
 
 재현: `python train_hgb.py 2>&1 | tee backup/hgb_validate.log` (베이스라인 실험용/)
+
+## Wave B 게이트 검증 (2026-08-07)
+
+- **결과: FAIL** — Wave B(60컬럼) HGB 2024 검증 BSS **0.00** ≤ Wave A 앵커 439.00
+- 원인: 60컬럼 전처리가 2024 일반화 실패 (Brier 0.2740 > 기준선 0.2498, n_iter 1000 early stop 미발동)
+- 진단: l2 파라미터와 무관 (기본 파라미터에서도 동일 FAIL) → 전처리(특히 TargetEncoder 무수축 과적합)가 원인 후보
+- 다음 단계: 전처리 단계별 분리 검증으로 원인 pinpoint (enc/missing/interact 각각 2024 BSS 추적)
+- 로그: backup/hgb_validate_wb.log, backup/hgb_validate_wb_base.log
