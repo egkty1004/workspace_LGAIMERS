@@ -19,3 +19,22 @@
 - 진단: l2 파라미터와 무관 (기본 파라미터에서도 동일 FAIL) → 전처리(특히 TargetEncoder 무수축 과적합)가 원인 후보
 - 다음 단계: 전처리 단계별 분리 검증으로 원인 pinpoint (enc/missing/interact 각각 2024 BSS 추적)
 - 로그: backup/hgb_validate_wb.log, backup/hgb_validate_wb_base.log
+
+## 결측(데뷔) 신호 대체 ablation (2026-08-08)
+
+**질문**: prev_game missing 지시자(2024 역전)를 `asof_n` 소표본 신호로 대체 가능한가? (Oracle [High] 권고)
+
+**게이트 결과 (기본 HGB_KWARGS, 2019~2023 → 2024)**:
+
+| 조합 | 피처 | n_iter | Brier24 | BSS24 | BSS23(in) |
+|---|---|---|---|---|---|
+| base (47) | 47 | 247 | 0.248710 | **439.00** | 2503.05 |
+| +prev 지시자 1종 | 48 | 247 | 0.248710 | **439.00** | 2503.05 |
+| +n0 (asof_n==0) | 49 | 247 | 0.248710 | **439.00** | 2503.05 |
+| +nle10 (asof_n≤10) | 49 | 200 | 0.248765 | **417.18** | 2213.74 |
+| +all (prev+n0+nle10) | 52 | 200 | 0.248765 | **417.18** | 2213.74 |
+
+**결론**:
+1. **prev 지시자 1종은 무해** (BSS 439.00 동일, n_iter 247 — HGB가 무시). → Wave B FAIL의 범인은 지시자 6종이 아니라 **다른 단계**(enc 또는 60컬럼 조합)일 가능성 — 기존 §3.2 결론 재검증 필요.
+2. **asof_n≤10 지시자는 오히려 해로움** (-21.82): 데이터 레벨에서 pitcher 결측 행의 70.9%가 asof_n>10 (데뷔 경기 20~100투구에서 asof_n 이미 큼) → 소표본 신호로 pitcher 결측 대체 **불가능**. batter는 asof_n==0과 완벽 1:1 (max 0) → 대체 가능.
+3. 로그: backup/diag_debut_ablation.log, backup/diag_debut_ablation.csv
