@@ -15,6 +15,7 @@ train_baseline.py(RF)의 데이터 로드 방식 / 검증 분할 / BSS 공식을
     python train_hgb.py --validate --anchor 415.57
 """
 import argparse
+import json
 import os
 import subprocess
 import sys
@@ -27,12 +28,19 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 
-from bss_preprocess import CAT_COLS, _to_category
+from bss_preprocess import (
+    CAT_COLS,
+    _to_category,
+    IDTargetEncoder,
+    MissingIndicatorAdder,
+    InteractionAdder,
+)
 
 DATA_DIR = "./data"
 ID = "row_id"
 TARGET = "control_success"
 ANCHOR_FILE = "backup/rf_anchor_bss.txt"
+BEST_PARAMS_FILE = "backup/hgb_best_params.json"
 MODEL_PATH = "./model/rf.pkl"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -50,11 +58,36 @@ QA_MAX_ITER = 10     # cross-process QA용 소형 fit 반복 수
 
 
 def build_pipeline(**clf_kwargs):
-    """HGB 파이프라인. 범주형 변환은 bss_preprocess._to_category 모듈 함수 사용."""
+    """HGB 파이프라인 (5단계).
+
+    1. enc_ids    : pitcher_id/batter_id → TargetEncoder (pitcher_enc/batter_enc 추가)
+    2. add_missing: MISSING_COLS 8개 결측 지시자({col}_missing) 추가
+    3. add_interact: base_state_li / count_cat / runner_risk 상호작용 피처 3종 추가
+    4. to_cat     : 7개 범주형 컬럼을 pandas category dtype으로 (bss_preprocess._to_category)
+    5. clf        : HistGradientBoostingClassifier(**clf_kwargs)
+    """
     return Pipeline([
+        ("enc_ids", IDTargetEncoder()),
+        ("add_missing", MissingIndicatorAdder()),
+        ("add_interact", InteractionAdder()),
         ("to_cat", FunctionTransformer(_to_category)),
         ("clf", HistGradientBoostingClassifier(**clf_kwargs)),
     ])
+
+
+def load_best_params():
+    """NEW-2: backup/hgb_best_params.json이 있으면 'clf__' 접두사를 제거하고
+    HGB_KWARGS에 overlay (없으면 기본값으로 진행하고 경고 출력)."""
+    if not os.path.exists(BEST_PARAMS_FILE):
+        print(f"[WARN] best_params 파일 없음: {BEST_PARAMS_FILE} "
+              f"— 기본 HGB_KWARGS 사용")
+        return
+    with open(BEST_PARAMS_FILE, encoding="utf-8") as f:
+        params = json.load(f)
+    stripped = {k[len("clf__"):]: v for k, v in params.items()
+                if k.startswith("clf__")}
+    HGB_KWARGS.update(stripped)
+    print(f"best_params overlay: {BEST_PARAMS_FILE} -> {stripped}")
 
 
 def load_data():
@@ -243,6 +276,9 @@ def main():
     parser.add_argument("--full", action="store_true",
                         help="전체 재학습 + ./model/rf.pkl dump + 스모크 검증")
     args = parser.parse_args()
+
+    # NEW-2: 튜닝 best_params overlay (--validate/--full 공통, 파일 없으면 기본값)
+    load_best_params()
 
     train, features = load_data()
 
