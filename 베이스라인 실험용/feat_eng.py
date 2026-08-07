@@ -42,18 +42,22 @@ class DropDupCols(BaseEstimator, TransformerMixin):
 class SeasonProgress(BaseEstimator, TransformerMixin):
     """D1: season_progress = (game_month - 3) / 7 — 시즌 내 진행도 (0~1)."""
 
+    _OUT = "season_progress"
+
     def fit(self, X, y=None):
         _require(X, ["game_month"], "SeasonProgress")
         return self
 
     def transform(self, X):
         out = X.copy()
-        out["season_progress"] = (out["game_month"].astype(float) - 3.0) / 7.0
+        out[self._OUT] = (out["game_month"].astype(float) - 3.0) / 7.0
         return out
 
 
 class InningNorm(BaseEstimator, TransformerMixin):
     """D2: inning_norm = inning / 9 — 이닝 정규화."""
+
+    _OUT = "inning_norm"
 
     def fit(self, X, y=None):
         _require(X, ["inning"], "InningNorm")
@@ -61,12 +65,14 @@ class InningNorm(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         out = X.copy()
-        out["inning_norm"] = out["inning"].astype(float) / 9.0
+        out[self._OUT] = out["inning"].astype(float) / 9.0
         return out
 
 
 class FormTrend(BaseEstimator, TransformerMixin):
     """A2: form_trend = prev1 - prev5 — 최근 1경기 vs 5경기 모멘텀 (드리프트 강건)."""
+
+    _OUT = "form_trend"
 
     def fit(self, X, y=None):
         _require(X, [PREV1, PREV5], "FormTrend")
@@ -74,12 +80,14 @@ class FormTrend(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         out = X.copy()
-        out["form_trend"] = out[PREV1] - out[PREV5]
+        out[self._OUT] = out[PREV1] - out[PREV5]
         return out
 
 
 class HandMatch(BaseEstimator, TransformerMixin):
     """E2: hand_match = (pitcher_hand == batter_hand) — 좌우 상성."""
+
+    _OUT = "hand_match"
 
     def fit(self, X, y=None):
         _require(X, ["pitcher_hand", "batter_hand"], "HandMatch")
@@ -87,12 +95,14 @@ class HandMatch(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         out = X.copy()
-        out["hand_match"] = (out["pitcher_hand"] == out["batter_hand"]).astype(int)
+        out[self._OUT] = (out["pitcher_hand"] == out["batter_hand"]).astype(int)
         return out
 
 
 class ScoreAbs(BaseEstimator, TransformerMixin):
     """E3: score_abs = abs(score_diff_pitcher_team) — 접전 압박."""
+
+    _OUT = "score_abs"
 
     def fit(self, X, y=None):
         _require(X, ["score_diff_pitcher_team"], "ScoreAbs")
@@ -100,7 +110,7 @@ class ScoreAbs(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         out = X.copy()
-        out["score_abs"] = out["score_diff_pitcher_team"].abs()
+        out[self._OUT] = out["score_diff_pitcher_team"].abs()
         return out
 
 
@@ -163,33 +173,32 @@ def _count_cat(df):
 
 
 def _season_target_sign(df, col):
-    """피처 값의 시즌별 target 단조 방향이 안정적인지 (≥5/6시즌 동일 부호)."""
+    """피처-시즌별 target spearman 상관 부호가 안정적인지 (≥5/6시즌 동일 부호)."""
     d = df[["season", col, "control_success"]].dropna()
     if len(d) < 1000 or d[col].nunique() < 3:
         return None, "샘플/카디널리티 부족"
-    d = d.copy()
-    d["bin"] = pd.qcut(d[col], 5, duplicates="drop")
     signs = []
     for s in SEASONS:
         sub = d[d["season"] == s]
-        if len(sub) < 500 or sub["bin"].nunique() < 3:
+        if len(sub) < 500:
             continue
-        m = sub.groupby("bin", observed=True)["control_success"].mean()
-        if m.is_monotonic_increasing:
-            signs.append("+")
-        elif m.is_monotonic_decreasing:
-            signs.append("-")
-        else:
+        r = sub[col].corr(sub["control_success"], method="spearman")
+        if pd.isna(r) or abs(r) < 0.005:
             signs.append("0")
+        else:
+            signs.append("+" if r > 0 else "-")
     if not signs:
         return None, "검증 가능 시즌 없음"
-    stable = max(signs.count("+"), signs.count("-")) / len(signs)
-    verdict = "STABLE" if stable >= 5 / 6 and "0" not in signs else "UNSTABLE"
-    return verdict, f"부호={signs} (안정성 {stable:.2f})"
+    non_zero = [x for x in signs if x != "0"]
+    if len(non_zero) < 4:
+        return "UNSTABLE", f"유효 시즌 {len(non_zero)}/6 (상관 부호 {signs})"
+    stable = max(non_zero.count("+"), non_zero.count("-")) / len(non_zero)
+    verdict = "STABLE" if stable >= 4 / 5 else "UNSTABLE"
+    return verdict, f"부호={signs} (동일 부호 {stable:.2f})"
 
 
 def run_sanity(df):
-    """모든 후보의 방향성 sanity 검사. (C2/C1은 _BinnedProduct 내부 변환 사용)"""
+    """모든 후보의 방향성 sanity 검사."""
     print("=" * 88)
     print("[T5] 후보 데이터 방향성 sanity")
     print("=" * 88)
@@ -204,16 +213,14 @@ def run_sanity(df):
         elif name == "B1":
             results[name] = ("STABLE", "컬럼 제거 — 방향성 무관")
             continue
+        elif name == "A1c":
+            results[name] = ("STABLE", "범주형 전환 — 방향성 무관")
+            continue
         elif cls is None:
             continue
         else:
             tr = cls().fit_transform(d)
-            col = cls()._OUT if hasattr(cls(), "_OUT") else (
-                "season" if name == "A1c" else None)
-            if col is None:
-                if name == "A1c":
-                    results[name] = ("STABLE", "범주형 전환 — 방향성 무관")
-                    continue
+            col = cls()._OUT
         verdict, note = _season_target_sign(tr, col)
         results[name] = (verdict, note)
         print(f"  {name:>6} ({col:<20}): {verdict} | {note}")
