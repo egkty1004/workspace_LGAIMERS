@@ -31,6 +31,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 
 from bss_preprocess import CAT_COLS, _to_category
+from feat_eng import HandMatch
 
 DATA_DIR = "./data"
 ID = "row_id"
@@ -52,8 +53,13 @@ QA_N_ESTIMATORS = 10
 
 
 def build_pipeline(**clf_kwargs):
-    """LGBM 파이프라인 (2단계: to_cat → clf). base 47컬럼, interact 없음."""
+    """LGBM 파이프라인 (3단계: add_hand → to_cat → clf).
+
+    - add_hand: E2 hand_match (좌우 상성) — LGBM 이중 게이트 채택 (중앙값 +48.1, 3시드 일관)
+    - base 47컬럼 + hand_match 1컬럼, interact/enc 제외
+    """
     return Pipeline([
+        ("add_hand", HandMatch()),
         ("to_cat", FunctionTransformer(_to_category)),
         ("clf", lgb.LGBMClassifier(**clf_kwargs)),
     ])
@@ -159,11 +165,11 @@ def cross_process_pickle_qa(model, row_df, label):
 
 
 def fit_with_early_stop(X, y, seed):
-    """전체 X를 category 변환 후 train_test_split (카테고리 집합 공유) →
+    """전처리(add_hand+to_cat)를 먼저 적용 → train_test_split (카테고리 집합 공유) →
     LGBM early stopping fit."""
-    X_cat = _to_category(X)
-    Xt, Xv, yt, yv = train_test_split(X_cat, y, test_size=0.1, random_state=seed)
     pipe = build_pipeline(**LGBM_KWARGS, random_state=seed)
+    X_pre = pipe[:-1].fit_transform(X)
+    Xt, Xv, yt, yv = train_test_split(X_pre, y, test_size=0.1, random_state=seed)
     t0 = time.time()
     pipe.fit(Xt, yt, clf__eval_set=[(Xv, yv)],
              clf__eval_metric="binary_logloss")
