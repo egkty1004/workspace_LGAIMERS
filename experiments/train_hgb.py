@@ -8,7 +8,7 @@ train_baseline.py(RF)의 데이터 로드 방식 / 검증 분할 / BSS 공식을
   별도 새 프로세스에서 로드해 1행 predict_proba 검증 (실패 시 exit 2)
 - _to_category는 bss_preprocess 모듈에서 import (람다/__main__ 정의 금지)
 
-실행(CWD = 베이스라인 실험용/):
+실행(CWD = experiments/):
     python train_hgb.py               # --validate (기본)
     python train_hgb.py --validate
     python train_hgb.py --full

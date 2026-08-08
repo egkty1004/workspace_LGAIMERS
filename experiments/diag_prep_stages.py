@@ -9,7 +9,7 @@ Wave A와 동일한 2024 홀드아웃 게이트 프로토콜로 BSS를 추적한
 - 각 조합: 2019~2023 학습 → 2024 BSS, 2023 in-sample BSS, n_iter_ 기록
 - 파이프라인 transform 후 train/val 컬럼명·순서 일치 어서션 (정렬 버그 탐지)
 
-실행 (CWD = 베이스라인 실험용/):
+실행 (CWD = experiments/):
     python diag_prep_stages.py
 """
 import time

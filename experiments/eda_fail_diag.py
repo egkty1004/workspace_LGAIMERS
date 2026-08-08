@@ -15,7 +15,7 @@
   G. asof_pitcher_success_rate (최근 컨디션) quantile별 target — 시즌별
   H. li 분포 시즌별 (base_state_li/runner_risk bin 입력)
 
-실행 (CWD = 베이스라인 실험용/):
+실행 (CWD = experiments/):
     python eda_fail_diag.py 2>&1 | tee backup/eda_fail_diag.log
 """
 import pandas as pd
