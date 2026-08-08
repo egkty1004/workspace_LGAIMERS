@@ -34,3 +34,6 @@ venv/
 
 # 평가 서버 시뮬레이션 산출물
 submit_sim_*/
+
+# 팀원 공유 자료 (대회 내부 협업물)
+team_member_materials/
