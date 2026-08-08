@@ -1,0 +1,5 @@
+platoon,risp,succ,n
+opp_hand,False,0.5282594217210573,43543
+opp_hand,True,0.527704647033613,16333
+same_hand,False,0.5116992169072554,42396
+same_hand,True,0.519104991394148,17430
