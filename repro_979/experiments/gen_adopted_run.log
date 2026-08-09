@@ -1,0 +1,259 @@
+[gen_adopted] LGB F3 4폴드 10시드 로짓 예측 생성 (채택: asof_n_bucket + score_diff_binary)
+train: (1475092, 60) | adopted_feats: 51 (base 47 + 4) | cats: ['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state']
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[95]	valid_0's binary_logloss: 0.689149
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[120]	valid_0's binary_logloss: 0.689204
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[117]	valid_0's binary_logloss: 0.689193
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[148]	valid_0's binary_logloss: 0.689216
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[81]	valid_0's binary_logloss: 0.689069
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[93]	valid_0's binary_logloss: 0.689312
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[91]	valid_0's binary_logloss: 0.689214
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[109]	valid_0's binary_logloss: 0.689211
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[120]	valid_0's binary_logloss: 0.689253
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[84]	valid_0's binary_logloss: 0.689182
+  [adopted/primary] BSS=733.1 pred_mean=0.4976 저장 cache/fe_adopted_primary_lgb_f3.npy (81s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[83]	valid_0's binary_logloss: 0.690391
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[86]	valid_0's binary_logloss: 0.690293
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.690318
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[67]	valid_0's binary_logloss: 0.690305
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[65]	valid_0's binary_logloss: 0.69032
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[92]	valid_0's binary_logloss: 0.690403
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[82]	valid_0's binary_logloss: 0.690348
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[75]	valid_0's binary_logloss: 0.690493
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[63]	valid_0's binary_logloss: 0.69032
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[83]	valid_0's binary_logloss: 0.690362
+  [adopted/r2022] BSS=575.3 pred_mean=0.5076 저장 cache/fe_adopted_r2022_lgb_f3.npy (47s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[54]	valid_0's binary_logloss: 0.690378
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[60]	valid_0's binary_logloss: 0.690336
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[52]	valid_0's binary_logloss: 0.690428
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[50]	valid_0's binary_logloss: 0.690421
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[69]	valid_0's binary_logloss: 0.690434
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[61]	valid_0's binary_logloss: 0.690381
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[52]	valid_0's binary_logloss: 0.690419
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[46]	valid_0's binary_logloss: 0.690437
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[65]	valid_0's binary_logloss: 0.690343
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[63]	valid_0's binary_logloss: 0.690441
+  [adopted/r2023] BSS=559.2 pred_mean=0.5030 저장 cache/fe_adopted_r2023_lgb_f3.npy (50s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[91]	valid_0's binary_logloss: 0.689484
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[111]	valid_0's binary_logloss: 0.689461
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[70]	valid_0's binary_logloss: 0.689469
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[86]	valid_0's binary_logloss: 0.689447
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[96]	valid_0's binary_logloss: 0.689525
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[71]	valid_0's binary_logloss: 0.689542
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[78]	valid_0's binary_logloss: 0.689455
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[95]	valid_0's binary_logloss: 0.689547
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[84]	valid_0's binary_logloss: 0.689452
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[91]	valid_0's binary_logloss: 0.689509
+  [adopted/r2024] BSS=709.3 pred_mean=0.5010 저장 cache/fe_adopted_r2024_lgb_f3.npy (68s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[95]	valid_0's binary_logloss: 0.689158
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[86]	valid_0's binary_logloss: 0.689158
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[97]	valid_0's binary_logloss: 0.689231
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[97]	valid_0's binary_logloss: 0.689165
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[107]	valid_0's binary_logloss: 0.689327
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[84]	valid_0's binary_logloss: 0.68925
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[80]	valid_0's binary_logloss: 0.689222
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[109]	valid_0's binary_logloss: 0.689178
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[84]	valid_0's binary_logloss: 0.689204
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[98]	valid_0's binary_logloss: 0.689148
+  [base/primary] BSS=729.7 pred_mean=0.4973 저장 cache/fe_base_primary_lgb_f3.npy (74s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[92]	valid_0's binary_logloss: 0.690462
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[74]	valid_0's binary_logloss: 0.690325
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.690399
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[79]	valid_0's binary_logloss: 0.690322
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[64]	valid_0's binary_logloss: 0.690352
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[72]	valid_0's binary_logloss: 0.69031
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[80]	valid_0's binary_logloss: 0.690367
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[83]	valid_0's binary_logloss: 0.690357
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[122]	valid_0's binary_logloss: 0.690355
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[98]	valid_0's binary_logloss: 0.690258
+  [base/r2022] BSS=578.4 pred_mean=0.5073 저장 cache/fe_base_r2022_lgb_f3.npy (46s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[53]	valid_0's binary_logloss: 0.690455
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[47]	valid_0's binary_logloss: 0.690484
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[50]	valid_0's binary_logloss: 0.690494
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[50]	valid_0's binary_logloss: 0.690455
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[43]	valid_0's binary_logloss: 0.690445
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[62]	valid_0's binary_logloss: 0.69042
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[66]	valid_0's binary_logloss: 0.690438
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[62]	valid_0's binary_logloss: 0.69042
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[71]	valid_0's binary_logloss: 0.690479
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[42]	valid_0's binary_logloss: 0.690387
+  [base/r2023] BSS=551.0 pred_mean=0.5033 저장 cache/fe_base_r2023_lgb_f3.npy (48s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[74]	valid_0's binary_logloss: 0.689403
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[101]	valid_0's binary_logloss: 0.6895
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[84]	valid_0's binary_logloss: 0.689491
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[115]	valid_0's binary_logloss: 0.689522
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[74]	valid_0's binary_logloss: 0.689491
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[78]	valid_0's binary_logloss: 0.68954
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[82]	valid_0's binary_logloss: 0.68944
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[78]	valid_0's binary_logloss: 0.689489
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[66]	valid_0's binary_logloss: 0.689463
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[95]	valid_0's binary_logloss: 0.689474
+  [base/r2024] BSS=711.4 pred_mean=0.5009 저장 cache/fe_base_r2024_lgb_f3.npy (66s)
+
+========================================================================================
+채택 2피처 10시드 gain (adopted − base, deterministic=True):
+  primary  adopted=733.1 base=729.7 gain=+3.4
+  r2022    adopted=575.3 base=578.4 gain=-3.1
+  r2023    adopted=559.2 base=551.0 gain=+8.2
+  r2024    adopted=709.3 base=711.4 gain=-2.1
+
+완료 (총 486s)

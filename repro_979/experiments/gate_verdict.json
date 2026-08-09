@@ -1,0 +1,227 @@
+{
+  "baseline_fe": {
+    "primary": {
+      "bss": 727.1692142965746,
+      "pred_mean": 0.4974987997311919
+    },
+    "r2022": {
+      "bss": 567.7471899246389,
+      "pred_mean": 0.5074302898390651
+    },
+    "r2023": {
+      "bss": 544.3570802972753,
+      "pred_mean": 0.503491670828968
+    },
+    "r2024": {
+      "bss": 714.4517870337097,
+      "pred_mean": 0.5007313369692603
+    }
+  },
+  "gate_rules": {
+    "threshold_primary": 10.0,
+    "r_only_required": "2/3",
+    "r_only_folds": [
+      "r2022",
+      "r2023",
+      "r2024"
+    ],
+    "contribution_rule": {
+      "ablation": "기여 = -delta (제거 시 하락 = 기여), R-only delta<0 폴드 = 개선",
+      "addition": "기여 = +delta (추가 시 상승 = 기여), R-only delta>0 폴드 = 개선"
+    },
+    "accept_rule": "primary 기여 >= +10 & R-only 2/3 개선 -> 채택 | 미달 -> 기각",
+    "note": "기존 screen_all.json의 r_only_improved/verdict는 부호 오류(전부 기각) — 본 파일이 수정된 로직으로 재계산"
+  },
+  "candidates": {
+    "recent_gap_success": {
+      "mode": "ablation",
+      "primary_delta": -7.137553529756929,
+      "primary_contribution": 7.137553529756929,
+      "r_only_delta": {
+        "r2022": -10.292078264240217,
+        "r2023": -0.5412068120102731,
+        "r2024": 1.5578788843839675
+      },
+      "r_only_improved": "2/3",
+      "r_only_improved_old": 1,
+      "r_only_improved_folds": [
+        "r2022",
+        "r2023"
+      ],
+      "verdict": "기각",
+      "reason": "primary 기여 +7.1 < +10 미달; R-only 개선 2/3 (충족); 게이트 미달 -> 기각"
+    },
+    "return_gap": {
+      "mode": "ablation",
+      "primary_delta": -0.7933496935509083,
+      "primary_contribution": 0.7933496935509083,
+      "r_only_delta": {
+        "r2022": -9.386237099273671,
+        "r2023": -1.9606837449947534,
+        "r2024": 6.100063591640833
+      },
+      "r_only_improved": "2/3",
+      "r_only_improved_old": 1,
+      "r_only_improved_folds": [
+        "r2022",
+        "r2023"
+      ],
+      "verdict": "기각",
+      "reason": "primary 기여 +0.8 < +10 미달; R-only 개선 2/3 (충족); 게이트 미달 -> 기각"
+    },
+    "pitcher_debut": {
+      "mode": "ablation",
+      "primary_delta": -0.7933496935509083,
+      "primary_contribution": 0.7933496935509083,
+      "r_only_delta": {
+        "r2022": 0.0,
+        "r2023": 1.307702368313926,
+        "r2024": 3.323181918590876
+      },
+      "r_only_improved": "0/3",
+      "r_only_improved_old": 2,
+      "r_only_improved_folds": [],
+      "verdict": "기각",
+      "reason": "primary 기여 +0.8 < +10 미달; R-only 개선 0/3 (미달); 게이트 미달 -> 기각"
+    },
+    "batter_debut": {
+      "mode": "ablation",
+      "primary_delta": -0.7933496935509083,
+      "primary_contribution": 0.7933496935509083,
+      "r_only_delta": {
+        "r2022": 0.0,
+        "r2023": 0.0,
+        "r2024": -3.4058336570330994
+      },
+      "r_only_improved": "1/3",
+      "r_only_improved_old": 0,
+      "r_only_improved_folds": [
+        "r2024"
+      ],
+      "verdict": "기각",
+      "reason": "primary 기여 +0.8 < +10 미달; R-only 개선 1/3 (미달); 게이트 미달 -> 기각"
+    },
+    "asof_n_bucket": {
+      "mode": "ablation",
+      "primary_delta": -10.359812329574538,
+      "primary_contribution": 10.359812329574538,
+      "r_only_delta": {
+        "r2022": -9.141345026142403,
+        "r2023": -1.9606837449947534,
+        "r2024": 6.50870998368805
+      },
+      "r_only_improved": "2/3",
+      "r_only_improved_old": 1,
+      "r_only_improved_folds": [
+        "r2022",
+        "r2023"
+      ],
+      "verdict": "채택",
+      "reason": "primary 기여 +10.4 >= +10 통과; R-only 개선 2/3 (충족)"
+    },
+    "score_diff_binary": {
+      "mode": "ablation",
+      "primary_delta": -12.962463164467636,
+      "primary_contribution": 12.962463164467636,
+      "r_only_delta": {
+        "r2022": -5.497485549599332,
+        "r2023": -3.411517187523714,
+        "r2024": 8.452571231054549
+      },
+      "r_only_improved": "2/3",
+      "r_only_improved_old": 1,
+      "r_only_improved_folds": [
+        "r2022",
+        "r2023"
+      ],
+      "verdict": "채택",
+      "reason": "primary 기여 +13.0 >= +10 통과; R-only 개선 2/3 (충족)"
+    },
+    "li_risp_flag": {
+      "mode": "ablation",
+      "primary_delta": -7.075690566538128,
+      "primary_contribution": 7.075690566538128,
+      "r_only_delta": {
+        "r2022": -10.097084066496109,
+        "r2023": -4.858793222339841,
+        "r2024": 1.9267468890693635
+      },
+      "r_only_improved": "2/3",
+      "r_only_improved_old": 1,
+      "r_only_improved_folds": [
+        "r2022",
+        "r2023"
+      ],
+      "verdict": "기각",
+      "reason": "primary 기여 +7.1 < +10 미달; R-only 개선 2/3 (충족); 게이트 미달 -> 기각"
+    },
+    "outs_count_3b2_2out": {
+      "mode": "ablation",
+      "primary_delta": -4.581715317597627,
+      "primary_contribution": 4.581715317597627,
+      "r_only_delta": {
+        "r2022": -10.488184239032535,
+        "r2023": -0.3393956846786068,
+        "r2024": 7.0296141943870225
+      },
+      "r_only_improved": "2/3",
+      "r_only_improved_old": 1,
+      "r_only_improved_folds": [
+        "r2022",
+        "r2023"
+      ],
+      "verdict": "기각",
+      "reason": "primary 기여 +4.6 < +10 미달; R-only 개선 2/3 (충족); 게이트 미달 -> 기각"
+    },
+    "count_platoon_3b2_same": {
+      "mode": "addition",
+      "primary_delta": 7.4799680853776636,
+      "primary_contribution": 7.4799680853776636,
+      "r_only_delta": {
+        "r2022": -3.424673881269314,
+        "r2023": 11.951277624666659,
+        "r2024": -2.8091060951918507
+      },
+      "r_only_improved": "1/3",
+      "r_only_improved_old": 1,
+      "r_only_improved_folds": [
+        "r2023"
+      ],
+      "verdict": "기각",
+      "reason": "primary 기여 +7.5 < +10 미달; R-only 개선 1/3 (미달); 게이트 미달 -> 기각"
+    }
+  },
+  "adopted": [
+    "asof_n_bucket",
+    "score_diff_binary"
+  ],
+  "rejected": [
+    "recent_gap_success",
+    "return_gap",
+    "pitcher_debut",
+    "batter_debut",
+    "li_risp_flag",
+    "outs_count_3b2_2out",
+    "count_platoon_3b2_same"
+  ],
+  "wave_d_input": {
+    "features": [
+      "asof_n_bucket",
+      "score_diff_binary"
+    ],
+    "purpose": "Wave D 통합 검증(LGB 10시드 + MLP 5시드 블렌딩) + 제출 입력",
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "folds": [
+      "primary",
+      "r2022",
+      "r2023",
+      "r2024"
+    ]
+  }
+}

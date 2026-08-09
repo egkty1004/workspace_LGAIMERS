@@ -1,0 +1,2 @@
+# All required packages are pre-installed on the evaluation server:
+# scikit-learn==1.8.0, joblib==1.5.3, pandas==2.0.3, numpy==1.26.4

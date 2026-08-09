@@ -1,0 +1,73 @@
+[combo] F1+F2 통합 5시드 × 4폴드
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[118]	valid_0's binary_logloss: 0.689175
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[99]	valid_0's binary_logloss: 0.689192
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[87]	valid_0's binary_logloss: 0.689269
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[109]	valid_0's binary_logloss: 0.689183
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[91]	valid_0's binary_logloss: 0.689169
+  [primary] BSS=729.4 (45s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[67]	valid_0's binary_logloss: 0.690399
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[79]	valid_0's binary_logloss: 0.690261
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[78]	valid_0's binary_logloss: 0.690324
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[68]	valid_0's binary_logloss: 0.690339
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[76]	valid_0's binary_logloss: 0.690353
+  [r2022] BSS=576.2 (65s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[40]	valid_0's binary_logloss: 0.690518
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[60]	valid_0's binary_logloss: 0.690418
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[47]	valid_0's binary_logloss: 0.690398
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[54]	valid_0's binary_logloss: 0.69034
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[50]	valid_0's binary_logloss: 0.690372
+  [r2023] BSS=555.3 (87s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[70]	valid_0's binary_logloss: 0.689547
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[91]	valid_0's binary_logloss: 0.689527
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[89]	valid_0's binary_logloss: 0.689426
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[83]	valid_0's binary_logloss: 0.689421
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[70]	valid_0's binary_logloss: 0.689483
+  [r2024] BSS=707.5 (117s)
+
+COMBO vs baseline:
+  primary: 729.4 (Δ+3.1)
+  r2022: 576.2 (Δ+7.3)
+  r2023: 555.3 (Δ+12.5)
+  r2024: 707.5 (Δ-2.8)
+R-only 개선: 2/3
+저장: experiments/combo_check.json

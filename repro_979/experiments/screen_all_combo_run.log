@@ -1,0 +1,429 @@
+[screen_all] Wave C 유도 피처 전면 스크리닝 (5시드 × 4폴드, cats 분리, deterministic=True)
+train: (1475092, 60) | feats: 57 | cats: ['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'] | seeds: [42, 43, 44, 45, 46]
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[116]	valid_0's binary_logloss: 0.6892
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[112]	valid_0's binary_logloss: 0.689281
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[120]	valid_0's binary_logloss: 0.689153
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[91]	valid_0's binary_logloss: 0.68914
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[94]	valid_0's binary_logloss: 0.689316
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[85]	valid_0's binary_logloss: 0.690388
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[96]	valid_0's binary_logloss: 0.690441
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.6904
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[84]	valid_0's binary_logloss: 0.690343
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[77]	valid_0's binary_logloss: 0.690358
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[48]	valid_0's binary_logloss: 0.690377
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.690466
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[53]	valid_0's binary_logloss: 0.690629
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[52]	valid_0's binary_logloss: 0.690321
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[50]	valid_0's binary_logloss: 0.690509
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[74]	valid_0's binary_logloss: 0.689413
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[84]	valid_0's binary_logloss: 0.689501
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[97]	valid_0's binary_logloss: 0.6894
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[89]	valid_0's binary_logloss: 0.68944
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[93]	valid_0's binary_logloss: 0.689511
+  [baseline_fe                 ]    727.2    567.7    544.4    714.5  (243s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[98]	valid_0's binary_logloss: 0.689107
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[140]	valid_0's binary_logloss: 0.689183
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[87]	valid_0's binary_logloss: 0.689194
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[77]	valid_0's binary_logloss: 0.689231
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[94]	valid_0's binary_logloss: 0.689183
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[68]	valid_0's binary_logloss: 0.690407
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[77]	valid_0's binary_logloss: 0.690352
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[63]	valid_0's binary_logloss: 0.690314
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[77]	valid_0's binary_logloss: 0.690223
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[97]	valid_0's binary_logloss: 0.690349
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[51]	valid_0's binary_logloss: 0.690422
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[61]	valid_0's binary_logloss: 0.690431
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[44]	valid_0's binary_logloss: 0.690489
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.690511
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.690475
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[90]	valid_0's binary_logloss: 0.689427
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[104]	valid_0's binary_logloss: 0.68947
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[77]	valid_0's binary_logloss: 0.689433
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[83]	valid_0's binary_logloss: 0.689486
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[88]	valid_0's binary_logloss: 0.689476
+  [reduced_recent_gap_success  ]    734.3    578.0    544.9    712.9  (194s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[90]	valid_0's binary_logloss: 0.689158
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[109]	valid_0's binary_logloss: 0.689255
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[101]	valid_0's binary_logloss: 0.689256
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[83]	valid_0's binary_logloss: 0.689217
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[94]	valid_0's binary_logloss: 0.689122
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[73]	valid_0's binary_logloss: 0.690357
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[83]	valid_0's binary_logloss: 0.690365
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[71]	valid_0's binary_logloss: 0.690266
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[70]	valid_0's binary_logloss: 0.690309
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[104]	valid_0's binary_logloss: 0.690389
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[48]	valid_0's binary_logloss: 0.690413
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[49]	valid_0's binary_logloss: 0.690445
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[44]	valid_0's binary_logloss: 0.690424
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[53]	valid_0's binary_logloss: 0.690467
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[44]	valid_0's binary_logloss: 0.690478
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[87]	valid_0's binary_logloss: 0.689433
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[104]	valid_0's binary_logloss: 0.689441
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[70]	valid_0's binary_logloss: 0.689464
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[103]	valid_0's binary_logloss: 0.689508
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[79]	valid_0's binary_logloss: 0.689576
+  [reduced_return_gap          ]    728.0    577.1    546.3    708.4  (188s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[90]	valid_0's binary_logloss: 0.689158
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[109]	valid_0's binary_logloss: 0.689255
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[101]	valid_0's binary_logloss: 0.689256
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[83]	valid_0's binary_logloss: 0.689217
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[94]	valid_0's binary_logloss: 0.689122
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[85]	valid_0's binary_logloss: 0.690388
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[96]	valid_0's binary_logloss: 0.690441
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.6904
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[84]	valid_0's binary_logloss: 0.690343
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[77]	valid_0's binary_logloss: 0.690358
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[48]	valid_0's binary_logloss: 0.690413
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.690466
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[53]	valid_0's binary_logloss: 0.690629
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[52]	valid_0's binary_logloss: 0.690321
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[50]	valid_0's binary_logloss: 0.690509
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[87]	valid_0's binary_logloss: 0.689433
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[84]	valid_0's binary_logloss: 0.689501
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[97]	valid_0's binary_logloss: 0.6894
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[103]	valid_0's binary_logloss: 0.689508
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[93]	valid_0's binary_logloss: 0.689511
+  [reduced_pitcher_debut       ]    728.0    567.7    543.0    711.1  (183s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[90]	valid_0's binary_logloss: 0.689158
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[109]	valid_0's binary_logloss: 0.689255
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[101]	valid_0's binary_logloss: 0.689256
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[83]	valid_0's binary_logloss: 0.689217
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[94]	valid_0's binary_logloss: 0.689122
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[85]	valid_0's binary_logloss: 0.690388
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[96]	valid_0's binary_logloss: 0.690441
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.6904
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[84]	valid_0's binary_logloss: 0.690343
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[77]	valid_0's binary_logloss: 0.690358
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[48]	valid_0's binary_logloss: 0.690377
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.690466
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[53]	valid_0's binary_logloss: 0.690629
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[52]	valid_0's binary_logloss: 0.690321
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[50]	valid_0's binary_logloss: 0.690509
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[74]	valid_0's binary_logloss: 0.689413
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[104]	valid_0's binary_logloss: 0.689441
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[97]	valid_0's binary_logloss: 0.6894
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[89]	valid_0's binary_logloss: 0.68944
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[93]	valid_0's binary_logloss: 0.689511
+  [reduced_batter_debut        ]    728.0    567.7    544.4    717.9  (179s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[85]	valid_0's binary_logloss: 0.689151
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[113]	valid_0's binary_logloss: 0.689176
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[113]	valid_0's binary_logloss: 0.689162
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[99]	valid_0's binary_logloss: 0.689173
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[94]	valid_0's binary_logloss: 0.689128
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[66]	valid_0's binary_logloss: 0.690346
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[83]	valid_0's binary_logloss: 0.690365
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[71]	valid_0's binary_logloss: 0.690249
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[70]	valid_0's binary_logloss: 0.690309
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[92]	valid_0's binary_logloss: 0.690394
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[48]	valid_0's binary_logloss: 0.690413
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[49]	valid_0's binary_logloss: 0.690445
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[44]	valid_0's binary_logloss: 0.690424
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[53]	valid_0's binary_logloss: 0.690467
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[44]	valid_0's binary_logloss: 0.690478
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[87]	valid_0's binary_logloss: 0.689433
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[104]	valid_0's binary_logloss: 0.689441
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[70]	valid_0's binary_logloss: 0.689464
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[103]	valid_0's binary_logloss: 0.689508
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[69]	valid_0's binary_logloss: 0.689595
+  [reduced_asof_n_bucket       ]    737.5    576.9    546.3    707.9  (193s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[100]	valid_0's binary_logloss: 0.689077
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[121]	valid_0's binary_logloss: 0.689149
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[113]	valid_0's binary_logloss: 0.689184
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[86]	valid_0's binary_logloss: 0.689218
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[94]	valid_0's binary_logloss: 0.689117
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[67]	valid_0's binary_logloss: 0.690397
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[95]	valid_0's binary_logloss: 0.690418
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[72]	valid_0's binary_logloss: 0.690287
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[78]	valid_0's binary_logloss: 0.690295
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[67]	valid_0's binary_logloss: 0.690357
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[45]	valid_0's binary_logloss: 0.690419
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[62]	valid_0's binary_logloss: 0.690449
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[43]	valid_0's binary_logloss: 0.690461
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.690498
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[58]	valid_0's binary_logloss: 0.690417
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[87]	valid_0's binary_logloss: 0.689399
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[74]	valid_0's binary_logloss: 0.689505
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[82]	valid_0's binary_logloss: 0.68945
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[77]	valid_0's binary_logloss: 0.689474
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[69]	valid_0's binary_logloss: 0.689592
+  [reduced_score_diff_binary   ]    740.1    573.2    547.8    706.0  (192s)

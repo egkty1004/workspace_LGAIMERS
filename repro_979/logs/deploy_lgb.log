@@ -1,0 +1,14 @@
+[deploy_lgb] 채택 피처 포함 F3 전체 데이터 10시드 학습
+train: (1475092, 60) | feats: 51 (base 47 + 4) | cats: ['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'] | rounds: 109
+  seed=42 trees=109 저장 submit/model/f3_s42.txt (13s)
+  seed=43 trees=109 저장 submit/model/f3_s43.txt (20s)
+  seed=44 trees=109 저장 submit/model/f3_s44.txt (26s)
+  seed=45 trees=109 저장 submit/model/f3_s45.txt (33s)
+  seed=46 trees=109 저장 submit/model/f3_s46.txt (40s)
+  seed=47 trees=109 저장 submit/model/f3_s47.txt (48s)
+  seed=48 trees=109 저장 submit/model/f3_s48.txt (54s)
+  seed=49 trees=109 저장 submit/model/f3_s49.txt (61s)
+  seed=50 trees=109 저장 submit/model/f3_s50.txt (68s)
+  seed=51 trees=109 저장 submit/model/f3_s51.txt (75s)
+
+완료: submit/model/f3_s*.txt (10개) + train_meta.json (총 75s)

@@ -1,0 +1,20 @@
+device: cuda
+[deploy_mlp] 채택 피처 포함 전체 데이터 MLP 10시드 학습
+feats: 51 | cats(11): ['pitcher_id', 'batter_id', 'pitcher_team_id', 'batter_team_id', 'top_bottom', 'game_type', 'base_state', 'platoon', 'count_state', 'asof_n_bucket', 'score_diff_binary'] | nums: 40
+full: 1475092 | vocab: [793, 831, 14, 14, 3, 3, 9, 5, 13, 6, 3] | nums: 40
+/home/gpu_01/.conda/envs/aimers9/lib/python3.11/site-packages/torch/nn/modules/linear.py:125: UserWarning: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility (Triggered internally at ../aten/src/ATen/Context.cpp:208.)
+  return F.linear(input, self.weight, self.bias)
+/home/gpu_01/.conda/envs/aimers9/lib/python3.11/site-packages/torch/autograd/graph.py:825: UserWarning: Deterministic behavior was enabled with either `torch.use_deterministic_algorithms(True)` or `at::Context::setDeterministicAlgorithms(true)`, but this operation is not deterministic because it uses CuBLAS and you have CUDA >= 10.2. To enable deterministic behavior in this case, you must set an environment variable before running your PyTorch application: CUBLAS_WORKSPACE_CONFIG=:4096:8 or CUBLAS_WORKSPACE_CONFIG=:16:8. For more information, go to https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility (Triggered internally at ../aten/src/ATen/Context.cpp:208.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+  seed=42 epochs=30 best_train_loss=0.6760 (86s)
+  seed=43 epochs=30 best_train_loss=0.6757 (145s)
+  seed=44 epochs=30 best_train_loss=0.6765 (202s)
+  seed=45 epochs=30 best_train_loss=0.6761 (260s)
+  seed=46 epochs=30 best_train_loss=0.6758 (319s)
+  seed=47 epochs=30 best_train_loss=0.6759 (378s)
+  seed=48 epochs=30 best_train_loss=0.6760 (435s)
+  seed=49 epochs=30 best_train_loss=0.6759 (494s)
+  seed=50 epochs=30 best_train_loss=0.6757 (551s)
+  seed=51 epochs=30 best_train_loss=0.6759 (608s)
+
+저장 완료: submit/model/mlp_s*.pt (10개) + mlp_prep.pkl + mlp_meta.json (총 608s)
