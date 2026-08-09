@@ -1,0 +1,145 @@
+[screen] count_platoon_3b2_same LGB-only 스크리닝 (5시드 × 4폴드)
+train: (1475092, 51) | base_features: 49 | seeds: [42, 43, 44, 45, 46]
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[95]	valid_0's binary_logloss: 0.689158
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[86]	valid_0's binary_logloss: 0.689158
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[97]	valid_0's binary_logloss: 0.689231
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[97]	valid_0's binary_logloss: 0.689165
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[107]	valid_0's binary_logloss: 0.689327
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[92]	valid_0's binary_logloss: 0.690462
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[74]	valid_0's binary_logloss: 0.690325
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.690399
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[79]	valid_0's binary_logloss: 0.690322
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[64]	valid_0's binary_logloss: 0.690352
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[53]	valid_0's binary_logloss: 0.690455
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[47]	valid_0's binary_logloss: 0.690484
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[50]	valid_0's binary_logloss: 0.690494
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[50]	valid_0's binary_logloss: 0.690455
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[43]	valid_0's binary_logloss: 0.690445
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[74]	valid_0's binary_logloss: 0.689403
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[101]	valid_0's binary_logloss: 0.6895
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[84]	valid_0's binary_logloss: 0.689491
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[115]	valid_0's binary_logloss: 0.689522
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[74]	valid_0's binary_logloss: 0.689491
+  [baseline] primary: BSS=726.3 mean=0.4973 (114s)
+  [baseline] r2022: BSS=568.9 mean=0.5077 (114s)
+  [baseline] r2023: BSS=542.8 mean=0.5036 (114s)
+  [baseline] r2024: BSS=710.3 mean=0.5009 (114s)
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[98]	valid_0's binary_logloss: 0.689201
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[87]	valid_0's binary_logloss: 0.689332
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[89]	valid_0's binary_logloss: 0.689222
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[116]	valid_0's binary_logloss: 0.689314
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[85]	valid_0's binary_logloss: 0.689314
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[69]	valid_0's binary_logloss: 0.690344
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[72]	valid_0's binary_logloss: 0.690272
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[54]	valid_0's binary_logloss: 0.690431
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[68]	valid_0's binary_logloss: 0.690354
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[80]	valid_0's binary_logloss: 0.690319
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[50]	valid_0's binary_logloss: 0.690412
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[54]	valid_0's binary_logloss: 0.690455
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[45]	valid_0's binary_logloss: 0.690385
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[51]	valid_0's binary_logloss: 0.690431
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[59]	valid_0's binary_logloss: 0.690367
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[69]	valid_0's binary_logloss: 0.689569
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[87]	valid_0's binary_logloss: 0.689555
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[80]	valid_0's binary_logloss: 0.689435
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[70]	valid_0's binary_logloss: 0.689488
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[70]	valid_0's binary_logloss: 0.689502
+  [candidate] primary: BSS=713.0 mean=0.4976 (108s)
+  [candidate] r2022: BSS=574.0 mean=0.5080 (108s)
+  [candidate] r2023: BSS=554.5 mean=0.5035 (108s)
+  [candidate] r2024: BSS=700.3 mean=0.5008 (108s)
+
+==============================================================================
+스크리닝 결과 (BSS, delta vs baseline)
+==============================================================================
+  config         primary     r2022     r2023     r2024
+  baseline         726.3     568.9     542.8     710.3
+  candidate        713.0     574.0     554.5     700.3
+------------------------------------------------------------------------------
+  Δcandidate       -13.4      +5.2     +11.7     -10.0
+  R-only 개선: candidate = 2/3
+------------------------------------------------------------------------------
+  게이트: primary delta -13.4 (FAIL ≥ +20) | R-only 2/3 (PASS ≥ 2/3)
+  판정: 기각
+
+저장: experiments/screen_platoon_3b2.json (총 230s)
