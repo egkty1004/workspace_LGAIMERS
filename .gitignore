@@ -37,3 +37,6 @@ submit_sim_*/
 
 # 팀원 공유 자료 (대회 내부 협업물)
 team_member_materials/
+
+# repro_979 캐시 (실험 산출물)
+**/cache/*.npy
