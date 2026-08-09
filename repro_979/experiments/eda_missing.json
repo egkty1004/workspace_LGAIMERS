@@ -1,0 +1,543 @@
+{
+  "meta": {
+    "script": "eda_missing_pattern.py",
+    "date": "2026-08-09",
+    "source": "REPORT_data_quality.md \u00a71.3~1.4 (G1 \ubcf5\uadc0/\uacf5\ubc31\u00b7G2 \ud22c\uc218\ub370\ubdd4\u00b7G3 \ud0c0\uc790\ub370\ubdd4)",
+    "groups": {
+      "G1": {
+        "def_": "asof_pitcher_prev{1,3,5}_game_{success,middle}_rate 6\uc885 \uc804\ubd80 \uacb0\uce21 (asof_pitcher_n \uc874\uc7ac = \ubcf5\uadc0/\uacf5\ubc31)",
+        "cols": [
+          "asof_pitcher_prev1_game_success_rate",
+          "asof_pitcher_prev1_game_middle_rate",
+          "asof_pitcher_prev3_game_success_rate",
+          "asof_pitcher_prev3_game_middle_rate",
+          "asof_pitcher_prev5_game_success_rate",
+          "asof_pitcher_prev5_game_middle_rate"
+        ]
+      },
+      "G2": {
+        "def_": "asof_pitcher_{success,reverse,middle,ball,strike,fastball,breaking,offspeed}_rate 8\uc885 \uacb0\uce21 & asof_pitcher_n==0 (\ud22c\uc218 \ub370\ubdd4)",
+        "cols": [
+          "asof_pitcher_success_rate",
+          "asof_pitcher_reverse_rate",
+          "asof_pitcher_middle_rate",
+          "asof_pitcher_ball_rate",
+          "asof_pitcher_strike_rate",
+          "asof_pitcher_fastball_rate",
+          "asof_pitcher_breaking_rate",
+          "asof_pitcher_offspeed_rate"
+        ]
+      },
+      "G3": {
+        "def_": "asof_batter_{success,middle}_rate 2\uc885 \uacb0\uce21 & asof_batter_n==0 (\ud0c0\uc790 \ub370\ubdd4)",
+        "cols": [
+          "asof_batter_success_rate",
+          "asof_batter_middle_rate"
+        ]
+      }
+    },
+    "fold_defs": {
+      "primary": "train: season<=2023 / val: season==2024",
+      "r2022": "train: (season<=2021)&R / val: (season==2022)&R",
+      "r2023": "train: (season<=2022)&R / val: (season==2023)&R",
+      "r2024": "train: (season<=2023)&R / val: (season==2024)&R"
+    },
+    "bss_interpretation": "bss_bucket_raw=\ube44\uce98\ub9ac\ube0c\ub808\uc774\uc158 train\u2192val \ubc84\ud0b7 BSS, bss_bucket_calib=base-rate(logit shift) \ubcf4\uc815 \ud6c4 BSS = \uc608\uc0c1 \uae30\uc5ec, bss_oracle=val \uadf8\ub8f9 \ud3c9\uade0 \uc801\uc6a9 \uc0c1\ud55c, delta_pp=percentage point",
+    "note": "G2 \u2282 G1 (asof_pitcher_n==0\uc774\uba74 prev1~5\ub3c4 \uacb0\uce21), G1\u2229G3=161. G1 flag\ub294 return_gap_flag(<100) + g1_hist_flag(>=100)\ub85c \ubd84\ud574."
+  },
+  "overall": {
+    "n": 1475092,
+    "target_rate": 0.5237659752747625,
+    "groups": {
+      "g1_flag": {
+        "n": 29185,
+        "n_pct": 0.019785206617621138,
+        "target_rate": 0.5508309062874764,
+        "delta_pp": 2.70649310127139
+      },
+      "g2_flag": {
+        "n": 792,
+        "n_pct": 0.0005369156635653912,
+        "target_rate": 0.5517676767676768,
+        "delta_pp": 2.8001701492914255
+      },
+      "g3_flag": {
+        "n": 830,
+        "n_pct": 0.0005626767686354478,
+        "target_rate": 0.6024096385542169,
+        "delta_pp": 7.864366327945438
+      }
+    },
+    "overlaps": {
+      "g1_and_g2": 792,
+      "g1_and_g3": 161,
+      "g1_excl_g2": 28393
+    },
+    "g1_by_game_type": {
+      "R": {
+        "n": 1314088,
+        "g1_n": 20163,
+        "g1_prevalence_pct": 1.534372127285235,
+        "target_rate": 0.5140249359251435,
+        "g1_target_rate": 0.5227892674701186,
+        "delta_pp": 0.8764331544975024
+      },
+      "F": {
+        "n": 161004,
+        "g1_n": 9022,
+        "g1_prevalence_pct": 5.603587488509603,
+        "target_rate": 0.603270726193138,
+        "g1_target_rate": 0.6135003325205054,
+        "delta_pp": 1.0229606327367358
+      }
+    },
+    "skipped_zero_missing_cols": [
+      "asof_batter_n",
+      "asof_pitcher_n",
+      "asof_pitcher_pitchmix_n",
+      "away_win_expectancy",
+      "balls_before",
+      "base_state",
+      "batter_hand",
+      "batter_id",
+      "batter_team_id",
+      "control_success",
+      "game_dayofweek",
+      "game_month",
+      "game_type",
+      "home_win_expectancy",
+      "inning",
+      "li",
+      "num_runners_on",
+      "outs_before",
+      "pitcher_hand",
+      "pitcher_id",
+      "pitcher_team_id",
+      "row_id",
+      "run_bot_before",
+      "run_top_before",
+      "run_total_before",
+      "runner_on_1b",
+      "runner_on_2b",
+      "runner_on_3b",
+      "score_diff_home",
+      "score_diff_pitcher_team",
+      "season",
+      "strikes_before",
+      "top_bottom"
+    ]
+  },
+  "g1_asof_n_curve": {
+    "[0,10)": {
+      "n": 7632,
+      "n_pct": 0.005173914576175588,
+      "target_rate": 0.5449423480083857,
+      "delta_pp": 2.117637273362316
+    },
+    "[10,50)": {
+      "n": 14610,
+      "n_pct": 0.009904466975619149,
+      "target_rate": 0.556331279945243,
+      "delta_pp": 3.2565304670480466
+    },
+    "[50,100)": {
+      "n": 6844,
+      "n_pct": 0.004639710607880728,
+      "target_rate": 0.5463179427235535,
+      "delta_pp": 2.2551967448790955
+    },
+    "[100,1000)": {
+      "n": 99,
+      "n_pct": 6.71144579456739e-05,
+      "target_rate": 0.5050505050505051,
+      "delta_pp": -1.8715470224257458
+    },
+    "[1000+)": {
+      "n": 0,
+      "n_pct": 0.0,
+      "target_rate": null,
+      "delta_pp": null
+    }
+  },
+  "g1_by_season": {
+    "2019": {
+      "n": 237413,
+      "g1_n": 12278,
+      "g1_rate": 0.5869034044632676,
+      "overall_rate": 0.5646700054335694,
+      "delta_pp": 2.223339902969823,
+      "delta_pp_R": -0.764937275267985,
+      "g1_n_R": 9082,
+      "delta_pp_F": 2.570621463442191,
+      "g1_n_F": 3196
+    },
+    "2020": {
+      "n": 244087,
+      "g1_n": 3865,
+      "g1_rate": 0.5542043984476067,
+      "overall_rate": 0.5327116970588356,
+      "delta_pp": 2.149270138877113,
+      "delta_pp_R": 0.6302365380328689,
+      "g1_n_R": 2513,
+      "delta_pp_F": 0.5421174168626641,
+      "g1_n_F": 1352
+    },
+    "2021": {
+      "n": 247088,
+      "g1_n": 3741,
+      "g1_rate": 0.5562683774391873,
+      "overall_rate": 0.5327616072006734,
+      "delta_pp": 2.3506770238513885,
+      "delta_pp_R": -0.26169492703903563,
+      "g1_n_R": 2809,
+      "delta_pp_F": -0.8560788752945192,
+      "g1_n_F": 932
+    },
+    "2022": {
+      "n": 247472,
+      "g1_n": 2941,
+      "g1_rate": 0.555253315198912,
+      "overall_rate": 0.5289204435249241,
+      "delta_pp": 2.63328716739879,
+      "delta_pp_R": -0.39530279610561214,
+      "g1_n_R": 1907,
+      "delta_pp_F": -5.110911103408943,
+      "g1_n_F": 1034
+    },
+    "2023": {
+      "n": 245525,
+      "g1_n": 2722,
+      "g1_rate": 0.48971344599559147,
+      "overall_rate": 0.49995723449750534,
+      "delta_pp": -1.0243788501913875,
+      "delta_pp_R": 0.7637801584655879,
+      "g1_n_R": 1627,
+      "delta_pp_F": -1.4456038628793078,
+      "g1_n_F": 1095
+    },
+    "2024": {
+      "n": 253507,
+      "g1_n": 3638,
+      "g1_rate": 0.46206706981858164,
+      "overall_rate": 0.4861049201797189,
+      "delta_pp": -2.403785036113726,
+      "delta_pp_R": -1.1953987970479252,
+      "g1_n_R": 2225,
+      "delta_pp_F": -2.1912936310684805,
+      "g1_n_F": 1413
+    }
+  },
+  "debut_flags_proposed": {
+    "pitcher_debut_flag": {
+      "formula": "asof_pitcher_n == 0",
+      "identical_to": "g2_flag",
+      "n": 792,
+      "rationale": "\ud22c\uc218 \ub370\ubdd4 (\uc774\ub825 0\uad6c). fold\ubcc4 \u0394\ub294 2024\uc5d0\uc11c \uc74c\uc218 \uc804\ud658"
+    },
+    "batter_debut_flag": {
+      "formula": "asof_batter_n == 0",
+      "identical_to": "g3_flag",
+      "n": 830,
+      "rationale": "\ud0c0\uc790 \ub370\ubdd4. \uc804\uccb4 +7.9pp\ub85c \uac00\uc7a5 \ud070 \u0394\uc9c0\ub9cc \uc18c\ud45c\ubcf8(830) \ubc0f \uc2dc\uc98c \ud3b8\ucc28 \ud07c"
+    },
+    "return_gap_flag": {
+      "formula": "prev1_game \uacb0\uce21 & asof_pitcher_n < 100",
+      "n": 29086,
+      "rationale": "G1(\ubcf5\uadc0/\uacf5\ubc31) \uc911 \uc18c\uc774\ub825 \uad6c\uac04\ub9cc \ubd84\ub9ac. n>=100\uc740 \uae30\uc900\uce58\ub85c \ud68c\uadc0(\u0394~0)\ud558\ubbc0\ub85c \uc81c\uc678"
+    }
+  },
+  "folds": {
+    "primary": {
+      "n_train": 1221585,
+      "n_val": 253507,
+      "val_year": 2024,
+      "target_rate_val": 0.4861049201797189,
+      "flags": {
+        "g1_flag": {
+          "n_train": 25547,
+          "n_val": 3638,
+          "prevalence_val": 0.01435068854114482,
+          "target_rate_val_flag": 0.46206706981858164,
+          "delta_pp": -2.403785036113726,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 3.367728669656511
+          }
+        },
+        "return_gap_flag": {
+          "n_train": 25499,
+          "n_val": 3587,
+          "prevalence_val": 0.0141495106643998,
+          "target_rate_val_flag": 0.46138834680791746,
+          "delta_pp": -2.4716573371801442,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 3.5099619677625427
+          }
+        },
+        "g1_hist_flag": {
+          "n_train": 48,
+          "n_val": 51,
+          "prevalence_val": 0.00020117787674502085,
+          "target_rate_val_flag": 0.5098039215686274,
+          "delta_pp": 2.369900138890851,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.04524006445016937
+          }
+        },
+        "g2_flag": {
+          "n_train": 711,
+          "n_val": 81,
+          "prevalence_val": 0.00031951780424209193,
+          "target_rate_val_flag": 0.4074074074074074,
+          "delta_pp": -7.869751277231152,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.7924126261826814
+          }
+        },
+        "g3_flag": {
+          "n_train": 742,
+          "n_val": 88,
+          "prevalence_val": 0.0003471304539914085,
+          "target_rate_val_flag": 0.5,
+          "delta_pp": 1.3895079820281098,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.026838677613660877
+          }
+        }
+      }
+    },
+    "r2022": {
+      "n_train": 653728,
+      "n_val": 217024,
+      "val_year": 2022,
+      "target_rate_val": 0.5036908360365674,
+      "flags": {
+        "g1_flag": {
+          "n_train": 14404,
+          "n_val": 1907,
+          "prevalence_val": 0.008787046593925096,
+          "target_rate_val_flag": 0.49973780807551127,
+          "delta_pp": -0.39530279610561214,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.05541398580000134
+          }
+        },
+        "return_gap_flag": {
+          "n_train": 14367,
+          "n_val": 1905,
+          "prevalence_val": 0.008777831023296963,
+          "target_rate_val_flag": 0.49973753280839894,
+          "delta_pp": -0.39533032281684477,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.05536306421083381
+          }
+        },
+        "g1_hist_flag": {
+          "n_train": 37,
+          "n_val": 2,
+          "prevalence_val": 9.215570628133294e-06,
+          "target_rate_val_flag": 0.5,
+          "delta_pp": -0.3690836036567391,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 5.021766336099631e-05
+          }
+        },
+        "g2_flag": {
+          "n_train": 391,
+          "n_val": 46,
+          "prevalence_val": 0.00021195812444706576,
+          "target_rate_val_flag": 0.5,
+          "delta_pp": -0.3690836036567391,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.001155248174899981
+          }
+        },
+        "g3_flag": {
+          "n_train": 383,
+          "n_val": 32,
+          "prevalence_val": 0.0001474491300501327,
+          "target_rate_val_flag": 0.46875,
+          "delta_pp": -3.494083603656739,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.07202056019339764
+          }
+        }
+      }
+    },
+    "r2023": {
+      "n_train": 870752,
+      "n_val": 219839,
+      "val_year": 2023,
+      "target_rate_val": 0.5031181910398064,
+      "flags": {
+        "g1_flag": {
+          "n_train": 16311,
+          "n_val": 1627,
+          "prevalence_val": 0.007400870637148095,
+          "target_rate_val_flag": 0.5107559926244623,
+          "delta_pp": 0.7637801584655879,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.17345326900342073,
+            "expected_gain_estimate": 0.17345326900342073,
+            "bss_oracle": 0.1739893034868878
+          }
+        },
+        "return_gap_flag": {
+          "n_train": 16272,
+          "n_val": 1618,
+          "prevalence_val": 0.007359931586297244,
+          "target_rate_val_flag": 0.5111248454882571,
+          "delta_pp": 0.8006654448450723,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.18846327991539624,
+            "expected_gain_estimate": 0.18846327991539624,
+            "bss_oracle": 0.19013454456429102
+          }
+        },
+        "g1_hist_flag": {
+          "n_train": 39,
+          "n_val": 9,
+          "prevalence_val": 4.093905085084994e-05,
+          "target_rate_val_flag": 0.4444444444444444,
+          "delta_pp": -5.867374659536195,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.017918701600283526,
+            "expected_gain_estimate": 0.017918701600283526,
+            "bss_oracle": 0.05637935115432313
+          }
+        },
+        "g2_flag": {
+          "n_train": 437,
+          "n_val": 28,
+          "prevalence_val": 0.00012736593598042204,
+          "target_rate_val_flag": 0.42857142857142855,
+          "delta_pp": -7.454676246837782,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.28316727777033535
+          }
+        },
+        "g3_flag": {
+          "n_train": 415,
+          "n_val": 24,
+          "prevalence_val": 0.00010917080226893317,
+          "target_rate_val_flag": 0.5,
+          "delta_pp": -0.3118191039806373,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.00042465487792853196
+          }
+        }
+      }
+    },
+    "r2024": {
+      "n_train": 1090591,
+      "n_val": 223497,
+      "val_year": 2024,
+      "target_rate_val": 0.4897067969592433,
+      "flags": {
+        "g1_flag": {
+          "n_train": 17938,
+          "n_val": 2225,
+          "prevalence_val": 0.009955390900101568,
+          "target_rate_val_flag": 0.47775280898876404,
+          "delta_pp": -1.1953987970479252,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.5750071795151968
+          }
+        },
+        "return_gap_flag": {
+          "n_train": 17890,
+          "n_val": 2225,
+          "prevalence_val": 0.009955390900101568,
+          "target_rate_val_flag": 0.47775280898876404,
+          "delta_pp": -1.1953987970479252,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.5750071795151968
+          }
+        },
+        "g1_hist_flag": {
+          "n_train": 48,
+          "n_val": 0,
+          "prevalence_val": 0.0,
+          "target_rate_val_flag": null,
+          "delta_pp": null,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.0
+          }
+        },
+        "g2_flag": {
+          "n_train": 465,
+          "n_val": 37,
+          "prevalence_val": 0.00016555032058595864,
+          "target_rate_val_flag": 0.4594594594594595,
+          "delta_pp": -3.024733749978381,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.06062061223000015
+          }
+        },
+        "g3_flag": {
+          "n_train": 439,
+          "n_val": 19,
+          "prevalence_val": 8.501232678738417e-05,
+          "target_rate_val_flag": 0.42105263157894735,
+          "delta_pp": -6.865416538029595,
+          "bss": {
+            "bss_bucket_raw": 0.0,
+            "bss_bucket_calib": 0.0,
+            "expected_gain_estimate": 0.0,
+            "bss_oracle": 0.16036023831045298
+          }
+        }
+      }
+    }
+  }
+}
