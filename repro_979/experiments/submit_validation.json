@@ -1,0 +1,61 @@
+{
+  "task": "채택 피처 2개(asof_n_bucket, score_diff_binary) 포함 전체 데이터 재학습 + submit.zip 준비",
+  "adopted_features": ["asof_n_bucket", "score_diff_binary"],
+  "lgb": {
+    "script": "repro_979/deploy_train_lgb.py",
+    "seeds": [42, 43, 44, 45, 46, 47, 48, 49, 50, 51],
+    "num_boost_round": 109,
+    "feats": 51,
+    "cats": ["top_bottom", "game_type", "base_state", "platoon", "count_state"],
+    "train_time_s": 75,
+    "model_files": "submit/model/f3_s42..51.txt (10)"
+  },
+  "mlp": {
+    "script": "repro_979/deploy_train_mlp.py",
+    "seeds": [42, 43, 44, 45, 46, 47, 48, 49, 50, 51],
+    "cats": ["pitcher_id", "batter_id", "pitcher_team_id", "batter_team_id", "top_bottom", "game_type", "base_state", "platoon", "count_state", "asof_n_bucket", "score_diff_binary"],
+    "emb_dim": [16, 16, 4, 4, 2, 4, 4, 4, 4, 4, 2],
+    "prep_vocab": [793, 831, 14, 14, 3, 3, 9, 5, 13, 6, 3],
+    "nums": 40,
+    "train_time_s": 608,
+    "model_files": "submit/model/mlp_s42..51.pt (10) + mlp_prep.pkl + mlp_meta.json"
+  },
+  "blend": {
+    "w_lgb": 0.51,
+    "c_logit": -0.0404,
+    "clip": [0.30, 0.70],
+    "formula": "z = 0.51*z_lgb + 0.49*z_mlp (로짓 공간), p = sigmoid(z + C_LOGIT), clip"
+  },
+  "feature_parity": {
+    "feats": 51,
+    "f3_extra": ["platoon", "count_state", "asof_n_bucket", "score_diff_binary"],
+    "test_columns_after_preprocess": "51/51 present — assert 통과"
+  },
+  "validation_5row": {
+    "command": "LGA_TEST_PATH=open/data/test.csv LGA_SAMPLE_PATH=open/data/sample_submission.csv LGA_OUT_PATH=output/test_sub.csv python submit/script.py",
+    "rows": 5,
+    "pred_mean": 0.4504,
+    "target": "0.477 ± 0.03 (0.447~0.507) — 통과",
+    "key_error": "없음 (feature parity assert 통과)",
+    "inference_s": 0.4,
+    "output": "output/test_sub.csv",
+    "preds": [0.42248, 0.42066, 0.47958, 0.46497, 0.46439]
+  },
+  "validation_fullsize": {
+    "rows": 245789,
+    "inference_s": 15.0,
+    "limit": "600s (평가 서버 10분) — 여유 충분",
+    "lgb_s": 1.7,
+    "mlp_s": 11.4,
+    "pred_mean": 0.4715
+  },
+  "zip": {
+    "path": "/home/gpu_01/workspace_LGAIMERS/submit.zip",
+    "size_bytes": 18187326,
+    "structure": ["model/", "model/f3_s42..51.txt", "model/mlp_s42..51.pt", "model/mlp_prep.pkl", "model/mlp_meta.json", "model/train_meta.json", "script.py", "common.py", "mlp_model.py", "requirements.txt"],
+    "zip_root_check": "model/ + script.py + common.py + mlp_model.py + requirements.txt 최상위 (GIHO cl0404 구조 일치)",
+    "standalone_test": "zip 해제 후 5행 e2e — 예측 일치 (0.4504), 통과"
+  },
+  "status": "PASS",
+  "timestamp": "2026-08-10T00:20:00+09:00"
+}
