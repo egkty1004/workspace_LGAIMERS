@@ -7,17 +7,17 @@ gate_verdict.py — 유도 피처 게이트 판정 (재판정, 학습 없음)
 각 후보의 채택/기각을 재판정한다. **재학습/LGB 실행 없음** — 판정 로직의
 부호 오류 수정 + 게이트 기준 +10 적용이 목적.
 
-부호 규칙 (ablation = 제거 실험):
-  delta_vs_baseline_fe = reduced_bss - baseline_fe_bss
-  - ablation: delta < 0 = 제거 시 성능 하락 = 피처가 기여.  기여도 = -delta.
-  - addition: delta > 0 = 추가 시 성능 상승 = 피처가 기여. 기여도 = +delta.
+부호 규칙 (screen_all.py 저장 규칙 — delta_vs_baseline_fe):
+  - ablation: delta = baseline_fe_bss − reduced_bss
+      delta > 0 = 제거 시 성능 하락 = 피처가 기여.  기여도 = +delta.
+      delta < 0 = 제거 시 성능 상승 = 피처가 해로움.  기여도 = delta (음수).
+  - addition: delta = added_bss − baseline_fe_bss
+      delta > 0 = 추가 시 성능 상승 = 피처가 기여.  기여도 = +delta.
 R-only 개선 카운트 (r2022/r2023/r2024):
-  - ablation: delta < 0 인 폴드가 개선 (제거 시 하락 = 기여)
-  - addition: delta > 0 인 폴드가 개선
+  - ablation/addition 모두 delta > 0 인 폴드가 개선 (기여)
 게이트 (수정됨, 사용자 승인 2026-08-09):
   - primary 기여 >= +10 & R-only 2/3 개선 -> 채택. 미달 -> 기각.
-  (기존 screen_all.json 의 r_only_improved / verdict 필드는 부호 오류로 전부
-   "기각"으로 잘못 기록됨 — 본 스크립트가 올바른 값으로 재계산)
+  (F2 리뷰: ablation 부호 반전 수정 — 기여도 = delta, improved = delta > 0)
 
 입력 : experiments/screen_all.json
 출력 : experiments/gate_verdict.json  +  stdout 재판정표
@@ -37,21 +37,19 @@ R_ONLY_FOLDS = ["r2022", "r2023", "r2024"]
 GATE_PRIMARY = 10.0        # primary 기여 임계 (시드 노이즈 ±9.5 실측 반영, +20 -> +10)
 GATE_R_ONLY = 2            # R-only 3폴드 중 개선 요구 수 (2/3)
 
-ADOPTED_WAVE_D = ["score_diff_binary", "asof_n_bucket"]  # 예상 채택 (검증용)
+ADOPTED_WAVE_D: list[str] = []  # 예상 채택 (검증용) — 부호 수정 후 채택 0건
 
 
 def contribution(mode: str, delta: float) -> float:
-    """모드별 피처 기여도. ablation: 제거 시 하락(-delta)이 기여. addition: 상승(+delta)이 기여."""
-    if mode == "addition":
-        return delta
-    return -delta  # ablation
+    """피처 기여도 = delta (ablation/addition 공통).
+    delta = baseline_fe − reduced (ablation) / added − baseline_fe (addition).
+    delta > 0 = 기여, delta < 0 = 해로움."""
+    return delta
 
 
 def is_r_improved(mode: str, delta: float) -> bool:
-    """R-only 폴드에서 해당 폴드가 '개선'(기여)인지."""
-    if mode == "addition":
-        return delta > 0.0
-    return delta < 0.0  # ablation
+    """R-only 폴드에서 해당 폴드가 '개선'(기여)인지. ablation/addition 모두 delta > 0."""
+    return delta > 0.0
 
 
 def main() -> int:
@@ -81,9 +79,9 @@ def main() -> int:
         # 근거 문장
         reasons = []
         if primary_ok:
-            reasons.append(f"primary 기여 +{contrib:.1f} >= +{GATE_PRIMARY:.0f} 통과")
+            reasons.append(f"primary 기여 {contrib:+.1f} >= +{GATE_PRIMARY:.0f} 통과")
         else:
-            reasons.append(f"primary 기여 +{contrib:.1f} < +{GATE_PRIMARY:.0f} 미달")
+            reasons.append(f"primary 기여 {contrib:+.1f} < +{GATE_PRIMARY:.0f} 미달")
         reasons.append(f"R-only 개선 {len(r_imp)}/{len(R_ONLY_FOLDS)} ({'충족' if r_only_ok else '미달'})")
         if not (primary_ok and r_only_ok):
             reasons.append("게이트 미달 -> 기각")
@@ -137,11 +135,14 @@ def main() -> int:
             "r_only_required": f"{GATE_R_ONLY}/{len(R_ONLY_FOLDS)}",
             "r_only_folds": R_ONLY_FOLDS,
             "contribution_rule": {
-                "ablation": "기여 = -delta (제거 시 하락 = 기여), R-only delta<0 폴드 = 개선",
-                "addition": "기여 = +delta (추가 시 상승 = 기여), R-only delta>0 폴드 = 개선",
+                "rule": "기여도 = delta (delta>0 기여, delta<0 해로움) — ablation/addition 공통",
+                "ablation_delta": "baseline_fe_bss − reduced_bss (제거 시 하락 = 기여)",
+                "addition_delta": "added_bss − baseline_fe_bss (추가 시 상승 = 기여)",
+                "r_only_improved": "delta > 0 인 폴드 = 개선 (양쪽 모두)",
             },
             "accept_rule": "primary 기여 >= +10 & R-only 2/3 개선 -> 채택 | 미달 -> 기각",
-            "note": "기존 screen_all.json의 r_only_improved/verdict는 부호 오류(전부 기각) — 본 파일이 수정된 로직으로 재계산",
+            "note": "F2 리뷰에서 ablation 부호 반전 발견 → 수정 (기여도=delta, improved=delta>0). "
+                    "기존 채택 2건(asof_n_bucket/score_diff_binary)은 실제 해로움(-10.4/-13.0)으로 기각.",
         },
         "candidates": candidates,
         "adopted": adopted,
@@ -175,13 +176,14 @@ def main() -> int:
             "task": task_marker,
             "artifact": "repro_979/gate_verdict.py, repro_979/experiments/gate_verdict.json",
             "summary": (
-                f"부호 오류 수정 + 게이트 +10 적용, 재학습 없음. "
-                f"채택 {len(adopted)}: {adopted} (asof_n_bucket 기여 +10.4 R-only 2/3, "
-                f"score_diff_binary 기여 +13.0 R-only 2/3). "
-                f"기각 {len(rejected)}: {rejected} (기여 < +10 또는 R-only 1/3 이하). "
-                f"R-only 개선 카운트 재계산: recent_gap 2/3, return_gap 2/3, pitcher_debut 0/3, "
-                f"batter_debut 1/3, li_risp 2/3, outs_count 2/3, count_platoon 1/3. "
-                f"Wave D 입력: {adopted}."
+                f"부호 오류 수정(기여도=delta, improved=delta>0) + 게이트 +10 적용, 재학습 없음. "
+                f"채택 {len(adopted)}: {adopted} (최대 기여 count_platoon +7.5 < +10, "
+                f"asof_n_bucket/score_diff_binary는 실제 해로움 -10.4/-13.0으로 기각 확정). "
+                f"기각 {len(rejected)}: {rejected} 전부. "
+                f"R-only 개선 카운트(재계산, delta>0): recent_gap 1/3, return_gap 1/3, "
+                f"pitcher_debut 2/3, batter_debut 0/3, asof_n_bucket 1/3, score_diff_binary 1/3, "
+                f"li_risp_flag 1/3, outs_count 1/3, count_platoon 1/3. "
+                f"Wave D 입력: {adopted} (빈 목록)."
             ),
             "commands": ["cd repro_979 && /home/gpu_01/.conda/envs/aimers9/bin/python gate_verdict.py"],
             "timestamp": datetime.now(timezone.utc).isoformat(),
