@@ -4,6 +4,8 @@
 
 # 강의 자료 (대용량 - 코드 아님)
 강의 자료/
+"LG AIMERS Phase 1 강의 자료/"
+lecture_txt/
 
 # 실험 산출물
 **/model/
@@ -34,6 +36,12 @@ venv/
 
 # 평가 서버 시뮬레이션 산출물
 submit_sim_*/
+submit_sim/
+timing_sim/
+
+# 스크래치/임시 실험 데이터
+oracle_scratch/
+experiments/tmpdata/
 
 # 팀원 공유 자료 (대회 내부 협업물)
 team_member_materials/
