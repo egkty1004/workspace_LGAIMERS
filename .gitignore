@@ -48,3 +48,6 @@ team_member_materials/
 
 # repro_979 캐시 (실험 산출물)
 **/cache/*.npy
+
+# δ mean-sweep 스테이징 (생성물)
+repro_979/submit_sweep/
