@@ -217,8 +217,9 @@ def check_logit_identity(base_pred, var_pred, delta_logit):
 
 # ── ZIP ───────────────────────────────────────────────────────────────
 def make_zip(variant_dir, zip_path):
-    """variant_dir 내부에서 python -m zipfile 로 ZIP 생성.
-    엔트리: model/ 디렉터리 + 모델 파일 + 4개 최상위 파일.
+    """variant_dir 내부 파일들을 ZIP 루트에 직접 기록 (래퍼 디렉토리 없이).
+    엔트리: model/ 디렉터리 + 모델 파일 + 4개 최상위 파일 (28 엔트리).
+    python -m zipfile -c 는 variant_dir 자체를 래퍼로 포함하므로 사용하지 않는다.
     반환: zip 파일 크기(bytes)"""
     os.makedirs(os.path.dirname(zip_path), exist_ok=True)
     tmp_zip = zip_path + ".tmp"
@@ -228,15 +229,14 @@ def make_zip(variant_dir, zip_path):
     pycache = os.path.join(variant_dir, "__pycache__")
     if os.path.isdir(pycache):
         shutil.rmtree(pycache)
-    proc = subprocess.run(
-        ["python", "-m", "zipfile", "-c", tmp_zip, variant_dir],
-        capture_output=True,
-        text=True,
-    )
-    if proc.returncode != 0:
-        raise RuntimeError(
-            f"zipfile 생성 실패 (rc={proc.returncode}): {proc.stderr[-500:]}"
-        )
+    model_dir = os.path.join(variant_dir, "model")
+    model_names = sorted(os.listdir(model_dir))
+    with zipfile.ZipFile(tmp_zip, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("model/", "")
+        for name in model_names:
+            zf.write(os.path.join(model_dir, name), arcname=f"model/{name}")
+        for top in TOP_LEVEL_FILES:
+            zf.write(os.path.join(variant_dir, top), arcname=top)
     os.replace(tmp_zip, zip_path)
     return os.path.getsize(zip_path)
 
@@ -247,8 +247,11 @@ def verify_zip(zip_path, n_model_files):
     expected_top = {"model/"} | set(TOP_LEVEL_FILES)
     with zipfile.ZipFile(zip_path) as zf:
         names = zf.namelist()
-        top = {n.split("/")[0] + "/" if n.endswith("/") else n.split("/")[0]
-               for n in names}
+        # 최상위 이름: 루트 파일(TOP_LEVEL_FILES)은 그대로, 그 외는 첫 컴포넌트를 디렉터리로 정규화
+        top = set()
+        for n in names:
+            first = n.split("/")[0]
+            top.add(first if first in TOP_LEVEL_FILES else first + "/")
         if top != expected_top:
             raise AssertionError(
                 f"ZIP 최상위 이름 불일치: {sorted(top)} != {sorted(expected_top)}"
