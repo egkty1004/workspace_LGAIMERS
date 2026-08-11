@@ -51,3 +51,6 @@ team_member_materials/
 
 # δ mean-sweep 스테이징 (생성물)
 repro_979/submit_sweep/
+
+# platoon3b2 제출 실험 스테이징 (모델/zip 생성물)
+repro_979/submit_plato3b2/

@@ -1,0 +1,11 @@
+{
+  "measured_2024_mean_lgb": 0.4882012391426859,
+  "measured_2024_mean_mlp": 0.48732057213783264,
+  "measured_new_pipeline_mean": 0.4877697123103078,
+  "champion_mean": 0.4871,
+  "diff": 0.000669712310307824,
+  "c_logit_measured": -0.04313406208349663,
+  "cache_proxy_mean": 0.49263727501764876,
+  "c_logit_cache": -0.0626119442701639,
+  "target_2025": 0.477
+}
