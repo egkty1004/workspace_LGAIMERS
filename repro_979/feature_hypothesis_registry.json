@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "generated_by": "drift_eda.py (Todo 3 — aimers9-top100-score-improvement)",
-  "generated_at_utc": "2026-08-13T20:01:36.672671+00:00",
+  "generated_at_utc": "2026-08-13T22:01:25.343485+00:00",
   "leakage_guard_policy": "비협상 가드: ① 2025 라벨 미사용(모든 통계/변환 상수는 학습 윈도우 전용) ② test 행 간 파생 금지(test_row_dependency=false) ③ 외부 데이터 금지. 기각 가설(count_platoon_3b2_same, asof_n_bucket, score_diff_binary, recent_gap_success, return_gap, pitcher_debut, batter_debut, li_risp_flag, outs_count_3b2_2out)은 blocked 로만 기록 — proposed/approved 불가.",
   "prior_rejection_source": "experiments/screen_all_10seed.json",
   "gate": "10-seed(42..51) × 4-fold temporal OOF; primary Δ≥+15 & R-only 3/3 & max|Δmean|≤0.005 → 채택, 그 외 기각",

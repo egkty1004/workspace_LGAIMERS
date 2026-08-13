@@ -1,6 +1,6 @@
 # Task 3 — Drift-aware EDA + feature hypothesis registry
 
-> 날짜: 2026-08-13T20:01:36.672516+00:00 | smoke=False | 데이터: train 1,475,092행 (2019~2024) + test 형식 샘플
+> 날짜: 2026-08-13T22:01:25.343332+00:00 | smoke=False | 데이터: train 1,475,092행 (2019~2024) + test 형식 샘플
 
 ## 1. 누수 가드
 
