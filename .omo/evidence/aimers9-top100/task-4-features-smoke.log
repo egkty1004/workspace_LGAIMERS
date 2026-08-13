@@ -1,0 +1,39 @@
+[feature_qualification] Todo 4 — 드리프트 인지 피처 후보 게이팅 (seeds=[42, 43], smoke=True)
+[feature_qualification] 게이트: primary Δ ≥ +15 & R-only 3/3 & max|Δmean| ≤ 0.005 & bootstrap primary Δ 5%하한 > 0 → 채택, 그 외 기각
+[registry] validate_registry: PASS (17 항목)
+[registry] proposed 8: ['season_dev_success_pitcher', 'league_trend_ratio_middle', 'usage_rank_pitcher', 'log1p_usage_pitcher', 'count_state_abs_regime', 'debut_league_impute_success', 'batter_debut_league_impute_success', 'f_game_post2023_label_mapping']
+[registry] blocked 9: ['count_platoon_3b2_same', 'asof_n_bucket', 'score_diff_binary', 'recent_gap_success', 'return_gap', 'pitcher_debut', 'batter_debut', 'li_risp_flag', 'outs_count_3b2_2out']
+[--smoke] 축소 실행: seeds=[42, 43] 후보 1종=season_dev_success_pitcher (기본 동작과 무관한 테스트 모드)
+[fold] 검증 행 수: primary=253507, r2022=217024, r2023=219839, r2024=223497 | Task2 대조: PASS
+[leakage] 2025 검증 마스크 부재 4/4 PASS | train seasons: [2019, 2020, 2021, 2022, 2023, 2024]
+[contract] season_dev_success_pitcher             PASS {'kind': 'numeric', 'corr': 0.9999999999999999, 'max_abs_diff': 0.0}
+[contract] league_trend_ratio_middle              PASS {'kind': 'numeric', 'corr': 1.0, 'max_abs_diff': 0.0}
+[contract] usage_rank_pitcher                     PASS {'kind': 'numeric', 'corr': 0.9999999661662213, 'max_abs_diff': 0.0006399992853403091}
+[contract] log1p_usage_pitcher                    PASS {'kind': 'numeric', 'corr': 1.0, 'max_abs_diff': 0.0}
+[contract] count_state_abs_regime                 PASS {'kind': 'category', 'label_accuracy': 1.0}
+[contract] debut_league_impute_success            PASS {'kind': 'numeric', 'corr': 1.0, 'max_abs_diff': 0.0}
+[contract] batter_debut_league_impute_success     PASS {'kind': 'numeric', 'corr': 1.0, 'max_abs_diff': 0.0}
+[contract] f_game_post2023_label_mapping          PASS {'kind': 'numeric', 'corr': 0.9999999999999998, 'max_abs_diff': 0.0}
+[base] 49피처 LGB 2시드 × 4폴드 (deterministic=True, cats=['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'])
+  [base] primary= 728.610 r2022= 558.593 r2023= 538.110 r2024= 708.323  (51s)
+  [base/primary] BSS=728.610 (Task2 729.680, Δ-1.070) mean=0.4974 n=253507
+  [base/r2022] BSS=558.593 (Task2 578.409, Δ-19.816) mean=0.5077 n=217024
+  [base/r2023] BSS=538.110 (Task2 550.953, Δ-12.843) mean=0.5034 n=219839
+  [base/r2024] BSS=708.323 (Task2 711.397, Δ-3.074) mean=0.5008 n=223497
+  [base+mlp blend/primary] BSS=774.995 (문서화 774.159, Δ+0.836)
+  [base+mlp blend/r2022] BSS=599.084 (문서화 607.229, Δ-8.145)
+  [base+mlp blend/r2023] BSS=566.534 (문서화 571.831, Δ-5.297)
+  [base+mlp blend/r2024] BSS=725.823 (문서화 724.143, Δ+1.679)
+
+[candidate] season_dev_success_pitcher — 투수 최근 성공률 데미안(평균 편차) 안정 변환 | transform: drift_eda.py:season_dev_success_pitcher | feats=50 | cats=['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'] | dtype=float32
+  [cand/season_dev_success_pitcher] primary= 713.614 r2022= 576.316 r2023= 551.754 r2024= 698.650  (56s)
+  [cand/season_dev_success_pitcher] Δ: primary=-15.00 r2022=+17.72 r2023=+13.64 r2024=-9.67
+  [cand/season_dev_success_pitcher] Δmean: primary=+0.0001 r2022=+0.0004 r2023=-0.0000 r2024=-0.0002 (max|Δmean|=0.0004) | R-only 2/3
+  [cand/season_dev_success_pitcher] bootstrap(primary) 5/50/95%: -24.918/-15.298/-4.779 | overall: -4.230/+1.111/+5.870
+  [cand/season_dev_success_pitcher] mlp blend Δ: primary=-5.24 r2022=+8.74 r2023=+7.69 r2024=-6.29 (mean +1.22, helps)
+  [cand/season_dev_success_pitcher] → rejected ✗ primary -15.0 < +15 R-only 2/3 bootstrap primary Δ 5%하한 -24.918 ≤ 0
+
+[schema] 저장: /home/2022113165/workspace_LGAIMERS/.omo/evidence/aimers9-top100/task-4-features-smoke.json
+[result] 채택 0 / 기각 1
+
+[--smoke] PASS — 폴드/델타/bootstrap/MLP상호작용/게이트/JSON 경로 검증 완료 (seeds=[42, 43], candidate=season_dev_success_pitcher, verdict=rejected)

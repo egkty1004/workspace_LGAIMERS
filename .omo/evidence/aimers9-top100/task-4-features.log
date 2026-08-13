@@ -1,0 +1,92 @@
+[feature_qualification] Todo 4 — 드리프트 인지 피처 후보 게이팅 (seeds=[42, 43, 44, 45, 46, 47, 48, 49, 50, 51], smoke=False)
+[feature_qualification] 게이트: primary Δ ≥ +15 & R-only 3/3 & max|Δmean| ≤ 0.005 & bootstrap primary Δ 5%하한 > 0 → 채택, 그 외 기각
+[registry] validate_registry: PASS (17 항목)
+[registry] proposed 8: ['season_dev_success_pitcher', 'league_trend_ratio_middle', 'usage_rank_pitcher', 'log1p_usage_pitcher', 'count_state_abs_regime', 'debut_league_impute_success', 'batter_debut_league_impute_success', 'f_game_post2023_label_mapping']
+[registry] blocked 9: ['count_platoon_3b2_same', 'asof_n_bucket', 'score_diff_binary', 'recent_gap_success', 'return_gap', 'pitcher_debut', 'batter_debut', 'li_risp_flag', 'outs_count_3b2_2out']
+[fold] 검증 행 수: primary=253507, r2022=217024, r2023=219839, r2024=223497 | Task2 대조: PASS
+[leakage] 2025 검증 마스크 부재 4/4 PASS | train seasons: [2019, 2020, 2021, 2022, 2023, 2024]
+[contract] season_dev_success_pitcher             PASS {'kind': 'numeric', 'corr': 0.9999999999999999, 'max_abs_diff': 0.0}
+[contract] league_trend_ratio_middle              PASS {'kind': 'numeric', 'corr': 1.0, 'max_abs_diff': 0.0}
+[contract] usage_rank_pitcher                     PASS {'kind': 'numeric', 'corr': 0.9999999661662213, 'max_abs_diff': 0.0006399992853403091}
+[contract] log1p_usage_pitcher                    PASS {'kind': 'numeric', 'corr': 1.0, 'max_abs_diff': 0.0}
+[contract] count_state_abs_regime                 PASS {'kind': 'category', 'label_accuracy': 1.0}
+[contract] debut_league_impute_success            PASS {'kind': 'numeric', 'corr': 1.0, 'max_abs_diff': 0.0}
+[contract] batter_debut_league_impute_success     PASS {'kind': 'numeric', 'corr': 1.0, 'max_abs_diff': 0.0}
+[contract] f_game_post2023_label_mapping          PASS {'kind': 'numeric', 'corr': 0.9999999999999998, 'max_abs_diff': 0.0}
+[base] 49피처 LGB 10시드 × 4폴드 (deterministic=True, cats=['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'])
+  [base] primary= 729.680 r2022= 578.409 r2023= 550.953 r2024= 711.398  (250s)
+  [base/primary] BSS=729.680 (Task2 729.680, Δ+0.000) mean=0.4973 n=253507
+  [base/r2022] BSS=578.409 (Task2 578.409, Δ+0.000) mean=0.5073 n=217024
+  [base/r2023] BSS=550.953 (Task2 550.953, Δ+0.000) mean=0.5033 n=219839
+  [base/r2024] BSS=711.398 (Task2 711.397, Δ+0.000) mean=0.5009 n=223497
+  [base+mlp blend/primary] BSS=774.159 (문서화 774.159, Δ+0.000)
+  [base+mlp blend/r2022] BSS=607.229 (문서화 607.229, Δ+0.000)
+  [base+mlp blend/r2023] BSS=571.831 (문서화 571.831, Δ+0.000)
+  [base+mlp blend/r2024] BSS=724.143 (문서화 724.143, Δ+0.000)
+
+[candidate] season_dev_success_pitcher — 투수 최근 성공률 데미안(평균 편차) 안정 변환 | transform: drift_eda.py:season_dev_success_pitcher | feats=50 | cats=['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'] | dtype=float32
+  [cand/season_dev_success_pitcher] primary= 725.819 r2022= 572.782 r2023= 549.732 r2024= 712.568  (257s)
+  [cand/season_dev_success_pitcher] Δ: primary=-3.86 r2022=-5.63 r2023=-1.22 r2024=+1.17
+  [cand/season_dev_success_pitcher] Δmean: primary=+0.0003 r2022=+0.0007 r2023=+0.0001 r2024=-0.0001 (max|Δmean|=0.0007) | R-only 1/3
+  [cand/season_dev_success_pitcher] bootstrap(primary) 5/50/95%: -8.260/-4.061/+0.548 | overall: -4.781/-2.519/-0.067
+  [cand/season_dev_success_pitcher] mlp blend Δ: primary=-0.99 r2022=-3.65 r2023=+0.24 r2024=+0.55 (mean -0.96, hurts)
+  [cand/season_dev_success_pitcher] → rejected ✗ primary -3.9 < +15 R-only 1/3 bootstrap primary Δ 5%하한 -8.260 ≤ 0
+
+[candidate] league_trend_ratio_middle — middle_rate 리그 추세 비율 (디트렌드 안정 변환) | transform: drift_eda.py:league_trend_ratio_middle | feats=50 | cats=['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'] | dtype=float32
+  [cand/league_trend_ratio_middle] primary= 726.934 r2022= 580.112 r2023= 552.765 r2024= 704.981  (253s)
+  [cand/league_trend_ratio_middle] Δ: primary=-2.75 r2022=+1.70 r2023=+1.81 r2024=-6.42
+  [cand/league_trend_ratio_middle] Δmean: primary=+0.0001 r2022=+0.0002 r2023=+0.0003 r2024=-0.0001 (max|Δmean|=0.0003) | R-only 2/3
+  [cand/league_trend_ratio_middle] bootstrap(primary) 5/50/95%: -7.058/-2.863/+1.214 | overall: -3.828/-1.552/+0.773
+  [cand/league_trend_ratio_middle] mlp blend Δ: primary=-0.99 r2022=+0.24 r2023=+0.87 r2024=-4.04 (mean -0.98, hurts)
+  [cand/league_trend_ratio_middle] → rejected ✗ primary -2.7 < +15 R-only 2/3 bootstrap primary Δ 5%하한 -7.058 ≤ 0
+
+[candidate] usage_rank_pitcher — 투수 사용량 백분위 랭크 (드리프트 정규화) | transform: drift_eda.py:usage_rank_pitcher | feats=50 | cats=['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'] | dtype=float32
+  [cand/usage_rank_pitcher] primary= 724.852 r2022= 580.280 r2023= 558.931 r2024= 710.793  (268s)
+  [cand/usage_rank_pitcher] Δ: primary=-4.83 r2022=+1.87 r2023=+7.98 r2024=-0.60
+  [cand/usage_rank_pitcher] Δmean: primary=+0.0003 r2022=+0.0002 r2023=-0.0001 r2024=-0.0000 (max|Δmean|=0.0003) | R-only 2/3
+  [cand/usage_rank_pitcher] bootstrap(primary) 5/50/95%: -8.881/-4.846/-0.216 | overall: -1.499/+0.828/+3.137
+  [cand/usage_rank_pitcher] mlp blend Δ: primary=-1.25 r2022=+0.38 r2023=+4.06 r2024=-1.05 (mean +0.54, helps)
+  [cand/usage_rank_pitcher] → rejected ✗ primary -4.8 < +15 R-only 2/3 bootstrap primary Δ 5%하한 -8.881 ≤ 0
+
+[candidate] log1p_usage_pitcher — log1p 투수 사용량 (꼬리 압축 안정 변환) | transform: drift_eda.py:log1p_usage_pitcher | feats=50 | cats=['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'] | dtype=float32
+  [cand/log1p_usage_pitcher] primary= 724.218 r2022= 580.280 r2023= 558.931 r2024= 712.263  (279s)
+  [cand/log1p_usage_pitcher] Δ: primary=-5.46 r2022=+1.87 r2023=+7.98 r2024=+0.86
+  [cand/log1p_usage_pitcher] Δmean: primary=+0.0003 r2022=+0.0002 r2023=-0.0001 r2024=-0.0001 (max|Δmean|=0.0003) | R-only 3/3
+  [cand/log1p_usage_pitcher] bootstrap(primary) 5/50/95%: -9.520/-5.426/-1.080 | overall: -1.223/+0.992/+3.373
+  [cand/log1p_usage_pitcher] mlp blend Δ: primary=-1.57 r2022=+0.38 r2023=+4.06 r2024=-0.51 (mean +0.59, helps)
+  [cand/log1p_usage_pitcher] → rejected ✗ primary -5.5 < +15 bootstrap primary Δ 5%하한 -9.520 ≤ 0
+
+[candidate] count_state_abs_regime — ABS 레짐 × count_state 결합 범주 (레짐별 전처리) | transform: drift_eda.py:count_state_abs_regime | feats=50 | cats=['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state', 'count_state_abs_regime'] | dtype=category
+  [cand/count_state_abs_regime] primary= 724.601 r2022= 580.027 r2023= 557.020 r2024= 711.942  (257s)
+  [cand/count_state_abs_regime] Δ: primary=-5.08 r2022=+1.62 r2023=+6.07 r2024=+0.54
+  [cand/count_state_abs_regime] Δmean: primary=-0.0000 r2022=+0.0004 r2023=+0.0001 r2024=-0.0005 (max|Δmean|=0.0005) | R-only 3/3
+  [cand/count_state_abs_regime] bootstrap(primary) 5/50/95%: -9.365/-5.161/-0.649 | overall: -1.829/+0.513/+3.005
+  [cand/count_state_abs_regime] mlp blend Δ: primary=-1.79 r2022=+0.07 r2023=+2.96 r2024=-0.53 (mean +0.18, helps)
+  [cand/count_state_abs_regime] → rejected ✗ primary -5.1 < +15 bootstrap primary Δ 5%하한 -9.365 ≤ 0
+
+[candidate] debut_league_impute_success — 투수 데뷔(G2) asof 성공률 레짐별 리그 대체 (결측 처리) | transform: drift_eda.py:debut_league_impute_success | feats=50 | cats=['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'] | dtype=float32
+  [cand/debut_league_impute_success] primary= 725.620 r2022= 577.631 r2023= 551.921 r2024= 708.507  (260s)
+  [cand/debut_league_impute_success] Δ: primary=-4.06 r2022=-0.78 r2023=+0.97 r2024=-2.89
+  [cand/debut_league_impute_success] Δmean: primary=+0.0001 r2022=+0.0005 r2023=-0.0001 r2024=+0.0001 (max|Δmean|=0.0005) | R-only 1/3
+  [cand/debut_league_impute_success] bootstrap(primary) 5/50/95%: -8.095/-4.114/+0.216 | overall: -4.013/-1.879/+0.463
+  [cand/debut_league_impute_success] mlp blend Δ: primary=-1.52 r2022=-0.42 r2023=+1.05 r2024=-1.26 (mean -0.54, hurts)
+  [cand/debut_league_impute_success] → rejected ✗ primary -4.1 < +15 R-only 1/3 bootstrap primary Δ 5%하한 -8.095 ≤ 0
+
+[candidate] batter_debut_league_impute_success — 타자 데뷔(G3) asof 성공률 레짐별 리그 대체 (결측 처리) | transform: drift_eda.py:batter_debut_league_impute_success | feats=50 | cats=['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'] | dtype=float32
+  [cand/batter_debut_league_impute_success] primary= 719.548 r2022= 576.253 r2023= 556.860 r2024= 703.608  (259s)
+  [cand/batter_debut_league_impute_success] Δ: primary=-10.13 r2022=-2.16 r2023=+5.91 r2024=-7.79
+  [cand/batter_debut_league_impute_success] Δmean: primary=+0.0001 r2022=+0.0005 r2023=+0.0002 r2024=-0.0000 (max|Δmean|=0.0005) | R-only 1/3
+  [cand/batter_debut_league_impute_success] bootstrap(primary) 5/50/95%: -14.497/-10.280/-6.077 | overall: -6.117/-3.888/-1.490
+  [cand/batter_debut_league_impute_success] mlp blend Δ: primary=-4.20 r2022=-2.31 r2023=+3.21 r2024=-4.69 (mean -2.00, hurts)
+  [cand/batter_debut_league_impute_success] → rejected ✗ primary -10.1 < +15 R-only 1/3 bootstrap primary Δ 5%하한 -14.497 ≤ 0
+
+[candidate] f_game_post2023_label_mapping — F 게임 post-2023 라벨 레짐 매핑 (레짐별 전처리/캘리브레이션 정책) | transform: drift_eda.py:f_game_post2023_label_mapping | feats=50 | cats=['top_bottom', 'game_type', 'base_state', 'platoon', 'count_state'] | dtype=int8
+  [cand/f_game_post2023_label_mapping] primary= 722.659 r2022= 578.409 r2023= 550.953 r2024= 711.398  (259s)
+  [cand/f_game_post2023_label_mapping] Δ: primary=-7.02 r2022=+0.00 r2023=+0.00 r2024=+0.00
+  [cand/f_game_post2023_label_mapping] Δmean: primary=+0.0002 r2022=+0.0000 r2023=+0.0000 r2024=+0.0000 (max|Δmean|=0.0002) | R-only 0/3
+  [cand/f_game_post2023_label_mapping] bootstrap(primary) 5/50/95%: -11.394/-6.867/-2.081 | overall: -3.204/-1.978/-0.697
+  [cand/f_game_post2023_label_mapping] mlp blend Δ: primary=-2.34 r2022=+0.00 r2023=+0.00 r2024=+0.00 (mean -0.58, hurts)
+  [cand/f_game_post2023_label_mapping] → rejected ✗ primary -7.0 < +15 R-only 0/3 bootstrap primary Δ 5%하한 -11.394 ≤ 0
+
+[schema] 저장: /home/2022113165/workspace_LGAIMERS/.omo/evidence/aimers9-top100/task-4-features.json
+[result] 채택 0 / 기각 8

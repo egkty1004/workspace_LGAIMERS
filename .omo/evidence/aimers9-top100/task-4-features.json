@@ -1,0 +1,1239 @@
+{
+  "schema_version": 1,
+  "task": "todo-4-feature-gating",
+  "smoke": false,
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+  ],
+  "folds": [
+    "primary",
+    "r2022",
+    "r2023",
+    "r2024"
+  ],
+  "r_folds": [
+    "r2022",
+    "r2023",
+    "r2024"
+  ],
+  "gate": "primary Δ ≥ +15 & R-only 3/3 & max|Δmean| ≤ 0.005 & bootstrap primary Δ 5%하한 > 0 → 채택, 그 외 기각",
+  "gate_definition": {
+    "primary_threshold": 15.0,
+    "r_only_required": 3,
+    "mean_poison_threshold": 0.005,
+    "bootstrap_iter": 1000,
+    "bootstrap_seed": 42,
+    "bootstrap_lower_bound_gt_0": true
+  },
+  "registry": {
+    "path": "feature_hypothesis_registry.json",
+    "valid": true,
+    "n_proposed": 8,
+    "n_blocked": 9,
+    "proposed_ids": [
+      "season_dev_success_pitcher",
+      "league_trend_ratio_middle",
+      "usage_rank_pitcher",
+      "log1p_usage_pitcher",
+      "count_state_abs_regime",
+      "debut_league_impute_success",
+      "batter_debut_league_impute_success",
+      "f_game_post2023_label_mapping"
+    ],
+    "blocked_ids": [
+      "count_platoon_3b2_same",
+      "asof_n_bucket",
+      "score_diff_binary",
+      "recent_gap_success",
+      "return_gap",
+      "pitcher_debut",
+      "batter_debut",
+      "li_risp_flag",
+      "outs_count_3b2_2out"
+    ],
+    "blocked_rejected": [
+      "count_platoon_3b2_same",
+      "asof_n_bucket",
+      "score_diff_binary",
+      "recent_gap_success",
+      "return_gap",
+      "pitcher_debut",
+      "batter_debut",
+      "li_risp_flag",
+      "outs_count_3b2_2out"
+    ]
+  },
+  "integrity": {
+    "gate": "PASS",
+    "frozen_control": {
+      "config_digest": "6a8a42fa5c031f1a0e221227b0b34f8ea1b7f7ffa388db3c5cab62e289259ac2",
+      "config_digest_matches_frozen": true,
+      "champion_features": 49,
+      "lgb_cats": [
+        "top_bottom",
+        "game_type",
+        "base_state",
+        "platoon",
+        "count_state"
+      ],
+      "mlp_cats_sha256_checked": 4
+    }
+  },
+  "leakage_guard": {
+    "no_2025_in_any_validation_mask": true,
+    "transform_constants_train_window_only": true,
+    "train_seasons": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ]
+  },
+  "base": {
+    "n_features": 49,
+    "features_source": "team_member_materials/GIHO/submit979_extract/model/train_meta.json",
+    "per_fold": {
+      "primary": {
+        "n_rows": 253507,
+        "bss": 729.6801091066562,
+        "pred_mean": 0.49729191743966383,
+        "digest": "e482cc869f9964b013223e7e97828b2825a4ee722e0259454627b376d46aceda",
+        "logits_path": "cache/qualification/task4_base/primary.npy"
+      },
+      "r2022": {
+        "n_rows": 217024,
+        "bss": 578.4091089575671,
+        "pred_mean": 0.5073168923549236,
+        "digest": "7960fdff1216f0a275e50f063218d6ac9d07f326da916e31decd03022162e2bd",
+        "logits_path": "cache/qualification/task4_base/r2022.npy"
+      },
+      "r2023": {
+        "n_rows": 219839,
+        "bss": 550.9528706342248,
+        "pred_mean": 0.5032840591549266,
+        "digest": "ae02faa114a961dc1d7d7fce8d34097558a1a889250ba8dffc9944067fddbe44",
+        "logits_path": "cache/qualification/task4_base/r2023.npy"
+      },
+      "r2024": {
+        "n_rows": 223497,
+        "bss": 711.3975960281405,
+        "pred_mean": 0.5008901908895141,
+        "digest": "a931358a81a0df2c4bcca0dea4b6f20a9a5b0640bfb9a083673d4d5029584c44",
+        "logits_path": "cache/qualification/task4_base/r2024.npy"
+      }
+    },
+    "documented_lgb": {
+      "primary": 729.6799481544491,
+      "r2022": 578.4091008043557,
+      "r2023": 550.9528062504487,
+      "r2024": 711.3974940101131
+    },
+    "delta_vs_documented": {
+      "primary": 0.0001609522071248648,
+      "r2022": 8.15321141089953e-06,
+      "r2023": 6.43837761344912e-05,
+      "r2024": 0.00010201802740539279
+    },
+    "base_assertion": {
+      "within_tolerance": true,
+      "tolerance_bss": 1.0,
+      "max_abs_delta_bss": 0.0001609522071248648,
+      "row_counts_match_task2": true
+    },
+    "blend_reproduction": {
+      "w_lgb": 0.51,
+      "primary": {
+        "repro_blend_bss": 774.1586482109209,
+        "documented": 774.1586482109209,
+        "delta": 0.0
+      },
+      "note": "기준선(재학습 LGB) + 챔피언 MLP 블렌드가 Task 2 챔피언 블렌드 수치 재현 확인"
+    }
+  },
+  "candidates": {
+    "season_dev_success_pitcher": {
+      "candidate": "season_dev_success_pitcher",
+      "registry_status": "proposed",
+      "name": "투수 최근 성공률 데미안(평균 편차) 안정 변환",
+      "transform_ref": "drift_eda.py:season_dev_success_pitcher",
+      "column_name": "season_dev_success_pitcher",
+      "is_categorical": false,
+      "feature_count": 50,
+      "mode": "addition",
+      "contract_check": {
+        "ok": true,
+        "kind": "numeric",
+        "corr": 0.9999999999999999,
+        "max_abs_diff": 0.0,
+        "n_rows": 100000,
+        "ref": "drift_eda.py:season_dev_success_pitcher"
+      },
+      "per_fold": {
+        "primary": {
+          "n_rows": 253507,
+          "bss": 725.8190423415579,
+          "pred_mean": 0.49757806842835844,
+          "digest": "08387297f7420076a5509e70df7710954a9785b58942b55bca2b7f0aeb9bae7c",
+          "logits_path": "cache/qualification/task4_season_dev_success_pitcher/primary.npy"
+        },
+        "r2022": {
+          "n_rows": 217024,
+          "bss": 572.781892088936,
+          "pred_mean": 0.5080426986876984,
+          "digest": "b40d6fe07f277d99b35314a4a17b22e878952e0676862ac66cfdf390351432c4",
+          "logits_path": "cache/qualification/task4_season_dev_success_pitcher/r2022.npy"
+        },
+        "r2023": {
+          "n_rows": 219839,
+          "bss": 549.7321446161329,
+          "pred_mean": 0.5033496633188234,
+          "digest": "9761a24613cb84bbe2c1540914d528cd67d18a6d5794a4d2ea381ae8ca7cb9f3",
+          "logits_path": "cache/qualification/task4_season_dev_success_pitcher/r2023.npy"
+        },
+        "r2024": {
+          "n_rows": 223497,
+          "bss": 712.5678420890624,
+          "pred_mean": 0.5008206237373856,
+          "digest": "6d9f84caef260c424aa1d297a7093497f574de35a1f4481655f05e338bc0b3cf",
+          "logits_path": "cache/qualification/task4_season_dev_success_pitcher/r2024.npy"
+        }
+      },
+      "delta_vs_base": {
+        "primary": -3.8610667650983714,
+        "r2022": -5.627216868631081,
+        "r2023": -1.2207260180919093,
+        "r2024": 1.1702460609219543
+      },
+      "r_only_improved": 1,
+      "max_abs_dmean": 0.0007258063327747477,
+      "dmean_per_fold": {
+        "primary": 0.0002861509886946112,
+        "r2022": 0.0007258063327747477,
+        "r2023": 6.560416389678192e-05,
+        "r2024": -6.956715212858011e-05
+      },
+      "bootstrap_ci": {
+        "primary": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -8.260273584122013,
+          "pct_50": -4.061160873025585,
+          "pct_95": 0.547628983929007,
+          "lower_bound_gt_0": false,
+          "mean": -4.0069171354282895
+        },
+        "overall_pooled": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -4.781361770149852,
+          "pct_50": -2.5187596839725757,
+          "pct_95": -0.06666239094511969,
+          "lower_bound_gt_0": false,
+          "mean": -2.4647765992395305
+        }
+      },
+      "mlp_interaction": {
+        "per_fold": {
+          "primary": {
+            "n_rows": 253507,
+            "blend_base_bss": 774.1586482109209,
+            "blend_cand_bss": 773.1655790406578,
+            "blend_delta": -0.9930691702630838,
+            "lgb_delta": -3.8610667650983714,
+            "mlp_logits": "cache/mlp_primary.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2022": {
+            "n_rows": 217024,
+            "blend_base_bss": 607.229065801873,
+            "blend_cand_bss": 603.5793540812184,
+            "blend_delta": -3.6497117206546363,
+            "lgb_delta": -5.627216868631081,
+            "mlp_logits": "cache/mlp_r2022.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2023": {
+            "n_rows": 219839,
+            "blend_base_bss": 571.8306285905417,
+            "blend_cand_bss": 572.0716091953792,
+            "blend_delta": 0.2409806048375458,
+            "lgb_delta": -1.2207260180919093,
+            "mlp_logits": "cache/mlp_r2023.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2024": {
+            "n_rows": 223497,
+            "blend_base_bss": 724.1432877117759,
+            "blend_cand_bss": 724.6947369771051,
+            "blend_delta": 0.5514492653292109,
+            "lgb_delta": 1.1702460609219543,
+            "mlp_logits": "cache/mlp_r2024.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          }
+        },
+        "mean_delta": -0.9625877551877409,
+        "helps_blend": false,
+        "w_lgb": 0.51,
+        "mlp_source": "cache/mlp_{fold}.npy (챔피언 5시드 MLP — Task 2 sha256 대조)"
+      },
+      "verdict": "rejected",
+      "reasons": [
+        "primary -3.9 < +15",
+        "R-only 1/3",
+        "bootstrap primary Δ 5%하한 -8.260 ≤ 0"
+      ]
+    },
+    "league_trend_ratio_middle": {
+      "candidate": "league_trend_ratio_middle",
+      "registry_status": "proposed",
+      "name": "middle_rate 리그 추세 비율 (디트렌드 안정 변환)",
+      "transform_ref": "drift_eda.py:league_trend_ratio_middle",
+      "column_name": "league_trend_ratio_middle",
+      "is_categorical": false,
+      "feature_count": 50,
+      "mode": "addition",
+      "contract_check": {
+        "ok": true,
+        "kind": "numeric",
+        "corr": 1.0,
+        "max_abs_diff": 0.0,
+        "n_rows": 100000,
+        "ref": "drift_eda.py:league_trend_ratio_middle"
+      },
+      "per_fold": {
+        "primary": {
+          "n_rows": 253507,
+          "bss": 726.9341918379246,
+          "pred_mean": 0.4973609251171542,
+          "digest": "443efb38972cbd93c095053e4e6f435a53c390588cabff37aaead9ef4d1ff343",
+          "logits_path": "cache/qualification/task4_league_trend_ratio_middle/primary.npy"
+        },
+        "r2022": {
+          "n_rows": 217024,
+          "bss": 580.1116381779603,
+          "pred_mean": 0.5075442546816178,
+          "digest": "8105e314b7c64aeca106fa3afda04a7e5627e315cc0c950b645033780d030abd",
+          "logits_path": "cache/qualification/task4_league_trend_ratio_middle/r2022.npy"
+        },
+        "r2023": {
+          "n_rows": 219839,
+          "bss": 552.7649546222424,
+          "pred_mean": 0.5035611961615954,
+          "digest": "beb77366e65775e65df61131b3db7040a2ef8f5d9f9742e89d85d5760a5da64d",
+          "logits_path": "cache/qualification/task4_league_trend_ratio_middle/r2023.npy"
+        },
+        "r2024": {
+          "n_rows": 223497,
+          "bss": 704.9812327986959,
+          "pred_mean": 0.5007622562664105,
+          "digest": "e27f995f0b9b57e065e30d684f78ffea8c16f4b6ab54e7ad4512e5f02aa76d74",
+          "logits_path": "cache/qualification/task4_league_trend_ratio_middle/r2024.npy"
+        }
+      },
+      "delta_vs_base": {
+        "primary": -2.7459172687316595,
+        "r2022": 1.7025292203932167,
+        "r2023": 1.812083988017548,
+        "r2024": -6.416363229444528
+      },
+      "r_only_improved": 2,
+      "max_abs_dmean": 0.00027713700666887053,
+      "dmean_per_fold": {
+        "primary": 6.900767749035142e-05,
+        "r2022": 0.00022736232669418044,
+        "r2023": 0.00027713700666887053,
+        "r2024": -0.00012793462310367598
+      },
+      "bootstrap_ci": {
+        "primary": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -7.058197684003415,
+          "pct_50": -2.86312394264246,
+          "pct_95": 1.2139798553601222,
+          "lower_bound_gt_0": false,
+          "mean": -2.8866521161598273
+        },
+        "overall_pooled": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -3.827709647617513,
+          "pct_50": -1.5523877695766828,
+          "pct_95": 0.7732390541381776,
+          "lower_bound_gt_0": false,
+          "mean": -1.540786645924776
+        }
+      },
+      "mlp_interaction": {
+        "per_fold": {
+          "primary": {
+            "n_rows": 253507,
+            "blend_base_bss": 774.1586482109209,
+            "blend_cand_bss": 773.1704379744908,
+            "blend_delta": -0.9882102364300636,
+            "lgb_delta": -2.7459172687316595,
+            "mlp_logits": "cache/mlp_primary.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2022": {
+            "n_rows": 217024,
+            "blend_base_bss": 607.229065801873,
+            "blend_cand_bss": 607.4663237656152,
+            "blend_delta": 0.237257963742195,
+            "lgb_delta": 1.7025292203932167,
+            "mlp_logits": "cache/mlp_r2022.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2023": {
+            "n_rows": 219839,
+            "blend_base_bss": 571.8306285905417,
+            "blend_cand_bss": 572.6981384875818,
+            "blend_delta": 0.8675098970401223,
+            "lgb_delta": 1.812083988017548,
+            "mlp_logits": "cache/mlp_r2023.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2024": {
+            "n_rows": 223497,
+            "blend_base_bss": 724.1432877117759,
+            "blend_cand_bss": 720.1016198047139,
+            "blend_delta": -4.041667907061992,
+            "lgb_delta": -6.416363229444528,
+            "mlp_logits": "cache/mlp_r2024.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          }
+        },
+        "mean_delta": -0.9812775706774346,
+        "helps_blend": false,
+        "w_lgb": 0.51,
+        "mlp_source": "cache/mlp_{fold}.npy (챔피언 5시드 MLP — Task 2 sha256 대조)"
+      },
+      "verdict": "rejected",
+      "reasons": [
+        "primary -2.7 < +15",
+        "R-only 2/3",
+        "bootstrap primary Δ 5%하한 -7.058 ≤ 0"
+      ]
+    },
+    "usage_rank_pitcher": {
+      "candidate": "usage_rank_pitcher",
+      "registry_status": "proposed",
+      "name": "투수 사용량 백분위 랭크 (드리프트 정규화)",
+      "transform_ref": "drift_eda.py:usage_rank_pitcher",
+      "column_name": "usage_rank_pitcher",
+      "is_categorical": false,
+      "feature_count": 50,
+      "mode": "addition",
+      "contract_check": {
+        "ok": true,
+        "kind": "numeric",
+        "corr": 0.9999999661662213,
+        "max_abs_diff": 0.0006399992853403091,
+        "n_rows": 100000,
+        "ref": "drift_eda.py:usage_rank_pitcher"
+      },
+      "per_fold": {
+        "primary": {
+          "n_rows": 253507,
+          "bss": 724.8524694883573,
+          "pred_mean": 0.49758873551489685,
+          "digest": "e33d672b60d161fd838dd276383607d0b48bc915f6758c9659ffd5d5dadbfa89",
+          "logits_path": "cache/qualification/task4_usage_rank_pitcher/primary.npy"
+        },
+        "r2022": {
+          "n_rows": 217024,
+          "bss": 580.2800266214492,
+          "pred_mean": 0.5075524577174203,
+          "digest": "72de067451372a0fc39bd37e42a3857dad1b82da1892492c3b9709d61fe2ffd6",
+          "logits_path": "cache/qualification/task4_usage_rank_pitcher/r2022.npy"
+        },
+        "r2023": {
+          "n_rows": 219839,
+          "bss": 558.9311916371131,
+          "pred_mean": 0.5032315118869038,
+          "digest": "b1160e3e2ab45d3fdbb490a2611b851bb8076339edf001e36e1c24b864e3c201",
+          "logits_path": "cache/qualification/task4_usage_rank_pitcher/r2023.npy"
+        },
+        "r2024": {
+          "n_rows": 223497,
+          "bss": 710.7928062249358,
+          "pred_mean": 0.5008677647809999,
+          "digest": "80e410b032438dc8c256b63cfcfaecd24364ecf61ad1655267e71e5b0ccdbc35",
+          "logits_path": "cache/qualification/task4_usage_rank_pitcher/r2024.npy"
+        }
+      },
+      "delta_vs_base": {
+        "primary": -4.827639618298917,
+        "r2022": 1.8709176638820963,
+        "r2023": 7.978321002888265,
+        "r2024": -0.6047898032046533
+      },
+      "r_only_improved": 2,
+      "max_abs_dmean": 0.0002968180752330185,
+      "dmean_per_fold": {
+        "primary": 0.0002968180752330185,
+        "r2022": 0.00023556536249669247,
+        "r2023": -5.254726802272902e-05,
+        "r2024": -2.2426108514217447e-05
+      },
+      "bootstrap_ci": {
+        "primary": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -8.88119566888891,
+          "pct_50": -4.846374803335607,
+          "pct_95": -0.21599305211067304,
+          "lower_bound_gt_0": false,
+          "mean": -4.809503207856195
+        },
+        "overall_pooled": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -1.4986607602308084,
+          "pct_50": 0.828141570019568,
+          "pct_95": 3.136757968956703,
+          "lower_bound_gt_0": false,
+          "mean": 0.82766663980095
+        }
+      },
+      "mlp_interaction": {
+        "per_fold": {
+          "primary": {
+            "n_rows": 253507,
+            "blend_base_bss": 774.1586482109209,
+            "blend_cand_bss": 772.911164026846,
+            "blend_delta": -1.2474841840748923,
+            "lgb_delta": -4.827639618298917,
+            "mlp_logits": "cache/mlp_primary.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2022": {
+            "n_rows": 217024,
+            "blend_base_bss": 607.229065801873,
+            "blend_cand_bss": 607.6107384715646,
+            "blend_delta": 0.38167266969151115,
+            "lgb_delta": 1.8709176638820963,
+            "mlp_logits": "cache/mlp_r2022.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2023": {
+            "n_rows": 219839,
+            "blend_base_bss": 571.8306285905417,
+            "blend_cand_bss": 575.8882273038334,
+            "blend_delta": 4.057598713291782,
+            "lgb_delta": 7.978321002888265,
+            "mlp_logits": "cache/mlp_r2023.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2024": {
+            "n_rows": 223497,
+            "blend_base_bss": 724.1432877117759,
+            "blend_cand_bss": 723.0922862882294,
+            "blend_delta": -1.051001423546495,
+            "lgb_delta": -0.6047898032046533,
+            "mlp_logits": "cache/mlp_r2024.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          }
+        },
+        "mean_delta": 0.5351964438404764,
+        "helps_blend": true,
+        "w_lgb": 0.51,
+        "mlp_source": "cache/mlp_{fold}.npy (챔피언 5시드 MLP — Task 2 sha256 대조)"
+      },
+      "verdict": "rejected",
+      "reasons": [
+        "primary -4.8 < +15",
+        "R-only 2/3",
+        "bootstrap primary Δ 5%하한 -8.881 ≤ 0"
+      ]
+    },
+    "log1p_usage_pitcher": {
+      "candidate": "log1p_usage_pitcher",
+      "registry_status": "proposed",
+      "name": "log1p 투수 사용량 (꼬리 압축 안정 변환)",
+      "transform_ref": "drift_eda.py:log1p_usage_pitcher",
+      "column_name": "log1p_usage_pitcher",
+      "is_categorical": false,
+      "feature_count": 50,
+      "mode": "addition",
+      "contract_check": {
+        "ok": true,
+        "kind": "numeric",
+        "corr": 1.0,
+        "max_abs_diff": 0.0,
+        "n_rows": 100000,
+        "ref": "drift_eda.py:log1p_usage_pitcher"
+      },
+      "per_fold": {
+        "primary": {
+          "n_rows": 253507,
+          "bss": 724.2182469189951,
+          "pred_mean": 0.4975800380897874,
+          "digest": "c8846d803d885be4b5d6fe8fd56144425a618ce28a177cbe94db3f61a529bafa",
+          "logits_path": "cache/qualification/task4_log1p_usage_pitcher/primary.npy"
+        },
+        "r2022": {
+          "n_rows": 217024,
+          "bss": 580.2800266214492,
+          "pred_mean": 0.5075524577174203,
+          "digest": "72de067451372a0fc39bd37e42a3857dad1b82da1892492c3b9709d61fe2ffd6",
+          "logits_path": "cache/qualification/task4_log1p_usage_pitcher/r2022.npy"
+        },
+        "r2023": {
+          "n_rows": 219839,
+          "bss": 558.9311916371131,
+          "pred_mean": 0.5032315118869038,
+          "digest": "b1160e3e2ab45d3fdbb490a2611b851bb8076339edf001e36e1c24b864e3c201",
+          "logits_path": "cache/qualification/task4_log1p_usage_pitcher/r2023.npy"
+        },
+        "r2024": {
+          "n_rows": 223497,
+          "bss": 712.2625649036319,
+          "pred_mean": 0.5007621006663652,
+          "digest": "745db20ef2c1a45f0e93a33626bc24f5aeea2402112c1b5628a944b26c1c7bdb",
+          "logits_path": "cache/qualification/task4_log1p_usage_pitcher/r2024.npy"
+        }
+      },
+      "delta_vs_base": {
+        "primary": -5.461862187661154,
+        "r2022": 1.8709176638820963,
+        "r2023": 7.978321002888265,
+        "r2024": 0.8649688754913996
+      },
+      "r_only_improved": 3,
+      "max_abs_dmean": 0.0002881206501235689,
+      "dmean_per_fold": {
+        "primary": 0.0002881206501235689,
+        "r2022": 0.00023556536249669247,
+        "r2023": -5.254726802272902e-05,
+        "r2024": -0.0001280902231489689
+      },
+      "bootstrap_ci": {
+        "primary": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -9.520114888478236,
+          "pct_50": -5.426224787763431,
+          "pct_95": -1.080393469314919,
+          "lower_bound_gt_0": false,
+          "mean": -5.441542589203287
+        },
+        "overall_pooled": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -1.2225423115719252,
+          "pct_50": 0.9923750283469417,
+          "pct_95": 3.3725566270898693,
+          "lower_bound_gt_0": false,
+          "mean": 1.0090662952915037
+        }
+      },
+      "mlp_interaction": {
+        "per_fold": {
+          "primary": {
+            "n_rows": 253507,
+            "blend_base_bss": 774.1586482109209,
+            "blend_cand_bss": 772.5856056223779,
+            "blend_delta": -1.5730425885429895,
+            "lgb_delta": -5.461862187661154,
+            "mlp_logits": "cache/mlp_primary.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2022": {
+            "n_rows": 217024,
+            "blend_base_bss": 607.229065801873,
+            "blend_cand_bss": 607.6107384715646,
+            "blend_delta": 0.38167266969151115,
+            "lgb_delta": 1.8709176638820963,
+            "mlp_logits": "cache/mlp_r2022.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2023": {
+            "n_rows": 219839,
+            "blend_base_bss": 571.8306285905417,
+            "blend_cand_bss": 575.8882273038334,
+            "blend_delta": 4.057598713291782,
+            "lgb_delta": 7.978321002888265,
+            "mlp_logits": "cache/mlp_r2023.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2024": {
+            "n_rows": 223497,
+            "blend_base_bss": 724.1432877117759,
+            "blend_cand_bss": 723.6332412878465,
+            "blend_delta": -0.5100464239293387,
+            "lgb_delta": 0.8649688754913996,
+            "mlp_logits": "cache/mlp_r2024.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          }
+        },
+        "mean_delta": 0.5890455926277411,
+        "helps_blend": true,
+        "w_lgb": 0.51,
+        "mlp_source": "cache/mlp_{fold}.npy (챔피언 5시드 MLP — Task 2 sha256 대조)"
+      },
+      "verdict": "rejected",
+      "reasons": [
+        "primary -5.5 < +15",
+        "bootstrap primary Δ 5%하한 -9.520 ≤ 0"
+      ]
+    },
+    "count_state_abs_regime": {
+      "candidate": "count_state_abs_regime",
+      "registry_status": "proposed",
+      "name": "ABS 레짐 × count_state 결합 범주 (레짐별 전처리)",
+      "transform_ref": "drift_eda.py:count_state_abs_regime",
+      "column_name": "count_state_abs_regime",
+      "is_categorical": true,
+      "feature_count": 50,
+      "mode": "addition",
+      "contract_check": {
+        "ok": true,
+        "kind": "category",
+        "label_accuracy": 1.0,
+        "n_rows": 100000,
+        "ref": "drift_eda.py:count_state_abs_regime"
+      },
+      "per_fold": {
+        "primary": {
+          "n_rows": 253507,
+          "bss": 724.600908819073,
+          "pred_mean": 0.4972819275575925,
+          "digest": "eafeea9326f5094b731a3853565b435566ec2e1bf94ec5be146a0c75d9632638",
+          "logits_path": "cache/qualification/task4_count_state_abs_regime/primary.npy"
+        },
+        "r2022": {
+          "n_rows": 217024,
+          "bss": 580.0271971696413,
+          "pred_mean": 0.5077040675179469,
+          "digest": "2ff3aff18d21325291a4c46284e3aad70efdfe1fb1ae933c5090170396d705dd",
+          "logits_path": "cache/qualification/task4_count_state_abs_regime/r2022.npy"
+        },
+        "r2023": {
+          "n_rows": 219839,
+          "bss": 557.0197838488778,
+          "pred_mean": 0.5033764726863486,
+          "digest": "49b3a653d84df89156eb467e56a56f65d95228eed28c3538b8b1ae1eb37a32bd",
+          "logits_path": "cache/qualification/task4_count_state_abs_regime/r2023.npy"
+        },
+        "r2024": {
+          "n_rows": 223497,
+          "bss": 711.9423068236874,
+          "pred_mean": 0.5004057212687353,
+          "digest": "fb3c47383c39be98c53a56c6c76c6566059c541144658ef9cd5c7959200083ba",
+          "logits_path": "cache/qualification/task4_count_state_abs_regime/r2024.npy"
+        }
+      },
+      "delta_vs_base": {
+        "primary": -5.079200287583262,
+        "r2022": 1.6180882120742126,
+        "r2023": 6.066913214652914,
+        "r2024": 0.5447107955469619
+      },
+      "r_only_improved": 3,
+      "max_abs_dmean": 0.00048446962077886013,
+      "dmean_per_fold": {
+        "primary": -9.989882071348433e-06,
+        "r2022": 0.00038717516302333443,
+        "r2023": 9.241353142197539e-05,
+        "r2024": -0.00048446962077886013
+      },
+      "bootstrap_ci": {
+        "primary": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -9.36531903787619,
+          "pct_50": -5.161107305162659,
+          "pct_95": -0.6488004482003477,
+          "lower_bound_gt_0": false,
+          "mean": -5.081681966432192
+        },
+        "overall_pooled": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -1.828951892376426,
+          "pct_50": 0.5126587304171721,
+          "pct_95": 3.0051352734866543,
+          "lower_bound_gt_0": false,
+          "mean": 0.5187595642910688
+        }
+      },
+      "mlp_interaction": {
+        "per_fold": {
+          "primary": {
+            "n_rows": 253507,
+            "blend_base_bss": 774.1586482109209,
+            "blend_cand_bss": 772.3709403861134,
+            "blend_delta": -1.7877078248075122,
+            "lgb_delta": -5.079200287583262,
+            "mlp_logits": "cache/mlp_primary.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2022": {
+            "n_rows": 217024,
+            "blend_base_bss": 607.229065801873,
+            "blend_cand_bss": 607.2989888302849,
+            "blend_delta": 0.06992302841183573,
+            "lgb_delta": 1.6180882120742126,
+            "mlp_logits": "cache/mlp_r2022.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2023": {
+            "n_rows": 219839,
+            "blend_base_bss": 571.8306285905417,
+            "blend_cand_bss": 574.7908095207754,
+            "blend_delta": 2.9601809302337188,
+            "lgb_delta": 6.066913214652914,
+            "mlp_logits": "cache/mlp_r2023.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2024": {
+            "n_rows": 223497,
+            "blend_base_bss": 724.1432877117759,
+            "blend_cand_bss": 723.6089467636319,
+            "blend_delta": -0.5343409481439494,
+            "lgb_delta": 0.5447107955469619,
+            "mlp_logits": "cache/mlp_r2024.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          }
+        },
+        "mean_delta": 0.17701379642352322,
+        "helps_blend": true,
+        "w_lgb": 0.51,
+        "mlp_source": "cache/mlp_{fold}.npy (챔피언 5시드 MLP — Task 2 sha256 대조)"
+      },
+      "verdict": "rejected",
+      "reasons": [
+        "primary -5.1 < +15",
+        "bootstrap primary Δ 5%하한 -9.365 ≤ 0"
+      ]
+    },
+    "debut_league_impute_success": {
+      "candidate": "debut_league_impute_success",
+      "registry_status": "proposed",
+      "name": "투수 데뷔(G2) asof 성공률 레짐별 리그 대체 (결측 처리)",
+      "transform_ref": "drift_eda.py:debut_league_impute_success",
+      "column_name": "debut_league_impute_success",
+      "is_categorical": false,
+      "feature_count": 50,
+      "mode": "addition",
+      "contract_check": {
+        "ok": true,
+        "kind": "numeric",
+        "corr": 1.0,
+        "max_abs_diff": 0.0,
+        "n_rows": 100000,
+        "ref": "drift_eda.py:debut_league_impute_success"
+      },
+      "per_fold": {
+        "primary": {
+          "n_rows": 253507,
+          "bss": 725.6201137934903,
+          "pred_mean": 0.4973581877741324,
+          "digest": "c3e785e7603ef0596369fe328c60bfa18d991fe1287cacae75388b78a8034558",
+          "logits_path": "cache/qualification/task4_debut_league_impute_success/primary.npy"
+        },
+        "r2022": {
+          "n_rows": 217024,
+          "bss": 577.6307297659322,
+          "pred_mean": 0.5078264515566427,
+          "digest": "244b1f4092a7bb28ffa0c19cb0e2339cecfc1db68d15319c77a92f5114302f36",
+          "logits_path": "cache/qualification/task4_debut_league_impute_success/r2022.npy"
+        },
+        "r2023": {
+          "n_rows": 219839,
+          "bss": 551.9214484978163,
+          "pred_mean": 0.5032065154410531,
+          "digest": "f58c8c31e1c185afc923eec50e2ae27f9ba0166b48552dd4529f6e6ce0246cd5",
+          "logits_path": "cache/qualification/task4_debut_league_impute_success/r2023.npy"
+        },
+        "r2024": {
+          "n_rows": 223497,
+          "bss": 708.5068965062225,
+          "pred_mean": 0.500976474453932,
+          "digest": "71e82d64142d1d1d61db1d0463f5c9802377a803406693b5c76a5b947106bd95",
+          "logits_path": "cache/qualification/task4_debut_league_impute_success/r2024.npy"
+        }
+      },
+      "delta_vs_base": {
+        "primary": -4.059995313165928,
+        "r2022": -0.7783791916349401,
+        "r2023": 0.968577863591463,
+        "r2024": -2.890699521918009
+      },
+      "r_only_improved": 1,
+      "max_abs_dmean": 0.0005095592017191342,
+      "dmean_per_fold": {
+        "primary": 6.627033446854336e-05,
+        "r2022": 0.0005095592017191342,
+        "r2023": -7.754371387347359e-05,
+        "r2024": 8.628356441786611e-05
+      },
+      "bootstrap_ci": {
+        "primary": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -8.095068487434196,
+          "pct_50": -4.114378045094725,
+          "pct_95": 0.215761892769029,
+          "lower_bound_gt_0": false,
+          "mean": -4.087099962885898
+        },
+        "overall_pooled": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -4.013038995304692,
+          "pct_50": -1.87859443736005,
+          "pct_95": 0.4629124981714817,
+          "lower_bound_gt_0": false,
+          "mean": -1.8287255509495184
+        }
+      },
+      "mlp_interaction": {
+        "per_fold": {
+          "primary": {
+            "n_rows": 253507,
+            "blend_base_bss": 774.1586482109209,
+            "blend_cand_bss": 772.6429388631218,
+            "blend_delta": -1.5157093477990884,
+            "lgb_delta": -4.059995313165928,
+            "mlp_logits": "cache/mlp_primary.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2022": {
+            "n_rows": 217024,
+            "blend_base_bss": 607.229065801873,
+            "blend_cand_bss": 606.8082713222677,
+            "blend_delta": -0.4207944796053198,
+            "lgb_delta": -0.7783791916349401,
+            "mlp_logits": "cache/mlp_r2022.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2023": {
+            "n_rows": 219839,
+            "blend_base_bss": 571.8306285905417,
+            "blend_cand_bss": 572.8818460952745,
+            "blend_delta": 1.05121750473279,
+            "lgb_delta": 0.968577863591463,
+            "mlp_logits": "cache/mlp_r2023.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2024": {
+            "n_rows": 223497,
+            "blend_base_bss": 724.1432877117759,
+            "blend_cand_bss": 722.882574596806,
+            "blend_delta": -1.2607131149699171,
+            "lgb_delta": -2.890699521918009,
+            "mlp_logits": "cache/mlp_r2024.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          }
+        },
+        "mean_delta": -0.5364998594103838,
+        "helps_blend": false,
+        "w_lgb": 0.51,
+        "mlp_source": "cache/mlp_{fold}.npy (챔피언 5시드 MLP — Task 2 sha256 대조)"
+      },
+      "verdict": "rejected",
+      "reasons": [
+        "primary -4.1 < +15",
+        "R-only 1/3",
+        "bootstrap primary Δ 5%하한 -8.095 ≤ 0"
+      ]
+    },
+    "batter_debut_league_impute_success": {
+      "candidate": "batter_debut_league_impute_success",
+      "registry_status": "proposed",
+      "name": "타자 데뷔(G3) asof 성공률 레짐별 리그 대체 (결측 처리)",
+      "transform_ref": "drift_eda.py:batter_debut_league_impute_success",
+      "column_name": "batter_debut_league_impute_success",
+      "is_categorical": false,
+      "feature_count": 50,
+      "mode": "addition",
+      "contract_check": {
+        "ok": true,
+        "kind": "numeric",
+        "corr": 1.0,
+        "max_abs_diff": 0.0,
+        "n_rows": 100000,
+        "ref": "drift_eda.py:batter_debut_league_impute_success"
+      },
+      "per_fold": {
+        "primary": {
+          "n_rows": 253507,
+          "bss": 719.5481332444631,
+          "pred_mean": 0.49743677549530924,
+          "digest": "5b9b911deee24edd13b6c5d0fa85f3c12e82af93ac0ba5c1d2a75b28fa918f87",
+          "logits_path": "cache/qualification/task4_batter_debut_league_impute_success/primary.npy"
+        },
+        "r2022": {
+          "n_rows": 217024,
+          "bss": 576.2533118465085,
+          "pred_mean": 0.5077957761025983,
+          "digest": "c075bb684d093ba0112f38e938c0ef9360ca3820bd1fd5792cc48f702e41ced8",
+          "logits_path": "cache/qualification/task4_batter_debut_league_impute_success/r2022.npy"
+        },
+        "r2023": {
+          "n_rows": 219839,
+          "bss": 556.8603204867961,
+          "pred_mean": 0.5034642833251266,
+          "digest": "dcb40ff76d13f11204fa8b808df16c53a46259e952e891ce528ddaac9e9029f9",
+          "logits_path": "cache/qualification/task4_batter_debut_league_impute_success/r2023.npy"
+        },
+        "r2024": {
+          "n_rows": 223497,
+          "bss": 703.6078370276755,
+          "pred_mean": 0.5008726977640996,
+          "digest": "a77d6601cc7bfda55b97ffe81a80937786925f20c7d7385d501984fce39f0418",
+          "logits_path": "cache/qualification/task4_batter_debut_league_impute_success/r2024.npy"
+        }
+      },
+      "delta_vs_base": {
+        "primary": -10.131975862193144,
+        "r2022": -2.1557971110586323,
+        "r2023": 5.90744985257129,
+        "r2024": -7.789759000464983
+      },
+      "r_only_improved": 1,
+      "max_abs_dmean": 0.00047888374767468544,
+      "dmean_per_fold": {
+        "primary": 0.00014485805564540266,
+        "r2022": 0.00047888374767468544,
+        "r2023": 0.00018022417020002734,
+        "r2024": -1.7493125414547173e-05
+      },
+      "bootstrap_ci": {
+        "primary": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -14.497413855272224,
+          "pct_50": -10.279670416057911,
+          "pct_95": -6.076699869340627,
+          "lower_bound_gt_0": false,
+          "mean": -10.296333132584433
+        },
+        "overall_pooled": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -6.117150145282261,
+          "pct_50": -3.887669968460898,
+          "pct_95": -1.489653808718299,
+          "lower_bound_gt_0": false,
+          "mean": -3.8788005860791706
+        }
+      },
+      "mlp_interaction": {
+        "per_fold": {
+          "primary": {
+            "n_rows": 253507,
+            "blend_base_bss": 774.1586482109209,
+            "blend_cand_bss": 769.9563936025222,
+            "blend_delta": -4.202254608398675,
+            "lgb_delta": -10.131975862193144,
+            "mlp_logits": "cache/mlp_primary.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2022": {
+            "n_rows": 217024,
+            "blend_base_bss": 607.229065801873,
+            "blend_cand_bss": 604.9205035252858,
+            "blend_delta": -2.3085622765872813,
+            "lgb_delta": -2.1557971110586323,
+            "mlp_logits": "cache/mlp_r2022.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2023": {
+            "n_rows": 219839,
+            "blend_base_bss": 571.8306285905417,
+            "blend_cand_bss": 575.0386491637394,
+            "blend_delta": 3.2080205731977003,
+            "lgb_delta": 5.90744985257129,
+            "mlp_logits": "cache/mlp_r2023.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2024": {
+            "n_rows": 223497,
+            "blend_base_bss": 724.1432877117759,
+            "blend_cand_bss": 719.449908487546,
+            "blend_delta": -4.69337922422983,
+            "lgb_delta": -7.789759000464983,
+            "mlp_logits": "cache/mlp_r2024.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          }
+        },
+        "mean_delta": -1.9990438840045215,
+        "helps_blend": false,
+        "w_lgb": 0.51,
+        "mlp_source": "cache/mlp_{fold}.npy (챔피언 5시드 MLP — Task 2 sha256 대조)"
+      },
+      "verdict": "rejected",
+      "reasons": [
+        "primary -10.1 < +15",
+        "R-only 1/3",
+        "bootstrap primary Δ 5%하한 -14.497 ≤ 0"
+      ]
+    },
+    "f_game_post2023_label_mapping": {
+      "candidate": "f_game_post2023_label_mapping",
+      "registry_status": "proposed",
+      "name": "F 게임 post-2023 라벨 레짐 매핑 (레짐별 전처리/캘리브레이션 정책)",
+      "transform_ref": "drift_eda.py:f_game_post2023_label_mapping",
+      "column_name": "f_game_post2023_label_mapping",
+      "is_categorical": false,
+      "feature_count": 50,
+      "mode": "addition",
+      "contract_check": {
+        "ok": true,
+        "kind": "numeric",
+        "corr": 0.9999999999999998,
+        "max_abs_diff": 0.0,
+        "n_rows": 100000,
+        "ref": "drift_eda.py:f_game_post2023_label_mapping"
+      },
+      "per_fold": {
+        "primary": {
+          "n_rows": 253507,
+          "bss": 722.6587414379316,
+          "pred_mean": 0.4974536425341762,
+          "digest": "59317c9c15cfe39cd5b863a48f04c69f57bd73383ba1f796ef00a7ae385f9e4e",
+          "logits_path": "cache/qualification/task4_f_game_post2023_label_mapping/primary.npy"
+        },
+        "r2022": {
+          "n_rows": 217024,
+          "bss": 578.4091089575671,
+          "pred_mean": 0.5073168923549236,
+          "digest": "7960fdff1216f0a275e50f063218d6ac9d07f326da916e31decd03022162e2bd",
+          "logits_path": "cache/qualification/task4_f_game_post2023_label_mapping/r2022.npy"
+        },
+        "r2023": {
+          "n_rows": 219839,
+          "bss": 550.9528706342248,
+          "pred_mean": 0.5032840591549266,
+          "digest": "ae02faa114a961dc1d7d7fce8d34097558a1a889250ba8dffc9944067fddbe44",
+          "logits_path": "cache/qualification/task4_f_game_post2023_label_mapping/r2023.npy"
+        },
+        "r2024": {
+          "n_rows": 223497,
+          "bss": 711.3975960281405,
+          "pred_mean": 0.5008901908895141,
+          "digest": "a931358a81a0df2c4bcca0dea4b6f20a9a5b0640bfb9a083673d4d5029584c44",
+          "logits_path": "cache/qualification/task4_f_game_post2023_label_mapping/r2024.npy"
+        }
+      },
+      "delta_vs_base": {
+        "primary": -7.021367668724679,
+        "r2022": 0.0,
+        "r2023": 0.0,
+        "r2024": 0.0
+      },
+      "r_only_improved": 0,
+      "max_abs_dmean": 0.00016172509451234385,
+      "dmean_per_fold": {
+        "primary": 0.00016172509451234385,
+        "r2022": 0.0,
+        "r2023": 0.0,
+        "r2024": 0.0
+      },
+      "bootstrap_ci": {
+        "primary": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -11.39390256258029,
+          "pct_50": -6.86693613147213,
+          "pct_95": -2.081179367420265,
+          "lower_bound_gt_0": false,
+          "mean": -6.917694255874174
+        },
+        "overall_pooled": {
+          "n_iter": 1000,
+          "seed": 42,
+          "pct_5": -3.2041586113291545,
+          "pct_50": -1.9777697876311322,
+          "pct_95": -0.6969623616848539,
+          "lower_bound_gt_0": false,
+          "mean": -1.959143963648593
+        }
+      },
+      "mlp_interaction": {
+        "per_fold": {
+          "primary": {
+            "n_rows": 253507,
+            "blend_base_bss": 774.1586482109209,
+            "blend_cand_bss": 771.8189505139472,
+            "blend_delta": -2.3396976969736443,
+            "lgb_delta": -7.021367668724679,
+            "mlp_logits": "cache/mlp_primary.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2022": {
+            "n_rows": 217024,
+            "blend_base_bss": 607.229065801873,
+            "blend_cand_bss": 607.229065801873,
+            "blend_delta": 0.0,
+            "lgb_delta": 0.0,
+            "mlp_logits": "cache/mlp_r2022.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2023": {
+            "n_rows": 219839,
+            "blend_base_bss": 571.8306285905417,
+            "blend_cand_bss": 571.8306285905417,
+            "blend_delta": 0.0,
+            "lgb_delta": 0.0,
+            "mlp_logits": "cache/mlp_r2023.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          },
+          "r2024": {
+            "n_rows": 223497,
+            "blend_base_bss": 724.1432877117759,
+            "blend_cand_bss": 724.1432877117759,
+            "blend_delta": 0.0,
+            "lgb_delta": 0.0,
+            "mlp_logits": "cache/mlp_r2024.npy",
+            "note": "feature 가 블렌드를 돕는다(blend_delta>0) / 해친다(blend_delta<0); lgb_delta>0 인데 blend_delta≤0 이면 MLP 가 이미 해당 신호를 포착했을 가능성"
+          }
+        },
+        "mean_delta": -0.5849244242434111,
+        "helps_blend": false,
+        "w_lgb": 0.51,
+        "mlp_source": "cache/mlp_{fold}.npy (챔피언 5시드 MLP — Task 2 sha256 대조)"
+      },
+      "verdict": "rejected",
+      "reasons": [
+        "primary -7.0 < +15",
+        "R-only 0/3",
+        "bootstrap primary Δ 5%하한 -11.394 ≤ 0"
+      ]
+    }
+  },
+  "accepted": [],
+  "rejected": [
+    "season_dev_success_pitcher",
+    "league_trend_ratio_middle",
+    "usage_rank_pitcher",
+    "log1p_usage_pitcher",
+    "count_state_abs_regime",
+    "debut_league_impute_success",
+    "batter_debut_league_impute_success",
+    "f_game_post2023_label_mapping"
+  ],
+  "environment": {
+    "python": "3.11.3",
+    "numpy": "1.26.4",
+    "pandas": "3.0.5",
+    "lightgbm": "4.7.0"
+  },
+  "git_commit": "57eb10dc828ff21c784c87d8613bf7cc26aaaa5a",
+  "recorded_at_utc": "2026-08-13T23:13:19.604586+00:00",
+  "total_time_s": 2624.679686307907
+}
