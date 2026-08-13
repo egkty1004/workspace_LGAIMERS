@@ -4,15 +4,19 @@ to measure the new pipeline's actual natural mean; compare vs champion 0.4871.""
 import os
 import sys
 import json
+import importlib
 
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
 
-REPO = "/home/gpu_01/workspace_LGAIMERS/repro_979"
-sys.path.insert(0, REPO)
+REPO = os.path.abspath(os.path.expanduser(os.environ.get(
+    "LGAIMERS_REPRO_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)))
+PROJECT_ROOT = os.path.dirname(REPO)
+sys.path.insert(0, PROJECT_ROOT)
 os.chdir(REPO)
-import common  # noqa: E402
+from repro_979 import common  # noqa: E402
 
 MODEL_DIR = os.path.join(REPO, "submit_plato3b2", "model")
 FEATURE = "count_platoon_3b2_same"
@@ -47,7 +51,7 @@ def main():
     print(f"LGB 10-seed 2024 mean: {p_lgb.mean():.6f}", flush=True)
 
     sys.path.insert(0, os.path.join(REPO, "submit_plato3b2"))
-    import mlp_model
+    mlp_model = importlib.import_module("mlp_model")
     prep, mlps = mlp_model.load(MODEL_DIR, SEEDS)
     test_full = train.loc[train["season"] == 2024].copy()
     z_mlp = mlp_model.predict_z(test_full, prep, mlps)
@@ -79,8 +83,7 @@ def main():
         c_logit_cache=float(logit(0.477) - logit(p_c)),
         target_2025=0.477,
     )
-    with open("/home/gpu_01/workspace_LGAIMERS/repro_979/experiments/plato3b2_mean_check.json",
-              "w") as f:
+    with open(os.path.join(REPO, "experiments", "plato3b2_mean_check.json"), "w") as f:
         json.dump(out, f, indent=2)
     print("\n-> experiments/plato3b2_mean_check.json")
 

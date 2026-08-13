@@ -3,7 +3,9 @@
 import pandas as pd
 import numpy as np
 
-DATA = "/home/gpu_01/workspace_LGAIMERS/데이터/open/data/"
+from portability_paths import DATA_DIR
+
+DATA = DATA_DIR
 
 # train gid=14
 tr = pd.read_csv(DATA + "train.csv", usecols=["row_id", "season", "game_month", "game_dayofweek",

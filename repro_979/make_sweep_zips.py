@@ -34,7 +34,7 @@ import numpy as np
 import pandas as pd
 
 # ── 상수 ──────────────────────────────────────────────────────────────
-WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+WORKSPACE_ROOT = os.path.abspath(os.path.expanduser(os.environ.get("LGAIMERS_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 CHAMPION_DIR_DEFAULT = os.path.join(
     WORKSPACE_ROOT, "team_member_materials", "GIHO", "submit979_extract"
 )
@@ -52,7 +52,7 @@ SMOKE_TEST_PATH = os.path.join(WORKSPACE_ROOT, "repro_979", "open", "data", "tes
 SMOKE_SAMPLE_PATH = os.path.join(
     WORKSPACE_ROOT, "repro_979", "open", "data", "sample_submission.csv"
 )
-INTERPRETER = "/home/gpu_01/.conda/envs/aimers9/bin/python"
+INTERPRETER = os.environ.get("AIMERS9_PYTHON", sys.executable)
 SMOKE_TIMEOUT_SEC = 600
 
 # 출력 포맷 / 검증

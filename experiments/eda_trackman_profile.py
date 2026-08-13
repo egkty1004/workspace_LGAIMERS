@@ -3,7 +3,9 @@
 import pandas as pd
 import numpy as np
 
-DATA = "/home/gpu_01/workspace_LGAIMERS/데이터/open/data/"
+from portability_paths import DATA_DIR
+
+DATA = DATA_DIR
 
 tm_cols = ["trackman_id", "season", "game_date", "game_month", "game_dayofweek",
            "trackman_game_id", "pitch_no", "inning", "top_bottom",

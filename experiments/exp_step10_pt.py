@@ -4,7 +4,9 @@ import pandas as pd
 import numpy as np
 import pickle
 
-OUT = "/home/gpu_01/workspace_LGAIMERS/experiments/tmpdata/"
+from portability_paths import TMP_DATA_DIR
+
+OUT = TMP_DATA_DIR
 mdf = pd.read_pickle(OUT + "matched_features.pkl")
 
 Xtr = mdf[mdf.season < 2024]

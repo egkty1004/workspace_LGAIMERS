@@ -16,12 +16,14 @@ import time
 import numpy as np
 import pandas as pd
 
+from portability_paths import DATA_DIR
+
 pd.set_option("display.width", 200)
 pd.set_option("display.max_columns", 60)
 pd.set_option("display.float_format", lambda x: f"{x:,.4f}")
 
 TARGET = "control_success"
-DATA = "/home/gpu_01/workspace_LGAIMERS/데이터/open/data/train.csv"
+DATA = DATA_DIR + "train.csv"
 
 # ---------- 컬럼 정의 ----------
 INT_COLS = [

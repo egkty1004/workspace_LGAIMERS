@@ -9,12 +9,14 @@
 import numpy as np
 import pandas as pd
 
-OUT = "/home/gpu_01/workspace_LGAIMERS/experiments/kbo_insights_out"
+from portability_paths import DATA_DIR, KBO_INSIGHTS_DIR
+
+OUT = KBO_INSIGHTS_DIR
 
 COLS = ["season", "game_type", "balls_before", "strikes_before",
         "runner_on_2b", "runner_on_3b", "pitcher_hand", "batter_hand",
         "asof_batter_success_rate", "asof_pitcher_success_rate", "control_success"]
-df = pd.read_csv("/home/gpu_01/workspace_LGAIMERS/데이터/open/data/train.csv", usecols=COLS)
+df = pd.read_csv(DATA_DIR + "train.csv", usecols=COLS)
 df = df.dropna(subset=["control_success"])
 df["recent"] = np.where(df["season"] >= 2023, "2023-24", "2019-22")
 df["count_state"] = df["balls_before"].astype(str) + "-" + df["strikes_before"].astype(str)

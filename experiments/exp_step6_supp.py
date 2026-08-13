@@ -4,8 +4,10 @@ import pandas as pd
 import numpy as np
 import collections, json, time
 
-DATA = "/home/gpu_01/workspace_LGAIMERS/데이터/open/data/"
-OUT = "/home/gpu_01/workspace_LGAIMERS/experiments/tmpdata/"
+from portability_paths import DATA_DIR, TMP_DATA_DIR
+
+DATA = DATA_DIR
+OUT = TMP_DATA_DIR
 t0 = time.time()
 
 tr = pd.read_csv(DATA + "train.csv", usecols=["row_id", "season", "game_month", "game_dayofweek",

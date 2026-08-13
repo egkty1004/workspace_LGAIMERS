@@ -9,7 +9,9 @@ import os
 import numpy as np
 import pandas as pd
 
-OUT = "/home/gpu_01/workspace_LGAIMERS/experiments/kbo_insights_out"
+from portability_paths import DATA_DIR, KBO_INSIGHTS_DIR
+
+OUT = KBO_INSIGHTS_DIR
 os.makedirs(OUT, exist_ok=True)
 
 COLS = ["season", "inning", "top_bottom", "game_type", "balls_before", "strikes_before",
@@ -17,7 +19,7 @@ COLS = ["season", "inning", "top_bottom", "game_type", "balls_before", "strikes_
         "base_state", "num_runners_on", "li", "pitcher_hand", "batter_hand", "asof_pitcher_n",
         "asof_batter_success_rate", "asof_pitcher_success_rate", "control_success"]
 
-df = pd.read_csv("/home/gpu_01/workspace_LGAIMERS/데이터/open/data/train.csv", usecols=COLS)
+df = pd.read_csv(DATA_DIR + "train.csv", usecols=COLS)
 df = df.dropna(subset=["control_success"])
 print(f"loaded {len(df):,} rows")
 

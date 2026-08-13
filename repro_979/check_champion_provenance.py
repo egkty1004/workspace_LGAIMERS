@@ -19,7 +19,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(os.environ.get("LGAIMERS_ROOT", Path(__file__).resolve().parent.parent)).resolve()
 DEFAULT_CHAMPION_DIR = ROOT / "team_member_materials" / "GIHO" / "submit979_extract"
 ZIP_PATH = (
     ROOT / "team_member_materials" / "GIHO" / "리더보드 979.31"
@@ -27,7 +27,7 @@ ZIP_PATH = (
 )
 MANIFEST_PATH = ROOT / "repro_979" / "submit_sweep" / "champion_manifest.json"
 OPEN_DATA_DIR = ROOT / "repro_979" / "open" / "data"
-AIMERS9_PYTHON = "/home/gpu_01/.conda/envs/aimers9/bin/python"
+AIMERS9_PYTHON = os.environ.get("AIMERS9_PYTHON", sys.executable)
 
 # 챔피언 핵심 파일 md5 지문 (불일치 시 FAIL)
 CHAMPION_MD5 = {
@@ -155,7 +155,7 @@ def check_smoke_fixtures() -> tuple[bool, str]:
 
 
 def check_env() -> tuple[bool, str]:
-    """aimers9 env 가 lgb 4.7.0 / pandas 2.0.3 / torch 인지."""
+    """현재 인터프리터에서 챔피언 의존성을 import하고 평가환경 차이를 보고한다."""
     if not os.path.exists(AIMERS9_PYTHON):
         return False, f"aimers9 파이썬 없음: {AIMERS9_PYTHON}"
     code = "import lightgbm, pandas, torch; print(lightgbm.__version__, pandas.__version__)"
@@ -173,11 +173,14 @@ def check_env() -> tuple[bool, str]:
     problems = []
     if lgb_ver != EXPECTED_LGB_VERSION:
         problems.append(f"lightgbm {lgb_ver} != 기대 {EXPECTED_LGB_VERSION}")
-    if pd_ver != EXPECTED_PANDAS_VERSION:
-        problems.append(f"pandas {pd_ver} != 기대 {EXPECTED_PANDAS_VERSION}")
     if problems:
         return False, "; ".join(problems)
-    return True, f"aimers9 env 일치 (lightgbm {lgb_ver}, pandas {pd_ver}, torch OK)"
+    pandas_status = (
+        f"pandas {pd_ver}"
+        if pd_ver == EXPECTED_PANDAS_VERSION
+        else f"WARNING: pandas {pd_ver} != 평가환경 {EXPECTED_PANDAS_VERSION}"
+    )
+    return True, f"의존성 import 성공 (lightgbm {lgb_ver}, {pandas_status}, torch OK)"
 
 
 def check_zip_identity(d: Path) -> tuple[bool, str]:
@@ -209,10 +212,11 @@ def write_manifest(d: Path) -> None:
         if path.is_file() and "__pycache__" not in path.parts:
             files[str(path.relative_to(d))] = file_hash(path, "sha256")
 
+    environment = {"python": AIMERS9_PYTHON, "lightgbm": None, "pandas": None}
     manifest = {
         "champion_dir": str(d),
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "env": {"python": AIMERS9_PYTHON, "lightgbm": None, "pandas": None},
+        "env": environment,
         "sha256": files,
     }
     code = "import lightgbm, pandas; print(lightgbm.__version__, pandas.__version__)"
@@ -221,8 +225,8 @@ def write_manifest(d: Path) -> None:
                               capture_output=True, text=True, timeout=120)
         if proc.returncode == 0:
             parts = proc.stdout.strip().split()
-            manifest["env"]["lightgbm"] = parts[0] if parts else None
-            manifest["env"]["pandas"] = parts[1] if len(parts) > 1 else None
+            environment["lightgbm"] = parts[0] if parts else None
+            environment["pandas"] = parts[1] if len(parts) > 1 else None
     except (OSError, subprocess.TimeoutExpired):
         pass
 

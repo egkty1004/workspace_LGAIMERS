@@ -6,8 +6,10 @@ import numpy as np
 import lightgbm as lgb
 import time, pickle
 
-DATA = "/home/gpu_01/workspace_LGAIMERS/데이터/open/data/"
-OUT = "/home/gpu_01/workspace_LGAIMERS/experiments/tmpdata/"
+from portability_paths import DATA_DIR, TMP_DATA_DIR
+
+DATA = DATA_DIR
+OUT = TMP_DATA_DIR
 t0 = time.time()
 
 base_cols = ["game_month", "game_dayofweek", "inning", "top_bottom", "game_type",

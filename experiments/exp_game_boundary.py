@@ -4,7 +4,9 @@ import pandas as pd
 import numpy as np
 import time
 
-DATA = "/home/gpu_01/workspace_LGAIMERS/데이터/open/data/"
+from portability_paths import DATA_DIR
+
+DATA = DATA_DIR
 
 t0 = time.time()
 # ---------- train ----------
