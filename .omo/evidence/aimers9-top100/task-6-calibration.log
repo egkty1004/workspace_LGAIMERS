@@ -1,0 +1,60 @@
+[calibration] train (1475092, 60) | feats 49 | cats 5 | seeds [42, 43, 44, 45, 46, 47, 48, 49, 50, 51] | schedules ['uniform', 'linear_recent', 'exp_recent', 'regime_step'] | methods ['raw', 'policy', 'slope_only']
+[calibration] nested split: 각 폴드 학습 윈도우 마지막 시즌 = inner_val (primary:2023, r2022:2021, r2023:2022, r2024:2023)
+[calibration] 챔피언 raw 블렌드 기준: primary 774.2, r2022 607.2, r2023 571.8, r2024 724.1
+
+[calibration] 중첩 학습 시작 (스코어 폴드는 검증/피팅/선택에 미사용)
+  [primary ] uniform      inner=  1612.2 outerraw|policy|slope_only [   724.8    777.8    718.3] rounds=109
+  [primary ] linear_recent inner=  1962.9 outerraw|policy|slope_only [   714.4    772.3    692.1] rounds=109
+  [primary ] exp_recent   inner=  2009.5 outerraw|policy|slope_only [   715.5    773.9    693.0] rounds=109
+  [primary ] regime_step  inner=  1932.5 outerraw|policy|slope_only [   706.9    764.8    680.7] rounds=109
+  [r2022   ] uniform      inner=  1772.9 outerraw|policy|slope_only [   574.6    559.9    499.3] rounds=109
+  [r2022   ] linear_recent inner=  2283.1 outerraw|policy|slope_only [   556.5    534.9    454.4] rounds=109
+  [r2022   ] exp_recent   inner=  2311.7 outerraw|policy|slope_only [   555.8    537.7    453.2] rounds=109
+  [r2022   ] regime_step  inner=  2143.2 outerraw|policy|slope_only [   560.3    539.2    463.0] rounds=109
+  [r2023   ] uniform      inner=  1674.5 outerraw|policy|slope_only [   526.3    466.2    345.8] rounds=109
+  [r2023   ] linear_recent inner=  2137.0 outerraw|policy|slope_only [   520.6    455.7    312.1] rounds=109
+  [r2023   ] exp_recent   inner=  2168.9 outerraw|policy|slope_only [   518.0    455.6    311.6] rounds=109
+  [r2023   ] regime_step  inner=  2254.7 outerraw|policy|slope_only [   523.2    458.6    313.0] rounds=109
+  [r2024   ] uniform      inner=  1761.3 outerraw|policy|slope_only [   706.6    762.6    692.4] rounds=109
+  [r2024   ] linear_recent inner=  2140.7 outerraw|policy|slope_only [   692.4    752.8    665.2] rounds=109
+  [r2024   ] exp_recent   inner=  2178.1 outerraw|policy|slope_only [   682.7    743.2    649.5] rounds=109
+  [r2024   ] regime_step  inner=  2104.6 outerraw|policy|slope_only [   679.1    739.3    648.9] rounds=109
+
+====================================================================================================
+결과 요약 (outer 폴드 BSS, transformed)
+====================================================================================================
+  treatment                  primary     r2022     r2023     r2024
+  uniform__raw                 724.8     574.6     526.3     706.6   reject
+  uniform__policy              777.8     559.9     466.2     762.6   reject
+  uniform__slope_only          718.3     499.3     345.8     692.4   reject
+  linear_recent__raw           714.4     556.5     520.6     692.4   reject
+  linear_recent__policy        772.3     534.9     455.7     752.8   reject
+  linear_recent__slope_only     692.1     454.4     312.1     665.2   reject
+  exp_recent__raw              715.5     555.8     518.0     682.7   reject
+  exp_recent__policy           773.9     537.7     455.6     743.2   reject
+  exp_recent__slope_only       693.0     453.2     311.6     649.5   reject
+  regime_step__raw             706.9     560.3     523.2     679.1   reject
+  regime_step__policy          764.8     539.2     458.6     739.3   reject
+  regime_step__slope_only      680.7     463.0     313.0     648.9   reject
+----------------------------------------------------------------------------------------------------
+  champion blend               774.2     607.2     571.8     724.1
+  champion lgb                 729.7     578.4     551.0     711.4
+
+[acceptance] 게이트: R-only 3폴드 ΔBSS vs 챔피언 raw 블렌드 > +1.0 AND max|Δmean| ≤ 0.005 (10시드 기준) → accepted | 그 외 rejected
+  uniform__raw             → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -32.60, r2023 -45.50, r2024 -17.49
+  uniform__policy          → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -47.32, r2023 -105.59, r2024 +38.43 | mean-alignment 위반: max|Δmean| 0.0100 > 0.005
+  uniform__slope_only      → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -107.89, r2023 -226.06, r2024 -31.71 | mean-alignment 위반: max|Δmean| 0.0109 > 0.005
+  linear_recent__raw       → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -50.72, r2023 -51.19, r2024 -31.75
+  linear_recent__policy    → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -72.31, r2023 -116.09, r2024 +28.64 | mean-alignment 위반: max|Δmean| 0.0100 > 0.005
+  linear_recent__slope_only → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -152.87, r2023 -259.76, r2024 -58.96 | mean-alignment 위반: max|Δmean| 0.0106 > 0.005
+  exp_recent__raw          → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -51.41, r2023 -53.87, r2024 -41.43
+  exp_recent__policy       → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -69.53, r2023 -116.26, r2024 +19.01 | mean-alignment 위반: max|Δmean| 0.0100 > 0.005
+  exp_recent__slope_only   → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -154.07, r2023 -260.23, r2024 -74.65 | mean-alignment 위반: max|Δmean| 0.0106 > 0.005
+  regime_step__raw         → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -46.97, r2023 -48.58, r2024 -45.00
+  regime_step__policy      → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -68.05, r2023 -113.22, r2024 +15.15 | mean-alignment 위반: max|Δmean| 0.0100 > 0.005
+  regime_step__slope_only  → rejected R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -144.20, r2023 -258.78, r2024 -75.22 | mean-alignment 위반: max|Δmean| 0.0106 > 0.005
+  accepted: (없음 — 전부 rejected)
+
+[calibration] 증거 JSON → /home/2022113165/workspace_LGAIMERS/.omo/evidence/aimers9-top100/task-6-calibration.json
+[calibration] OOF 로짓(npy) → /home/2022113165/workspace_LGAIMERS/repro_979/cache/calibration/task6/{schedule}/*.npy (Todo 7 후보 입력, 캐시 — git 제외)
+[calibration] 총 1763s

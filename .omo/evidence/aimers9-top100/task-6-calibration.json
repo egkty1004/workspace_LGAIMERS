@@ -1,0 +1,4214 @@
+{
+  "schema_version": 1,
+  "study": "task-6-calibration",
+  "smoke": false,
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+  ],
+  "folds": [
+    "primary",
+    "r2022",
+    "r2023",
+    "r2024"
+  ],
+  "r_folds": [
+    "r2022",
+    "r2023",
+    "r2024"
+  ],
+  "schedules": {
+    "uniform": "w(s)=1.0 for all s — 챔피언 등가 baseline (무가중)",
+    "linear_recent": "w(s)=1+t — 최근 시즌 강조 선형 램프 [1.0, 2.0]",
+    "exp_recent": "w(s)=2**t — 최근 시즌 강조 지수 램프 [1.0, 2.0]",
+    "regime_step": "w(s)=0.5 if s<mid else 1.5, mid=(s_min+s_max)/2 — 구레짐 다운·신레짐 업"
+  },
+  "calibration_methods": {
+    "raw": "캘리브레이션 없음 (a=1, b=0)",
+    "policy": "동결 챔피언 정책 (a=1, b=C_LOGIT=-0.0404)",
+    "slope_only": "중첩 slope-only (b=C_LOGIT 동결, a 만 inner split 에서 피팅)"
+  },
+  "frozen_control": {
+    "w_lgb": 0.51,
+    "c_logit": -0.0404,
+    "b_policy": -0.0404,
+    "b_note": "b=C_LOGIT=-0.0404 동결(2025 target-mean 정책 상수) — 절대 피팅 금지. slope a 만 inner split 에서 피팅.",
+    "feature_contract": {
+      "source": "model/train_meta.json",
+      "n_features": 49,
+      "forbidden_present": false,
+      "ok": true,
+      "problems": []
+    },
+    "config_digest_inherited_from": "qualification_runner (자기 무결성 게이트)",
+    "lgb_params": {
+      "learning_rate": 0.05,
+      "num_leaves": 63,
+      "min_data_in_leaf": 500,
+      "feature_fraction": 0.8,
+      "bagging_fraction": 0.8,
+      "bagging_freq": 1,
+      "num_threads": 16,
+      "deterministic": true
+    },
+    "num_boost_round": 109,
+    "early_stopping": 50
+  },
+  "nested_design": {
+    "inner_split": "각 outer 폴드의 학습 윈도우 마지막 시즌 = inner_val (피팅/선택 셋), inner split ⊂ outer 학습 윈도우. 스코어 폴드는 미사용.",
+    "model_training": "LGB = outer 학습 윈도우 전체 + 시즌 가중, FIXED num_boost_round=109 (train_meta.json 문서화 상수), early stopping 없음 → 스코어 폴드로 어떤 파라미터도 선택하지 않음.",
+    "model_training_note": "측정: 학습 윈도우에서 마지막 시즌을 제외하면(inner_train 전용 학습) 외부 폴드 BSS 가 0 으로 붕괴(드리프트) — 모델은 전 윈도우로 학습하고 마지막 시즌은 캘리브레이션/선택 전용으로 사용.",
+    "slope_fitting": "inner_val 로짓에서만 (b=C_LOGIT 동결, a 만 Brier 최소화 그리드 피팅)",
+    "schedule_selection": "inner_val raw BSS argmax (스코어 폴드 미사용)",
+    "seed_aggregation": "mean of per-seed logits (챔피언 컨벤션)",
+    "a_grid": {
+      "lo": 0.6,
+      "hi": 1.4,
+      "n": 201,
+      "refine_step": 0.001,
+      "refine_range": 0.02
+    },
+    "slope_flat_threshold": 0.005
+  },
+  "champion_control": {
+    "blend_logits_source": "cache/qualification/champion/*.npy",
+    "per_fold": {
+      "primary": {
+        "blend_bss": 774.1586482109209,
+        "blend_mean": 0.4930749083133784,
+        "lgb_bss": 729.6801091066562,
+        "n_rows": 253507,
+        "logits_sha256": "7302f5673cfbcfdfec524d174ff3eb901d89adc3b28e30989be29c1385ff5ec7"
+      },
+      "r2022": {
+        "blend_bss": 607.229065801873,
+        "blend_mean": 0.5071971002537589,
+        "lgb_bss": 578.4091089575671,
+        "n_rows": 217024,
+        "logits_sha256": "c5e32ff829ca43b49521398df167e22007c5c3301ba5e2d78d3d8fa65794f189"
+      },
+      "r2023": {
+        "blend_bss": 571.8306285905417,
+        "blend_mean": 0.5017768504597737,
+        "lgb_bss": 550.9528706342248,
+        "n_rows": 219839,
+        "logits_sha256": "178f6632e8ee2099e7448e7ec11d29a84155e7811ea2b057f105bbb9b50ce745"
+      },
+      "r2024": {
+        "blend_bss": 724.1432877117759,
+        "blend_mean": 0.49778066395679244,
+        "lgb_bss": 711.3975960281405,
+        "n_rows": 223497,
+        "logits_sha256": "5d098720d8922dcce43ef09fe81b2af28e087321d0bc74698157558eb84131cc"
+      }
+    },
+    "cross_check_ok": true,
+    "cross_check_problems": []
+  },
+  "leakage_guard": {
+    "no_2025_in_any_fitting_or_validation": true,
+    "scored_fold_never_in_fitting_set": true,
+    "checks": [
+      {
+        "check": "nested-leakage-primary",
+        "ok": true,
+        "detail": "중첩 분할 누수 없음"
+      },
+      {
+        "check": "nested-leakage-r2022",
+        "ok": true,
+        "detail": "중첩 분할 누수 없음"
+      },
+      {
+        "check": "nested-leakage-r2023",
+        "ok": true,
+        "detail": "중첩 분할 누수 없음"
+      },
+      {
+        "check": "nested-leakage-r2024",
+        "ok": true,
+        "detail": "중첩 분할 누수 없음"
+      }
+    ],
+    "nested_split_assertions": [
+      "inner_val ⊂ outer_train",
+      "inner_train ∩ inner_val = ∅",
+      "inner_val ∩ outer_val = ∅ (스코어 폴드 미누출)",
+      "2025 시즌 검증/피팅 셋 부재"
+    ]
+  },
+  "per_fold": {
+    "primary": {
+      "outer_val_season": [
+        2024
+      ],
+      "n_outer_val": 253507,
+      "inner_train_seasons": [
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "inner_val_season": 2023,
+      "n_inner_train": 976060,
+      "n_inner_val": 245525,
+      "nested_selected_schedule": "exp_recent",
+      "nested_selected_schedule_by": "argmax inner_val raw BSS (스코어 폴드 미사용)",
+      "treatments": {
+        "uniform": {
+          "inner_val_bss_raw": 1612.211072213543,
+          "inner_val_n_rows": 245525,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 724.7778698156293,
+              "mean_raw": 0.4977051349461287,
+              "bss_trans": 724.7778698156293,
+              "mean_trans": 0.4977051349461287,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -49.3807783952916,
+              "delta_vs_champion_lgb": -4.902239291026945,
+              "delta_raw_vs_champion_blend": -49.3807783952916,
+              "ece": 0.012496540815587813,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.42691853917767963,
+                  "actual_rate": 0.40945130369610666
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.45528496774624233,
+                  "actual_rate": 0.4452684312255927
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.47000087827360315,
+                  "actual_rate": 0.45964497041420116
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.4819267146093235,
+                  "actual_rate": 0.4733146621435052
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.4921176090410403,
+                  "actual_rate": 0.4771597633136095
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.502006066846892,
+                  "actual_rate": 0.48455682221608615
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.5123640215944076,
+                  "actual_rate": 0.49859966076288903
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.5243612246767296,
+                  "actual_rate": 0.5051676528599606
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.5400467851965101,
+                  "actual_rate": 0.5313794327639936
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.5720242805461522,
+                  "actual_rate": 0.5765058577570904
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 724.7778698156293,
+              "mean_raw": 0.4977051349461287,
+              "bss_trans": 777.8456726590944,
+              "mean_trans": 0.4876753429675476,
+              "dmean": -0.010029791978581115,
+              "delta_vs_champion_blend": 3.6870244481734744,
+              "delta_vs_champion_lgb": 48.16556355243813,
+              "delta_raw_vs_champion_blend": -49.3807783952916,
+              "ece": 0.005017495271872072,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.4170745272727815,
+                  "actual_rate": 0.40945130369610666
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.4452861584211614,
+                  "actual_rate": 0.4452684312255927
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.45995134531518045,
+                  "actual_rate": 0.45964497041420116
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.47184904101879965,
+                  "actual_rate": 0.4733146621435052
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.48202502486110294,
+                  "actual_rate": 0.4771597633136095
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.4919071289963184,
+                  "actual_rate": 0.48455682221608615
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.5022669218769225,
+                  "actual_rate": 0.49859966076288903
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.514277261581728,
+                  "actual_rate": 0.5051676528599606
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.5299979025208977,
+                  "actual_rate": 0.5313794327639936
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.5621178506654145,
+                  "actual_rate": 0.5765058577570904
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 724.7778698156293,
+              "mean_raw": 0.4977051349461287,
+              "bss_trans": 718.2749458611526,
+              "mean_trans": 0.48683058534213774,
+              "dmean": -0.01087454960399098,
+              "delta_vs_champion_blend": -55.88370234976833,
+              "delta_vs_champion_lgb": -11.405163245503672,
+              "delta_raw_vs_champion_blend": -49.3807783952916,
+              "ece": 0.01242147502022355,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.38886038695636743,
+                  "actual_rate": 0.40945130369610666
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.42765060630846424,
+                  "actual_rate": 0.4452684312255927
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.4480423385854011,
+                  "actual_rate": 0.45964497041420116
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.4646472206931518,
+                  "actual_rate": 0.4733146621435052
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.4788772782950324,
+                  "actual_rate": 0.4771597633136095
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.49270960827008314,
+                  "actual_rate": 0.48455682221608615
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.5072127808696966,
+                  "actual_rate": 0.49859966076288903
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.5240134525220208,
+                  "actual_rate": 0.5051676528599606
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.5459516203984028,
+                  "actual_rate": 0.5313794327639936
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.5903401834691256,
+                  "actual_rate": 0.5765058577570904
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.2454881078897519,
+                "brier_range_over_grid": 0.0017144626023606058,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "linear_recent": {
+          "inner_val_bss_raw": 1962.9397914655788,
+          "inner_val_n_rows": 245525,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 714.3886133006428,
+              "mean_raw": 0.49830298009929574,
+              "bss_trans": 714.3886133006428,
+              "mean_trans": 0.49830298009929574,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -59.77003491027813,
+              "delta_vs_champion_lgb": -15.291495806013472,
+              "delta_raw_vs_champion_blend": -59.77003491027813,
+              "ece": 0.012447930208415163,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.42516864337402743,
+                  "actual_rate": 0.41102915072383733
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.45489396643015384,
+                  "actual_rate": 0.44388781507632835
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.47009861069021935,
+                  "actual_rate": 0.46173570019723864
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.4822432938196572,
+                  "actual_rate": 0.4720129383456274
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.49283369654988657,
+                  "actual_rate": 0.4748717948717949
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.5029568560493564,
+                  "actual_rate": 0.48712082363614845
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.5135110441621918,
+                  "actual_rate": 0.49611455169421326
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.5255568718254204,
+                  "actual_rate": 0.5068244575936883
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.5414173058004195,
+                  "actual_rate": 0.5318527868723127
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.574349259056594,
+                  "actual_rate": 0.5755985957161454
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 714.3886133006428,
+              "mean_raw": 0.49830298009929574,
+              "bss_trans": 772.3211324125123,
+              "mean_trans": 0.4882764376775159,
+              "dmean": -0.01002654242177986,
+              "delta_vs_champion_blend": -1.8375157984086172,
+              "delta_vs_champion_lgb": 42.64102330585604,
+              "delta_raw_vs_champion_blend": -59.77003491027813,
+              "ece": 0.0048334407515770025,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.4153370113916554,
+                  "actual_rate": 0.41102915072383733
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.4448968379299545,
+                  "actual_rate": 0.44388781507632835
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.4600488068588203,
+                  "actual_rate": 0.46173570019723864
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.47216506290245464,
+                  "actual_rate": 0.4720129383456274
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.48274041204763357,
+                  "actual_rate": 0.4748717948717949
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.4928577240253132,
+                  "actual_rate": 0.48712082363614845
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.5034146944943666,
+                  "actual_rate": 0.49611455169421326
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.515474817529383,
+                  "actual_rate": 0.5068244575936883
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.5313724687659589,
+                  "actual_rate": 0.5318527868723127
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.5644562818545652,
+                  "actual_rate": 0.5755985957161454
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 714.3886133006428,
+              "mean_raw": 0.49830298009929574,
+              "bss_trans": 692.0993449681223,
+              "mean_trans": 0.4876715412130954,
+              "dmean": -0.010631438886200328,
+              "delta_vs_champion_blend": -82.05930324279859,
+              "delta_vs_champion_lgb": -37.58076413853394,
+              "delta_raw_vs_champion_blend": -59.77003491027813,
+              "ece": 0.013923821329021594,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.38650137869604584,
+                  "actual_rate": 0.41102915072383733
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.4271113000337466,
+                  "actual_rate": 0.44388781507632835
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.4481782006714935,
+                  "actual_rate": 0.46173570019723864
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.46508891983845296,
+                  "actual_rate": 0.4720129383456274
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.4798783693946394,
+                  "actual_rate": 0.4748717948717949
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.49404047320393646,
+                  "actual_rate": 0.48712082363614845
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.5088192175055223,
+                  "actual_rate": 0.49611455169421326
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.525687321657738,
+                  "actual_rate": 0.5068244575936883
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.5478656287094206,
+                  "actual_rate": 0.5318527868723127
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.5935442367250384,
+                  "actual_rate": 0.5755985957161454
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.24436349151575265,
+                "brier_range_over_grid": 0.0022757253327503058,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "exp_recent": {
+          "inner_val_bss_raw": 2009.5441046178885,
+          "inner_val_n_rows": 245525,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 715.5086518597975,
+              "mean_raw": 0.4983656339042671,
+              "bss_trans": 715.5086518597975,
+              "mean_trans": 0.4983656339042671,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -58.64999635112338,
+              "delta_vs_champion_lgb": -14.171457246858722,
+              "delta_raw_vs_champion_blend": -58.64999635112338,
+              "ece": 0.012629112711085215,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.4248903091933766,
+                  "actual_rate": 0.41027967338566523
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.45464537999228993,
+                  "actual_rate": 0.44447950771172734
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.47013634095781687,
+                  "actual_rate": 0.4608678500986193
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.48244424852296136,
+                  "actual_rate": 0.47004062956096404
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.49316039546869217,
+                  "actual_rate": 0.4770414201183432
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.5032125018554764,
+                  "actual_rate": 0.48917202477219834
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.5137140286877803,
+                  "actual_rate": 0.4963117825726796
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.5256252733699025,
+                  "actual_rate": 0.5058777120315582
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.5414793022017474,
+                  "actual_rate": 0.5307877401285945
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.5743483152167559,
+                  "actual_rate": 0.5761902883515443
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 715.5086518597975,
+              "mean_raw": 0.4983656339042671,
+              "bss_trans": 773.9364745457111,
+              "mean_trans": 0.4883393069570794,
+              "dmean": -0.010026326947187691,
+              "delta_vs_champion_blend": -0.2221736652097661,
+              "delta_vs_champion_lgb": 44.25636543905489,
+              "delta_raw_vs_champion_blend": -58.64999635112338,
+              "ece": 0.004737722675162082,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.41506039010512163,
+                  "actual_rate": 0.41027967338566523
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.44464926837007,
+                  "actual_rate": 0.44447950771172734
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.46008645851197466,
+                  "actual_rate": 0.4608678500986193
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.47236566492258525,
+                  "actual_rate": 0.47004062956096404
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.48306679013121,
+                  "actual_rate": 0.4770414201183432
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.4931133274253309,
+                  "actual_rate": 0.48917202477219834
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.503617804100396,
+                  "actual_rate": 0.4963117825726796
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.515543331679446,
+                  "actual_rate": 0.5058777120315582
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.5314346672251368,
+                  "actual_rate": 0.5307877401285945
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.5644551177468126,
+                  "actual_rate": 0.5761902883515443
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 715.5086518597975,
+              "mean_raw": 0.4983656339042671,
+              "bss_trans": 693.0164648648929,
+              "mean_trans": 0.4877607633270523,
+              "dmean": -0.010604870577214764,
+              "delta_vs_champion_blend": -81.14218334602799,
+              "delta_vs_champion_lgb": -36.663644241763336,
+              "delta_raw_vs_champion_blend": -58.64999635112338,
+              "ece": 0.01349130632159014,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.3861224287025837,
+                  "actual_rate": 0.41027967338566523
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.4267680124719189,
+                  "actual_rate": 0.44447950771172734
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.448230806125663,
+                  "actual_rate": 0.4608678500986193
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.46536929939810967,
+                  "actual_rate": 0.47004062956096404
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.48033509067744584,
+                  "actual_rate": 0.4770414201183432
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.49439832792413546,
+                  "actual_rate": 0.48917202477219834
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.5091035026497265,
+                  "actual_rate": 0.4963117825726796
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.52578307606177,
+                  "actual_rate": 0.5058777120315582
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.547952133727677,
+                  "actual_rate": 0.5307877401285945
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.5935446031462968,
+                  "actual_rate": 0.5761902883515443
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.2442139145453939,
+                "brier_range_over_grid": 0.0023494947688807166,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "regime_step": {
+          "inner_val_bss_raw": 1932.5080366438874,
+          "inner_val_n_rows": 245525,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 706.8669631104863,
+              "mean_raw": 0.4982990003268031,
+              "bss_trans": 706.8669631104863,
+              "mean_trans": 0.4982990003268031,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -67.29168510043462,
+              "delta_vs_champion_lgb": -22.813145996169965,
+              "delta_raw_vs_champion_blend": -67.29168510043462,
+              "ece": 0.01226264271659307,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.42482974430076376,
+                  "actual_rate": 0.41229142834602184
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.4546630266492116,
+                  "actual_rate": 0.4400615360340815
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.47004949260077383,
+                  "actual_rate": 0.4618145956607495
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.4823302850225802,
+                  "actual_rate": 0.4729202003865725
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.49300113408401164,
+                  "actual_rate": 0.47842209072978303
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.5031067804262898,
+                  "actual_rate": 0.4858190998382707
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.5136026901319202,
+                  "actual_rate": 0.49599621316713344
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.5257051832497561,
+                  "actual_rate": 0.5061538461538462
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.5417079152530097,
+                  "actual_rate": 0.5332334030215771
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.573993509303213,
+                  "actual_rate": 0.5743363180939608
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 706.8669631104863,
+              "mean_raw": 0.4982990003268031,
+              "bss_trans": 764.7736509691638,
+              "mean_trans": 0.4882726200960313,
+              "dmean": -0.010026380230771792,
+              "delta_vs_champion_blend": -9.384997241757105,
+              "delta_vs_champion_lgb": 35.09354186250755,
+              "delta_raw_vs_champion_blend": -67.29168510043462,
+              "ece": 0.005025888670203314,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.4150003489927896,
+                  "actual_rate": 0.41229142834602184
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.4446668375297119,
+                  "actual_rate": 0.4400615360340815
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.4599998553859765,
+                  "actual_rate": 0.4618145956607495
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.4722519036346959,
+                  "actual_rate": 0.4729202003865725
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.4829076829066381,
+                  "actual_rate": 0.47842209072978303
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.4930076237944663,
+                  "actual_rate": 0.4858190998382707
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.5035063953997552,
+                  "actual_rate": 0.49599621316713344
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.5156233934158974,
+                  "actual_rate": 0.5061538461538462
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.5316639473483279,
+                  "actual_rate": 0.5332334030215771
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.5640979645567649,
+                  "actual_rate": 0.5743363180939608
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 706.8669631104863,
+              "mean_raw": 0.4982990003268031,
+              "bss_trans": 680.7075134482532,
+              "mean_trans": 0.4876689933015956,
+              "dmean": -0.0106300070252075,
+              "delta_vs_champion_blend": -93.45113476266772,
+              "delta_vs_champion_lgb": -48.972595658403065,
+              "delta_raw_vs_champion_blend": -67.29168510043462,
+              "ece": 0.013750720435028563,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 25351,
+                  "pred_mean": 0.3860419562939836,
+                  "actual_rate": 0.41229142834602184
+                },
+                {
+                  "bin": 1,
+                  "n": 25351,
+                  "pred_mean": 0.4267923435415022,
+                  "actual_rate": 0.4400615360340815
+                },
+                {
+                  "bin": 2,
+                  "n": 25350,
+                  "pred_mean": 0.44811010281023045,
+                  "actual_rate": 0.4618145956607495
+                },
+                {
+                  "bin": 3,
+                  "n": 25351,
+                  "pred_mean": 0.46521030170106376,
+                  "actual_rate": 0.4729202003865725
+                },
+                {
+                  "bin": 4,
+                  "n": 25350,
+                  "pred_mean": 0.48011243888210303,
+                  "actual_rate": 0.47842209072978303
+                },
+                {
+                  "bin": 5,
+                  "n": 25351,
+                  "pred_mean": 0.4942503392957218,
+                  "actual_rate": 0.4858190998382707
+                },
+                {
+                  "bin": 6,
+                  "n": 25351,
+                  "pred_mean": 0.508947569339908,
+                  "actual_rate": 0.49599621316713344
+                },
+                {
+                  "bin": 7,
+                  "n": 25350,
+                  "pred_mean": 0.5258949138146687,
+                  "actual_rate": 0.5061538461538462
+                },
+                {
+                  "bin": 8,
+                  "n": 25351,
+                  "pred_mean": 0.5482714415749362,
+                  "actual_rate": 0.5332334030215771
+                },
+                {
+                  "bin": 9,
+                  "n": 25351,
+                  "pred_mean": 0.5930581751040974,
+                  "actual_rate": 0.5743363180939608
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.24446167323159051,
+                "brier_range_over_grid": 0.0022298303713139123,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "r2022": {
+      "outer_val_season": [
+        2022
+      ],
+      "n_outer_val": 217024,
+      "inner_train_seasons": [
+        2019,
+        2020
+      ],
+      "inner_val_season": 2021,
+      "n_inner_train": 432501,
+      "n_inner_val": 221227,
+      "nested_selected_schedule": "exp_recent",
+      "nested_selected_schedule_by": "argmax inner_val raw BSS (스코어 폴드 미사용)",
+      "treatments": {
+        "uniform": {
+          "inner_val_bss_raw": 1772.9208398264084,
+          "inner_val_n_rows": 221227,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 574.6258236262514,
+              "mean_raw": 0.5068881580113391,
+              "bss_trans": 574.6258236262514,
+              "mean_trans": 0.5068881580113391,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -32.60324217562163,
+              "delta_vs_champion_lgb": -3.78328533131571,
+              "delta_raw_vs_champion_blend": -32.60324217562163,
+              "ece": 0.004140622597802321,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.437749196534106,
+                  "actual_rate": 0.43385707045108973
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.4699507176424813,
+                  "actual_rate": 0.4656252879918901
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.48409031229006755,
+                  "actual_rate": 0.4763616256566215
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.4941088568099308,
+                  "actual_rate": 0.48762843846472836
+                },
+                {
+                  "bin": 4,
+                  "n": 21702,
+                  "pred_mean": 0.502816000433,
+                  "actual_rate": 0.502119620311492
+                },
+                {
+                  "bin": 5,
+                  "n": 21701,
+                  "pred_mean": 0.5114970407734791,
+                  "actual_rate": 0.5096539329984794
+                },
+                {
+                  "bin": 6,
+                  "n": 21704,
+                  "pred_mean": 0.5206962492974466,
+                  "actual_rate": 0.5210099520825654
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.5317111337241056,
+                  "actual_rate": 0.5253432863330568
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.5470670522551799,
+                  "actual_rate": 0.5514699106073173
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5691948638821621,
+                  "actual_rate": 0.5638391005851725
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 574.6258236262514,
+              "mean_raw": 0.5068881580113391,
+              "bss_trans": 559.9098648801148,
+              "mean_trans": 0.4968440965316614,
+              "dmean": -0.010044061479677735,
+              "delta_vs_champion_blend": -47.31920092175824,
+              "delta_vs_champion_lgb": -18.499244077452317,
+              "delta_raw_vs_champion_blend": -32.60324217562163,
+              "ece": 0.006846739504905965,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.42784664300845965,
+                  "actual_rate": 0.43385707045108973
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.4599018291871276,
+                  "actual_rate": 0.4656252879918901
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.47400882468267674,
+                  "actual_rate": 0.4763616256566215
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.4840143085535651,
+                  "actual_rate": 0.48762843846472836
+                },
+                {
+                  "bin": 4,
+                  "n": 21702,
+                  "pred_mean": 0.49271678697728,
+                  "actual_rate": 0.502119620311492
+                },
+                {
+                  "bin": 5,
+                  "n": 21701,
+                  "pred_mean": 0.501399331552996,
+                  "actual_rate": 0.5096539329984794
+                },
+                {
+                  "bin": 6,
+                  "n": 21704,
+                  "pred_mean": 0.5106067976276792,
+                  "actual_rate": 0.5210099520825654
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.5216407868176941,
+                  "actual_rate": 0.5253432863330568
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.5370399310705554,
+                  "actual_rate": 0.5514699106073173
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5592655615960804,
+                  "actual_rate": 0.5638391005851725
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 574.6258236262514,
+              "mean_raw": 0.5068881580113391,
+              "bss_trans": 499.33452147682414,
+              "mean_trans": 0.49962478012830136,
+              "dmean": -0.007263377883037769,
+              "delta_vs_champion_blend": -107.89454432504891,
+              "delta_vs_champion_lgb": -79.07458748074299,
+              "delta_raw_vs_champion_blend": -32.60324217562163,
+              "ece": 0.011244311949147918,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.4036780916664081,
+                  "actual_rate": 0.43385707045108973
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.4479756506396636,
+                  "actual_rate": 0.4656252879918901
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.4676658873708364,
+                  "actual_rate": 0.4763616256566215
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.48166100190660244,
+                  "actual_rate": 0.48762843846472836
+                },
+                {
+                  "bin": 4,
+                  "n": 21702,
+                  "pred_mean": 0.49384313622187015,
+                  "actual_rate": 0.502119620311492
+                },
+                {
+                  "bin": 5,
+                  "n": 21701,
+                  "pred_mean": 0.5059985210805534,
+                  "actual_rate": 0.5096539329984794
+                },
+                {
+                  "bin": 6,
+                  "n": 21704,
+                  "pred_mean": 0.5188820820623516,
+                  "actual_rate": 0.5210099520825654
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.534300016702022,
+                  "actual_rate": 0.5253432863330568
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.5557520095924487,
+                  "actual_rate": 0.5514699106073173
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5864911691870058,
+                  "actual_rate": 0.5638391005851725
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.2446390554243477,
+                "brier_range_over_grid": 0.0023217340813618814,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "linear_recent": {
+          "inner_val_bss_raw": 2283.1244518098815,
+          "inner_val_n_rows": 221227,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 556.5088672620622,
+              "mean_raw": 0.5060284902534719,
+              "bss_trans": 556.5088672620622,
+              "mean_trans": 0.5060284902534719,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -50.720198539810895,
+              "delta_vs_champion_lgb": -21.900241695504974,
+              "delta_raw_vs_champion_blend": -50.720198539810895,
+              "ece": 0.0030570744148942204,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.4350730210295676,
+                  "actual_rate": 0.4348707551951343
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.4684492722891671,
+                  "actual_rate": 0.46686941295733114
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.48270563496849084,
+                  "actual_rate": 0.4788959542899272
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.4928887711748985,
+                  "actual_rate": 0.48749020872690413
+                },
+                {
+                  "bin": 4,
+                  "n": 21702,
+                  "pred_mean": 0.5019288445571694,
+                  "actual_rate": 0.502303935121187
+                },
+                {
+                  "bin": 5,
+                  "n": 21702,
+                  "pred_mean": 0.5109091662648133,
+                  "actual_rate": 0.509906921021104
+                },
+                {
+                  "bin": 6,
+                  "n": 21703,
+                  "pred_mean": 0.5204704018199432,
+                  "actual_rate": 0.5200663502741556
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.5319487828429578,
+                  "actual_rate": 0.522117777163395
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.5469576302136234,
+                  "actual_rate": 0.5501797069394526
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5689536873952656,
+                  "actual_rate": 0.5642077132193706
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 556.5088672620622,
+              "mean_raw": 0.5060284902534719,
+              "bss_trans": 534.923265242071,
+              "mean_trans": 0.49598669048401917,
+              "dmean": -0.010041799769452686,
+              "delta_vs_champion_blend": -72.30580055980204,
+              "delta_vs_champion_lgb": -43.48584371549612,
+              "delta_raw_vs_champion_blend": -50.720198539810895,
+              "ece": 0.0077041455525482146,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.42518661964321364,
+                  "actual_rate": 0.4348707551951343
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.45840472973481416,
+                  "actual_rate": 0.46686941295733114
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.4726265674405599,
+                  "actual_rate": 0.4788959542899272
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.48279537731141003,
+                  "actual_rate": 0.48749020872690413
+                },
+                {
+                  "bin": 4,
+                  "n": 21702,
+                  "pred_mean": 0.49182985205694935,
+                  "actual_rate": 0.502303935121187
+                },
+                {
+                  "bin": 5,
+                  "n": 21702,
+                  "pred_mean": 0.5008111808982836,
+                  "actual_rate": 0.509906921021104
+                },
+                {
+                  "bin": 6,
+                  "n": 21703,
+                  "pred_mean": 0.5103807065358805,
+                  "actual_rate": 0.5200663502741556
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.5218789657721082,
+                  "actual_rate": 0.522117777163395
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.5369300538521059,
+                  "actual_rate": 0.5501797069394526
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5590231539128339,
+                  "actual_rate": 0.5642077132193706
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 556.5088672620622,
+              "mean_raw": 0.5060284902534719,
+              "bss_trans": 454.3617303731873,
+              "mean_trans": 0.49843484973110325,
+              "dmean": -0.007593640522368605,
+              "delta_vs_champion_blend": -152.86733542868575,
+              "delta_vs_champion_lgb": -124.04737858437983,
+              "delta_raw_vs_champion_blend": -50.720198539810895,
+              "ece": 0.013232864759334873,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.400038468287264,
+                  "actual_rate": 0.4348707551951343
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.4458896416026219,
+                  "actual_rate": 0.46686941295733114
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.46573389200021126,
+                  "actual_rate": 0.4788959542899272
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.479955203816433,
+                  "actual_rate": 0.48749020872690413
+                },
+                {
+                  "bin": 4,
+                  "n": 21702,
+                  "pred_mean": 0.4926013970331081,
+                  "actual_rate": 0.502303935121187
+                },
+                {
+                  "bin": 5,
+                  "n": 21702,
+                  "pred_mean": 0.5051752156692211,
+                  "actual_rate": 0.509906921021104
+                },
+                {
+                  "bin": 6,
+                  "n": 21703,
+                  "pred_mean": 0.5185657813424578,
+                  "actual_rate": 0.5200663502741556
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.5346324439936916,
+                  "actual_rate": 0.522117777163395
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.5555997388299186,
+                  "actual_rate": 0.5501797069394526
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5861571304957118,
+                  "actual_rate": 0.5642077132193706
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.24296025376644528,
+                "brier_range_over_grid": 0.0031947312202062483,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "exp_recent": {
+          "inner_val_bss_raw": 2311.722324884047,
+          "inner_val_n_rows": 221227,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 555.8179596785395,
+              "mean_raw": 0.5064596918792891,
+              "bss_trans": 555.8179596785395,
+              "mean_trans": 0.5064596918792891,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -51.411106123333525,
+              "delta_vs_champion_lgb": -22.591149279027604,
+              "delta_raw_vs_champion_blend": -51.411106123333525,
+              "ece": 0.0037609496258252423,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.4347344401389495,
+                  "actual_rate": 0.4347786020365848
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.46869385475036257,
+                  "actual_rate": 0.46465763524099163
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.48323471132006984,
+                  "actual_rate": 0.47848124596811353
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.4935217919414796,
+                  "actual_rate": 0.4955075335207114
+                },
+                {
+                  "bin": 4,
+                  "n": 21702,
+                  "pred_mean": 0.5025494359438596,
+                  "actual_rate": 0.4963597825085246
+                },
+                {
+                  "bin": 5,
+                  "n": 21702,
+                  "pred_mean": 0.5114288181816908,
+                  "actual_rate": 0.5106902589623076
+                },
+                {
+                  "bin": 6,
+                  "n": 21703,
+                  "pred_mean": 0.5209107248095838,
+                  "actual_rate": 0.5186379763166382
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.5323450164888283,
+                  "actual_rate": 0.5246521057967007
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.5475256158218742,
+                  "actual_rate": 0.550456179153995
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5696528328215821,
+                  "actual_rate": 0.5626871861033037
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 555.8179596785395,
+              "mean_raw": 0.5064596918792891,
+              "bss_trans": 537.697679696203,
+              "mean_trans": 0.4964186773932966,
+              "dmean": -0.010041014485992483,
+              "delta_vs_champion_blend": -69.5313861056701,
+              "delta_vs_champion_lgb": -40.711429261364174,
+              "delta_raw_vs_champion_blend": -51.411106123333525,
+              "ece": 0.007272158643270738,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.42485088647578206,
+                  "actual_rate": 0.4347786020365848
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.4586486309068536,
+                  "actual_rate": 0.46465763524099163
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.47315473029016397,
+                  "actual_rate": 0.47848124596811353
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.4834277932860651,
+                  "actual_rate": 0.4955075335207114
+                },
+                {
+                  "bin": 4,
+                  "n": 21702,
+                  "pred_mean": 0.49245029447160876,
+                  "actual_rate": 0.4963597825085246
+                },
+                {
+                  "bin": 5,
+                  "n": 21702,
+                  "pred_mean": 0.5013310791168426,
+                  "actual_rate": 0.5106902589623076
+                },
+                {
+                  "bin": 6,
+                  "n": 21703,
+                  "pred_mean": 0.5108215846430315,
+                  "actual_rate": 0.5186379763166382
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.5222760636171336,
+                  "actual_rate": 0.5246521057967007
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.537500013023319,
+                  "actual_rate": 0.550456179153995
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5597260136690033,
+                  "actual_rate": 0.5626871861033037
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 555.8179596785395,
+              "mean_raw": 0.5064596918792891,
+              "bss_trans": 453.15972388008106,
+              "mean_trans": 0.49903871987089227,
+              "dmean": -0.007420972008396809,
+              "delta_vs_champion_blend": -154.069341921792,
+              "delta_vs_champion_lgb": -125.24938507748607,
+              "delta_raw_vs_champion_blend": -51.411106123333525,
+              "ece": 0.012942519731046414,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.39958756728000205,
+                  "actual_rate": 0.4347786020365848
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.44622961641476916,
+                  "actual_rate": 0.46465763524099163
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.46647214366629924,
+                  "actual_rate": 0.47848124596811353
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.48084021107125946,
+                  "actual_rate": 0.4955075335207114
+                },
+                {
+                  "bin": 4,
+                  "n": 21702,
+                  "pred_mean": 0.4934700385877293,
+                  "actual_rate": 0.4963597825085246
+                },
+                {
+                  "bin": 5,
+                  "n": 21702,
+                  "pred_mean": 0.5059029776659877,
+                  "actual_rate": 0.5106902589623076
+                },
+                {
+                  "bin": 6,
+                  "n": 21703,
+                  "pred_mean": 0.5191823922223676,
+                  "actual_rate": 0.5186379763166382
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.5351867381105508,
+                  "actual_rate": 0.5246521057967007
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.5563918017628057,
+                  "actual_rate": 0.550456179153995
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5871241460144648,
+                  "actual_rate": 0.5626871861033037
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.24286962129072678,
+                "brier_range_over_grid": 0.0032385734986983827,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "regime_step": {
+          "inner_val_bss_raw": 2143.209930229151,
+          "inner_val_n_rows": 221227,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 560.2558293407278,
+              "mean_raw": 0.5060930691680499,
+              "bss_trans": 560.2558293407278,
+              "mean_trans": 0.5060930691680499,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -46.973236461145234,
+              "delta_vs_champion_lgb": -18.153279616839313,
+              "delta_raw_vs_champion_blend": -46.973236461145234,
+              "ece": 0.0028025538412336207,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.4356117398768039,
+                  "actual_rate": 0.4333041514997927
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.46851208414778495,
+                  "actual_rate": 0.46815961662519584
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.4829759171956082,
+                  "actual_rate": 0.4750714219887568
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.49324990124373447,
+                  "actual_rate": 0.4904851863797632
+                },
+                {
+                  "bin": 4,
+                  "n": 21701,
+                  "pred_mean": 0.502137137133194,
+                  "actual_rate": 0.5017741117920833
+                },
+                {
+                  "bin": 5,
+                  "n": 21703,
+                  "pred_mean": 0.5109544220574862,
+                  "actual_rate": 0.5126480210109201
+                },
+                {
+                  "bin": 6,
+                  "n": 21703,
+                  "pred_mean": 0.5202487513139198,
+                  "actual_rate": 0.5159655347187024
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.5314128140120353,
+                  "actual_rate": 0.5258962307621418
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.5464619195110983,
+                  "actual_rate": 0.5467698829600959
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5693658705804436,
+                  "actual_rate": 0.5668340782380316
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 560.2558293407278,
+              "mean_raw": 0.5060930691680499,
+              "bss_trans": 539.1797961111112,
+              "mean_trans": 0.49605072967583036,
+              "dmean": -0.010042339492219499,
+              "delta_vs_champion_blend": -68.04926969076189,
+              "delta_vs_champion_lgb": -39.22931284645597,
+              "delta_raw_vs_champion_blend": -46.973236461145234,
+              "ece": 0.007640106360737046,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.4257214873903548,
+                  "actual_rate": 0.4333041514997927
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.4584673704082281,
+                  "actual_rate": 0.46815961662519584
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.47289639717162574,
+                  "actual_rate": 0.4750714219887568
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.4831561472807682,
+                  "actual_rate": 0.4904851863797632
+                },
+                {
+                  "bin": 4,
+                  "n": 21701,
+                  "pred_mean": 0.49203807972494873,
+                  "actual_rate": 0.5017741117920833
+                },
+                {
+                  "bin": 5,
+                  "n": 21703,
+                  "pred_mean": 0.5008564463782341,
+                  "actual_rate": 0.5126480210109201
+                },
+                {
+                  "bin": 6,
+                  "n": 21703,
+                  "pred_mean": 0.5101587627758604,
+                  "actual_rate": 0.5159655347187024
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.5213418170858011,
+                  "actual_rate": 0.5258962307621418
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.5364327154283666,
+                  "actual_rate": 0.5467698829600959
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5594379307412404,
+                  "actual_rate": 0.5668340782380316
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 560.2558293407278,
+              "mean_raw": 0.5060930691680499,
+              "bss_trans": 463.0263629565312,
+              "mean_trans": 0.49852143773089314,
+              "dmean": -0.007571631437156723,
+              "delta_vs_champion_blend": -144.20270284534183,
+              "delta_vs_champion_lgb": -115.38274600103591,
+              "delta_raw_vs_champion_blend": -46.973236461145234,
+              "ece": 0.012830392351513654,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21703,
+                  "pred_mean": 0.4007641665996226,
+                  "actual_rate": 0.4333041514997927
+                },
+                {
+                  "bin": 1,
+                  "n": 21702,
+                  "pred_mean": 0.44597697414606446,
+                  "actual_rate": 0.46815961662519584
+                },
+                {
+                  "bin": 2,
+                  "n": 21702,
+                  "pred_mean": 0.46611109505639514,
+                  "actual_rate": 0.4750714219887568
+                },
+                {
+                  "bin": 3,
+                  "n": 21703,
+                  "pred_mean": 0.4804600459865287,
+                  "actual_rate": 0.4904851863797632
+                },
+                {
+                  "bin": 4,
+                  "n": 21701,
+                  "pred_mean": 0.4928929191047109,
+                  "actual_rate": 0.5017741117920833
+                },
+                {
+                  "bin": 5,
+                  "n": 21703,
+                  "pred_mean": 0.5052385898321372,
+                  "actual_rate": 0.5126480210109201
+                },
+                {
+                  "bin": 6,
+                  "n": 21703,
+                  "pred_mean": 0.5182554012580608,
+                  "actual_rate": 0.5159655347187024
+                },
+                {
+                  "bin": 7,
+                  "n": 21702,
+                  "pred_mean": 0.5338826943874533,
+                  "actual_rate": 0.5258962307621418
+                },
+                {
+                  "bin": 8,
+                  "n": 21702,
+                  "pred_mean": 0.5549080588231287,
+                  "actual_rate": 0.5467698829600959
+                },
+                {
+                  "bin": 9,
+                  "n": 21703,
+                  "pred_mean": 0.5867242264305571,
+                  "actual_rate": 0.5668340782380316
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.24341845770462453,
+                "brier_range_over_grid": 0.0029606118270584236,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "r2023": {
+      "outer_val_season": [
+        2023
+      ],
+      "n_outer_val": 219839,
+      "inner_train_seasons": [
+        2019,
+        2020,
+        2021
+      ],
+      "inner_val_season": 2022,
+      "n_inner_train": 653728,
+      "n_inner_val": 217024,
+      "nested_selected_schedule": "regime_step",
+      "nested_selected_schedule_by": "argmax inner_val raw BSS (스코어 폴드 미사용)",
+      "treatments": {
+        "uniform": {
+          "inner_val_bss_raw": 1674.4866869929265,
+          "inner_val_n_rows": 217024,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 526.331013961101,
+              "mean_raw": 0.5006492008555568,
+              "bss_trans": 526.331013961101,
+              "mean_trans": 0.5006492008555568,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -45.49961462944066,
+              "delta_vs_champion_lgb": -24.62185667312383,
+              "delta_raw_vs_champion_blend": -45.49961462944066,
+              "ece": 0.004678194977310354,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.4311326601740828,
+                  "actual_rate": 0.43781841339155747
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.46057191394292835,
+                  "actual_rate": 0.4600618631732169
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.4752728125253508,
+                  "actual_rate": 0.4781659388646288
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.4867453185195701,
+                  "actual_rate": 0.49945414847161573
+                },
+                {
+                  "bin": 4,
+                  "n": 21983,
+                  "pred_mean": 0.49636183217341157,
+                  "actual_rate": 0.5028885957330664
+                },
+                {
+                  "bin": 5,
+                  "n": 21984,
+                  "pred_mean": 0.5053198412836548,
+                  "actual_rate": 0.5086881368267832
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.5146417594171832,
+                  "actual_rate": 0.5181950509461426
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5261500611019867,
+                  "actual_rate": 0.5219705240174672
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.5412720005162065,
+                  "actual_rate": 0.5352529112081513
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.5690236138789638,
+                  "actual_rate": 0.5686863173216885
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 526.331013961101,
+              "mean_raw": 0.5006492008555568,
+              "bss_trans": 466.24049090183695,
+              "mean_trans": 0.49061156630138436,
+              "dmean": -0.010037634554172392,
+              "delta_vs_champion_blend": -105.59013768870471,
+              "delta_vs_champion_lgb": -84.71237973238789,
+              "delta_raw_vs_champion_blend": -45.49961462944066,
+              "ece": 0.01250662473842202,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.42126692538365523,
+                  "actual_rate": 0.43781841339155747
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.4505530163847205,
+                  "actual_rate": 0.4600618631732169
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.46520947462224566,
+                  "actual_rate": 0.4781659388646288
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.4766595456009833,
+                  "actual_rate": 0.49945414847161573
+                },
+                {
+                  "bin": 4,
+                  "n": 21983,
+                  "pred_mean": 0.4862654999026038,
+                  "actual_rate": 0.5028885957330664
+                },
+                {
+                  "bin": 5,
+                  "n": 21984,
+                  "pred_mean": 0.4952204500991446,
+                  "actual_rate": 0.5086881368267832
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.5045461664217278,
+                  "actual_rate": 0.5181950509461426
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5160689825035396,
+                  "actual_rate": 0.5219705240174672
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.5312264431264873,
+                  "actual_rate": 0.5352529112081513
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.5590989612764872,
+                  "actual_rate": 0.5686863173216885
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 526.331013961101,
+              "mean_raw": 0.5006492008555568,
+              "bss_trans": 345.77070075740846,
+              "mean_trans": 0.49093109703400734,
+              "dmean": -0.009718103821549418,
+              "delta_vs_champion_blend": -226.0599278331332,
+              "delta_vs_champion_lgb": -205.18216987681637,
+              "delta_raw_vs_champion_blend": -45.49961462944066,
+              "ece": 0.019083605539770725,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.394644618418448,
+                  "actual_rate": 0.43781841339155747
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.43496351235046055,
+                  "actual_rate": 0.4600618631732169
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.4553755715594643,
+                  "actual_rate": 0.4781659388646288
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.4713717755516661,
+                  "actual_rate": 0.49945414847161573
+                },
+                {
+                  "bin": 4,
+                  "n": 21983,
+                  "pred_mean": 0.48481182404574175,
+                  "actual_rate": 0.5028885957330664
+                },
+                {
+                  "bin": 5,
+                  "n": 21984,
+                  "pred_mean": 0.497348412345628,
+                  "actual_rate": 0.5086881368267832
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.5104028243532628,
+                  "actual_rate": 0.5181950509461426
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5265177304052318,
+                  "actual_rate": 0.5219705240174672
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.5476637705013839,
+                  "actual_rate": 0.5352529112081513
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.5862106524575759,
+                  "actual_rate": 0.5686863173216885
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.2451408258245521,
+                "brier_range_over_grid": 0.0020260003030988794,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "linear_recent": {
+          "inner_val_bss_raw": 2137.0487452326283,
+          "inner_val_n_rows": 217024,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 520.6449611978026,
+              "mean_raw": 0.500041419751354,
+              "bss_trans": 520.6449611978026,
+              "mean_trans": 0.500041419751354,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -51.185667392739106,
+              "delta_vs_champion_lgb": -30.30790943642228,
+              "delta_raw_vs_champion_blend": -51.185667392739106,
+              "ece": 0.005233673792176164,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.4278385480219275,
+                  "actual_rate": 0.43631732168850074
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.45862005580404885,
+                  "actual_rate": 0.46310953420669576
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.4740630420379828,
+                  "actual_rate": 0.47825691411935956
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.48585601648427507,
+                  "actual_rate": 0.5000454876273653
+                },
+                {
+                  "bin": 4,
+                  "n": 21983,
+                  "pred_mean": 0.49569020149419296,
+                  "actual_rate": 0.5000227448482919
+                },
+                {
+                  "bin": 5,
+                  "n": 21984,
+                  "pred_mean": 0.5051853986285221,
+                  "actual_rate": 0.5110534934497817
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.5149047210854081,
+                  "actual_rate": 0.5138737263464338
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5267263682111826,
+                  "actual_rate": 0.525245633187773
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.5421474491410996,
+                  "actual_rate": 0.5347980349344978
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.5693821986783064,
+                  "actual_rate": 0.5684588791848617
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 520.6449611978026,
+              "mean_raw": 0.500041419751354,
+              "bss_trans": 455.7358379988052,
+              "mean_trans": 0.4900076277998694,
+              "dmean": -0.010033791951484572,
+              "delta_vs_champion_blend": -116.09479059173646,
+              "delta_vs_champion_lgb": -95.21703263541963,
+              "delta_raw_vs_champion_blend": -51.185667392739106,
+              "ece": 0.01311056323993693,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.4179945621589696,
+                  "actual_rate": 0.43631732168850074
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.44860841348316777,
+                  "actual_rate": 0.46310953420669576
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.46400271288322587,
+                  "actual_rate": 0.47825691411935956
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.47577159918064915,
+                  "actual_rate": 0.5000454876273653
+                },
+                {
+                  "bin": 4,
+                  "n": 21983,
+                  "pred_mean": 0.4855943954182729,
+                  "actual_rate": 0.5000227448482919
+                },
+                {
+                  "bin": 5,
+                  "n": 21984,
+                  "pred_mean": 0.49508603633589426,
+                  "actual_rate": 0.5110534934497817
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.504809354176655,
+                  "actual_rate": 0.5138737263464338
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5166463101116553,
+                  "actual_rate": 0.525245633187773
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.5321045647374452,
+                  "actual_rate": 0.5347980349344978
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.5594581287652899,
+                  "actual_rate": 0.5684588791848617
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 520.6449611978026,
+              "mean_raw": 0.500041419751354,
+              "bss_trans": 312.07385569570476,
+              "mean_trans": 0.49010040178084424,
+              "dmean": -0.009941017970509725,
+              "delta_vs_champion_blend": -259.7567728948369,
+              "delta_vs_champion_lgb": -238.87901493852007,
+              "delta_raw_vs_champion_blend": -51.185667392739106,
+              "ece": 0.019902874487035836,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.3901875028331545,
+                  "actual_rate": 0.43631732168850074
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.4322624923667481,
+                  "actual_rate": 0.46310953420669576
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.45369190147945176,
+                  "actual_rate": 0.47825691411935956
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.4701301642551748,
+                  "actual_rate": 0.5000454876273653
+                },
+                {
+                  "bin": 4,
+                  "n": 21983,
+                  "pred_mean": 0.48387252158453387,
+                  "actual_rate": 0.5000227448482919
+                },
+                {
+                  "bin": 5,
+                  "n": 21984,
+                  "pred_mean": 0.49716022147817795,
+                  "actual_rate": 0.5110534934497817
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.5107711136653023,
+                  "actual_rate": 0.5138737263464338
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5273243960262498,
+                  "actual_rate": 0.525245633187773
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.5488860916609732,
+                  "actual_rate": 0.5347980349344978
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.5867173291671818,
+                  "actual_rate": 0.5684588791848617
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.24363380378128818,
+                "brier_range_over_grid": 0.002797189809657763,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "exp_recent": {
+          "inner_val_bss_raw": 2168.869284252739,
+          "inner_val_n_rows": 217024,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 517.955741444609,
+              "mean_raw": 0.5003535660423829,
+              "bss_trans": 517.955741444609,
+              "mean_trans": 0.5003535660423829,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -53.87488714593269,
+              "delta_vs_champion_lgb": -32.99712918961586,
+              "delta_raw_vs_champion_blend": -53.87488714593269,
+              "ece": 0.005523435951115428,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.42778145645187265,
+                  "actual_rate": 0.43618085880640467
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.4592854357793619,
+                  "actual_rate": 0.4628366084425036
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.47462167872916294,
+                  "actual_rate": 0.4816684861717613
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.48628475504242924,
+                  "actual_rate": 0.49667940320232895
+                },
+                {
+                  "bin": 4,
+                  "n": 21982,
+                  "pred_mean": 0.49607571232631464,
+                  "actual_rate": 0.5037758165771995
+                },
+                {
+                  "bin": 5,
+                  "n": 21985,
+                  "pred_mean": 0.5055077279737001,
+                  "actual_rate": 0.5064362065044349
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.5151842784689811,
+                  "actual_rate": 0.5186044395924309
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5267358721826876,
+                  "actual_rate": 0.5227438136826783
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.5422309245761384,
+                  "actual_rate": 0.5329785298398836
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.569827195263751,
+                  "actual_rate": 0.5692776564774381
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 517.955741444609,
+              "mean_raw": 0.5003535660423829,
+              "bss_trans": 455.5754651132116,
+              "mean_trans": 0.4903197263260517,
+              "dmean": -0.010033839716331205,
+              "delta_vs_champion_blend": -116.25516347733009,
+              "delta_vs_champion_lgb": -95.37740552101326,
+              "delta_raw_vs_champion_blend": -53.87488714593269,
+              "ece": 0.01279846471375471,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.41793888557153935,
+                  "actual_rate": 0.43618085880640467
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.4492713316999452,
+                  "actual_rate": 0.4628366084425036
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.46455997750061756,
+                  "actual_rate": 0.4816684861717613
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.47619967843537236,
+                  "actual_rate": 0.49667940320232895
+                },
+                {
+                  "bin": 4,
+                  "n": 21982,
+                  "pred_mean": 0.48597961038793785,
+                  "actual_rate": 0.5037758165771995
+                },
+                {
+                  "bin": 5,
+                  "n": 21985,
+                  "pred_mean": 0.4954083767469568,
+                  "actual_rate": 0.5064362065044349
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.5050891276536106,
+                  "actual_rate": 0.5186044395924309
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5166558099903653,
+                  "actual_rate": 0.5227438136826783
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.53218833132003,
+                  "actual_rate": 0.5329785298398836
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.5599055076403547,
+                  "actual_rate": 0.5692776564774381
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 517.955741444609,
+              "mean_raw": 0.5003535660423829,
+              "bss_trans": 311.6034474285434,
+              "mean_trans": 0.4905365323203967,
+              "dmean": -0.009817033721986224,
+              "delta_vs_champion_blend": -260.22718116199826,
+              "delta_vs_champion_lgb": -239.34942320568143,
+              "delta_raw_vs_champion_blend": -53.87488714593269,
+              "ece": 0.020316244325290025,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.3901243000404092,
+                  "actual_rate": 0.43618085880640467
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.43318334645353396,
+                  "actual_rate": 0.4628366084425036
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.45446946428567936,
+                  "actual_rate": 0.4816684861717613
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.47072873125746045,
+                  "actual_rate": 0.49667940320232895
+                },
+                {
+                  "bin": 4,
+                  "n": 21982,
+                  "pred_mean": 0.4844116887044788,
+                  "actual_rate": 0.5037758165771995
+                },
+                {
+                  "bin": 5,
+                  "n": 21985,
+                  "pred_mean": 0.49761151380571245,
+                  "actual_rate": 0.5064362065044349
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.5111626475079356,
+                  "actual_rate": 0.5186044395924309
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5273377294297013,
+                  "actual_rate": 0.5227438136826783
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.5490025034048934,
+                  "actual_rate": 0.5329785298398836
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.5873325192808331,
+                  "actual_rate": 0.5692776564774381
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.24352783505145978,
+                "brier_range_over_grid": 0.0028542459709588464,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "regime_step": {
+          "inner_val_bss_raw": 2254.6733343233204,
+          "inner_val_n_rows": 217024,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 523.2459272949908,
+              "mean_raw": 0.5000724049372186,
+              "bss_trans": 523.2459272949908,
+              "mean_trans": 0.5000724049372186,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -48.58470129555087,
+              "delta_vs_champion_lgb": -27.706943339234044,
+              "delta_raw_vs_champion_blend": -48.58470129555087,
+              "ece": 0.005479753538840574,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.42722353831561816,
+                  "actual_rate": 0.43577147016011647
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.45856573378759563,
+                  "actual_rate": 0.46420123726346435
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.4738910303028328,
+                  "actual_rate": 0.47666484716157204
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.48582859155329233,
+                  "actual_rate": 0.4981350072780204
+                },
+                {
+                  "bin": 4,
+                  "n": 21983,
+                  "pred_mean": 0.49591165973226486,
+                  "actual_rate": 0.5000227448482919
+                },
+                {
+                  "bin": 5,
+                  "n": 21984,
+                  "pred_mean": 0.505394077724142,
+                  "actual_rate": 0.5146470160116449
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.5150751104631153,
+                  "actual_rate": 0.5132823871906841
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5268716516478115,
+                  "actual_rate": 0.5254730713245997
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.5426966458833412,
+                  "actual_rate": 0.5344341339155749
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.5692658206997455,
+                  "actual_rate": 0.5685498544395924
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 523.2459272949908,
+              "mean_raw": 0.5000724049372186,
+              "bss_trans": 458.61250606091807,
+              "mean_trans": 0.490039224860044,
+              "dmean": -0.01003318007717463,
+              "delta_vs_champion_blend": -113.2181225296236,
+              "delta_vs_champion_lgb": -92.34036457330677,
+              "delta_raw_vs_champion_blend": -48.58470129555087,
+              "ece": 0.01307896617976237,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.4173847921345012,
+                  "actual_rate": 0.43577147016011647
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.4485543069595666,
+                  "actual_rate": 0.46420123726346435
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.4638311320401948,
+                  "actual_rate": 0.47666484716157204
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.4757442437801419,
+                  "actual_rate": 0.4981350072780204
+                },
+                {
+                  "bin": 4,
+                  "n": 21983,
+                  "pred_mean": 0.4858156876761912,
+                  "actual_rate": 0.5000227448482919
+                },
+                {
+                  "bin": 5,
+                  "n": 21984,
+                  "pred_mean": 0.49529472265935587,
+                  "actual_rate": 0.5146470160116449
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.5049798772430444,
+                  "actual_rate": 0.5132823871906841
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5167918581005156,
+                  "actual_rate": 0.5254730713245997
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.5326554968524415,
+                  "actual_rate": 0.5344341339155749
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.5593399390358016,
+                  "actual_rate": 0.5685498544395924
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 523.2459272949908,
+              "mean_raw": 0.5000724049372186,
+              "bss_trans": 313.0497124220644,
+              "mean_trans": 0.4901494307063931,
+              "dmean": -0.009922974230825499,
+              "delta_vs_champion_blend": -258.7809161684773,
+              "delta_vs_champion_lgb": -237.90315821216046,
+              "delta_raw_vs_champion_blend": -48.58470129555087,
+              "ece": 0.020026628372579423,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 21984,
+                  "pred_mean": 0.389371459130212,
+                  "actual_rate": 0.43577147016011647
+                },
+                {
+                  "bin": 1,
+                  "n": 21984,
+                  "pred_mean": 0.4321874296038262,
+                  "actual_rate": 0.46420123726346435
+                },
+                {
+                  "bin": 2,
+                  "n": 21984,
+                  "pred_mean": 0.4534525256978888,
+                  "actual_rate": 0.47666484716157204
+                },
+                {
+                  "bin": 3,
+                  "n": 21984,
+                  "pred_mean": 0.4700919796918456,
+                  "actual_rate": 0.4981350072780204
+                },
+                {
+                  "bin": 4,
+                  "n": 21983,
+                  "pred_mean": 0.4841822583701643,
+                  "actual_rate": 0.5000227448482919
+                },
+                {
+                  "bin": 5,
+                  "n": 21984,
+                  "pred_mean": 0.4974523919972855,
+                  "actual_rate": 0.5146470160116449
+                },
+                {
+                  "bin": 6,
+                  "n": 21984,
+                  "pred_mean": 0.5110097517874346,
+                  "actual_rate": 0.5132823871906841
+                },
+                {
+                  "bin": 7,
+                  "n": 21984,
+                  "pred_mean": 0.5275277364192882,
+                  "actual_rate": 0.5254730713245997
+                },
+                {
+                  "bin": 8,
+                  "n": 21984,
+                  "pred_mean": 0.5496526660611567,
+                  "actual_rate": 0.5344341339155749
+                },
+                {
+                  "bin": 9,
+                  "n": 21984,
+                  "pred_mean": 0.5865658368723167,
+                  "actual_rate": 0.5685498544395924
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.24324517152041975,
+                "brier_range_over_grid": 0.003001798290419355,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "r2024": {
+      "outer_val_season": [
+        2024
+      ],
+      "n_outer_val": 223497,
+      "inner_train_seasons": [
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "inner_val_season": 2023,
+      "n_inner_train": 870752,
+      "n_inner_val": 219839,
+      "nested_selected_schedule": "exp_recent",
+      "nested_selected_schedule_by": "argmax inner_val raw BSS (스코어 폴드 미사용)",
+      "treatments": {
+        "uniform": {
+          "inner_val_bss_raw": 1761.2809386412187,
+          "inner_val_n_rows": 219839,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 706.6496763361907,
+              "mean_raw": 0.5016491641788482,
+              "bss_trans": 706.6496763361907,
+              "mean_trans": 0.5016491641788482,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -17.493611375585147,
+              "delta_vs_champion_lgb": -4.747919691949733,
+              "delta_raw_vs_champion_blend": -17.493611375585147,
+              "ece": 0.012266765533632248,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.4302422544711383,
+                  "actual_rate": 0.4170469798657718
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.4591990015656576,
+                  "actual_rate": 0.4530648769574944
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.4738440319888447,
+                  "actual_rate": 0.45729115396662046
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.4858399183951112,
+                  "actual_rate": 0.4715883668903803
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.49624916166225247,
+                  "actual_rate": 0.484361716407893
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.5061809902621851,
+                  "actual_rate": 0.4880536912751678
+                },
+                {
+                  "bin": 6,
+                  "n": 22350,
+                  "pred_mean": 0.5165309393887749,
+                  "actual_rate": 0.4961968680089485
+                },
+                {
+                  "bin": 7,
+                  "n": 22349,
+                  "pred_mean": 0.5284436893313671,
+                  "actual_rate": 0.512864110251018
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.5440441878052771,
+                  "actual_rate": 0.5390604026845638
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.575917180089705,
+                  "actual_rate": 0.5775391498881431
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 706.6496763361907,
+              "mean_raw": 0.5016491641788482,
+              "bss_trans": 762.5764040260608,
+              "mean_trans": 0.4916181973522209,
+              "dmean": -0.010030966826627297,
+              "delta_vs_champion_blend": 38.433116314284916,
+              "delta_vs_champion_lgb": 51.17880799792033,
+              "delta_raw_vs_champion_blend": -17.493611375585147,
+              "ece": 0.005999523861763896,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.4203793402403433,
+                  "actual_rate": 0.4170469798657718
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.4491850914155571,
+                  "actual_rate": 0.4530648769574944
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.46378423962178045,
+                  "actual_rate": 0.45729115396662046
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.47575556549332415,
+                  "actual_rate": 0.4715883668903803
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.4861529708658156,
+                  "actual_rate": 0.484361716407893
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.49608171722339767,
+                  "actual_rate": 0.4880536912751678
+                },
+                {
+                  "bin": 6,
+                  "n": 22350,
+                  "pred_mean": 0.5064370154840137,
+                  "actual_rate": 0.4961968680089485
+                },
+                {
+                  "bin": 7,
+                  "n": 22349,
+                  "pred_mean": 0.5183667449432003,
+                  "actual_rate": 0.512864110251018
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.5340073374900459,
+                  "actual_rate": 0.5390604026845638
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.5660316576513693,
+                  "actual_rate": 0.5775391498881431
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 706.6496763361907,
+              "mean_raw": 0.5016491641788482,
+              "bss_trans": 692.4346445152829,
+              "mean_trans": 0.49231985297784325,
+              "dmean": -0.009329311201004942,
+              "delta_vs_champion_blend": -31.70864319649297,
+              "delta_vs_champion_lgb": -18.962951512857558,
+              "delta_raw_vs_champion_blend": -17.493611375585147,
+              "ece": 0.012419728683679205,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.39340080494005214,
+                  "actual_rate": 0.4170469798657718
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.4330627974490376,
+                  "actual_rate": 0.4530648769574944
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.4533870561172529,
+                  "actual_rate": 0.45729115396662046
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.4701078393344858,
+                  "actual_rate": 0.4715883668903803
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.48465438028136076,
+                  "actual_rate": 0.484361716407893
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.49855420884274504,
+                  "actual_rate": 0.4880536912751678
+                },
+                {
+                  "bin": 6,
+                  "n": 22350,
+                  "pred_mean": 0.5130486894671819,
+                  "actual_rate": 0.4961968680089485
+                },
+                {
+                  "bin": 7,
+                  "n": 22349,
+                  "pred_mean": 0.5297280292877088,
+                  "actual_rate": 0.512864110251018
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.551533358680103,
+                  "actual_rate": 0.5390604026845638
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.5957209541886508,
+                  "actual_rate": 0.5775391498881431
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.24500386222374645,
+                "brier_range_over_grid": 0.001978268848677911,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "linear_recent": {
+          "inner_val_bss_raw": 2140.710937690038,
+          "inner_val_n_rows": 219839,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 692.3980306936417,
+              "mean_raw": 0.5021976411404375,
+              "bss_trans": 692.3980306936417,
+              "mean_trans": 0.5021976411404375,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -31.745257018134225,
+              "delta_vs_champion_lgb": -18.99956533449881,
+              "delta_raw_vs_champion_blend": -31.745257018134225,
+              "ece": 0.01312492944075265,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.42873049568510807,
+                  "actual_rate": 0.41874720357941836
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.4583971484375471,
+                  "actual_rate": 0.4487695749440716
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.47371024014581,
+                  "actual_rate": 0.465882142377735
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.4865335515263438,
+                  "actual_rate": 0.46604026845637586
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.4974064700691449,
+                  "actual_rate": 0.4784554118752517
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.5076163491000191,
+                  "actual_rate": 0.494496644295302
+                },
+                {
+                  "bin": 6,
+                  "n": 22350,
+                  "pred_mean": 0.5180144432190612,
+                  "actual_rate": 0.4987919463087248
+                },
+                {
+                  "bin": 7,
+                  "n": 22349,
+                  "pred_mean": 0.5296728575646358,
+                  "actual_rate": 0.5116112577743971
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.5452886933870013,
+                  "actual_rate": 0.534496644295302
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.5766059026117327,
+                  "actual_rate": 0.5797762863534676
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 692.3980306936417,
+              "mean_raw": 0.5021976411404375,
+              "bss_trans": 752.7817440220019,
+              "mean_trans": 0.4921690004452085,
+              "dmean": -0.010028640695229019,
+              "delta_vs_champion_blend": 28.638456310226047,
+              "delta_vs_champion_lgb": 41.38414799386146,
+              "delta_raw_vs_champion_blend": -31.745257018134225,
+              "ece": 0.005595554809500665,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.41887720788367877,
+                  "actual_rate": 0.41874720357941836
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.44838631659038963,
+                  "actual_rate": 0.4487695749440716
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.46365085677049417,
+                  "actual_rate": 0.465882142377735
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.4764482076150389,
+                  "actual_rate": 0.46604026845637586
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.48730952998981053,
+                  "actual_rate": 0.4784554118752517
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.4975173071214109,
+                  "actual_rate": 0.494496644295302
+                },
+                {
+                  "bin": 6,
+                  "n": 22350,
+                  "pred_mean": 0.5079219710196752,
+                  "actual_rate": 0.4987919463087248
+                },
+                {
+                  "bin": 7,
+                  "n": 22349,
+                  "pred_mean": 0.5195982864544498,
+                  "actual_rate": 0.5116112577743971
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.5352558707077617,
+                  "actual_rate": 0.534496644295302
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.5667241841549401,
+                  "actual_rate": 0.5797762863534676
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 692.3980306936417,
+              "mean_raw": 0.5021976411404375,
+              "bss_trans": 665.1824986211863,
+              "mean_trans": 0.4930934863546778,
+              "dmean": -0.00910415478575971,
+              "delta_vs_champion_blend": -58.96078909058963,
+              "delta_vs_champion_lgb": -46.215097406954214,
+              "delta_raw_vs_champion_blend": -31.745257018134225,
+              "ece": 0.014765504231609097,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.39134986942172817,
+                  "actual_rate": 0.41874720357941836
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.43195390394376865,
+                  "actual_rate": 0.4487695749440716
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.45320126965684837,
+                  "actual_rate": 0.465882142377735
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.4710765142810834,
+                  "actual_rate": 0.46604026845637586
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.48627329962125304,
+                  "actual_rate": 0.4784554118752517
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.5005640430891463,
+                  "actual_rate": 0.494496644295302
+                },
+                {
+                  "bin": 6,
+                  "n": 22350,
+                  "pred_mean": 0.5151263508697018,
+                  "actual_rate": 0.4987919463087248
+                },
+                {
+                  "bin": 7,
+                  "n": 22349,
+                  "pred_mean": 0.5314481668779483,
+                  "actual_rate": 0.5116112577743971
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.5532700410155489,
+                  "actual_rate": 0.534496644295302
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.5966710308224188,
+                  "actual_rate": 0.5797762863534676
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.2437820003395011,
+                "brier_range_over_grid": 0.002589297246133243,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "exp_recent": {
+          "inner_val_bss_raw": 2178.1164081433267,
+          "inner_val_n_rows": 219839,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 682.7098132024645,
+              "mean_raw": 0.5022036372330837,
+              "bss_trans": 682.7098132024645,
+              "mean_trans": 0.5022036372330837,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -41.433474509311395,
+              "delta_vs_champion_lgb": -28.68778282567598,
+              "delta_raw_vs_champion_blend": -41.433474509311395,
+              "ece": 0.012669648254829425,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.4284691114319881,
+                  "actual_rate": 0.41838926174496643
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.4582542452736555,
+                  "actual_rate": 0.45293064876957495
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.47367374576502763,
+                  "actual_rate": 0.4612734350530225
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.4866039512895738,
+                  "actual_rate": 0.4684563758389262
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.4974910339006029,
+                  "actual_rate": 0.4780974540247886
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.5076111282301822,
+                  "actual_rate": 0.4893959731543624
+                },
+                {
+                  "bin": 6,
+                  "n": 22350,
+                  "pred_mean": 0.5179944126205435,
+                  "actual_rate": 0.503489932885906
+                },
+                {
+                  "bin": 7,
+                  "n": 22349,
+                  "pred_mean": 0.5296389166306045,
+                  "actual_rate": 0.511253299923934
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.5453559894011046,
+                  "actual_rate": 0.5359731543624161
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.5769435779568886,
+                  "actual_rate": 0.5778076062639821
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 682.7098132024645,
+              "mean_raw": 0.5022036372330837,
+              "bss_trans": 743.1555188294525,
+              "mean_trans": 0.49217543397455904,
+              "dmean": -0.01002820325852466,
+              "delta_vs_champion_blend": 19.012231117676606,
+              "delta_vs_champion_lgb": 31.75792280131202,
+              "delta_raw_vs_champion_blend": -41.433474509311395,
+              "ece": 0.005684717277803868,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.4186175652674292,
+                  "actual_rate": 0.41838926174496643
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.44824396373847375,
+                  "actual_rate": 0.45293064876957495
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.46361445482573743,
+                  "actual_rate": 0.4612734350530225
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.4765185127837587,
+                  "actual_rate": 0.4684563758389262
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.48739403442727597,
+                  "actual_rate": 0.4780974540247886
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.497512079792553,
+                  "actual_rate": 0.4893959731543624
+                },
+                {
+                  "bin": 6,
+                  "n": 22350,
+                  "pred_mean": 0.5079019218550545,
+                  "actual_rate": 0.503489932885906
+                },
+                {
+                  "bin": 7,
+                  "n": 22349,
+                  "pred_mean": 0.5195642804886575,
+                  "actual_rate": 0.511253299923934
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.5353234245426883,
+                  "actual_rate": 0.5359731543624161
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.5670638356466835,
+                  "actual_rate": 0.5778076062639821
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 682.7098132024645,
+              "mean_raw": 0.5022036372330837,
+              "bss_trans": 649.4892502858174,
+              "mean_trans": 0.49310255049867524,
+              "dmean": -0.009101086734408459,
+              "delta_vs_champion_blend": -74.65403742595845,
+              "delta_vs_champion_lgb": -61.908345742323036,
+              "delta_raw_vs_champion_blend": -41.433474509311395,
+              "ece": 0.01473389592189143,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.3909962519934368,
+                  "actual_rate": 0.41838926174496643
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.43175629039142843,
+                  "actual_rate": 0.45293064876957495
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.4531504887767684,
+                  "actual_rate": 0.4612734350530225
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.4711748501052091,
+                  "actual_rate": 0.4684563758389262
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.48639158238021063,
+                  "actual_rate": 0.4780974540247886
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.5005567272254049,
+                  "actual_rate": 0.4893959731543624
+                },
+                {
+                  "bin": 6,
+                  "n": 22350,
+                  "pred_mean": 0.5150982985154003,
+                  "actual_rate": 0.503489932885906
+                },
+                {
+                  "bin": 7,
+                  "n": 22349,
+                  "pred_mean": 0.5314006680584182,
+                  "actual_rate": 0.511253299923934
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.5533637817094182,
+                  "actual_rate": 0.5359731543624161
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.5971361915620523,
+                  "actual_rate": 0.5778076062639821
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.24365823514341708,
+                "brier_range_over_grid": 0.0026524876725336766,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        },
+        "regime_step": {
+          "inner_val_bss_raw": 2104.594664614312,
+          "inner_val_n_rows": 219839,
+          "rounds_fixed": 109,
+          "methods": {
+            "raw": {
+              "a": 1.0,
+              "b": 0.0,
+              "bss_raw": 679.1399874636728,
+              "mean_raw": 0.5021653172315982,
+              "bss_trans": 679.1399874636728,
+              "mean_trans": 0.5021653172315982,
+              "dmean": 0.0,
+              "delta_vs_champion_blend": -45.00330024810307,
+              "delta_vs_champion_lgb": -32.25760856446766,
+              "delta_raw_vs_champion_blend": -45.00330024810307,
+              "ece": 0.012739674501864206,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.4284674148811395,
+                  "actual_rate": 0.4197762863534676
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.4584606381878964,
+                  "actual_rate": 0.4519910514541387
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.47400569060270775,
+                  "actual_rate": 0.4615419034408698
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.4867825549928462,
+                  "actual_rate": 0.4694407158836689
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.49762272743723623,
+                  "actual_rate": 0.4780974540247886
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.5076867028242014,
+                  "actual_rate": 0.49221476510067114
+                },
+                {
+                  "bin": 6,
+                  "n": 22349,
+                  "pred_mean": 0.5179652711609146,
+                  "actual_rate": 0.4986800304264173
+                },
+                {
+                  "bin": 7,
+                  "n": 22350,
+                  "pred_mean": 0.5295427830113345,
+                  "actual_rate": 0.5133780760626399
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.5451642062715683,
+                  "actual_rate": 0.534586129753915
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.5759544266927823,
+                  "actual_rate": 0.5773601789709172
+                }
+              ]
+            },
+            "policy": {
+              "a": 1.0,
+              "b": -0.0404,
+              "bss_raw": 679.1399874636728,
+              "mean_raw": 0.5021653172315982,
+              "bss_trans": 739.2919372054773,
+              "mean_trans": 0.492136215022692,
+              "dmean": -0.010029102208906182,
+              "delta_vs_champion_blend": 15.148649493701441,
+              "delta_vs_champion_lgb": 27.894341177336855,
+              "delta_raw_vs_champion_blend": -45.00330024810307,
+              "ece": 0.005628156408715886,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.41861589549378386,
+                  "actual_rate": 0.4197762863534676
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.4484496162064015,
+                  "actual_rate": 0.4519910514541387
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.4639455630795721,
+                  "actual_rate": 0.4615419034408698
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.47669683172342664,
+                  "actual_rate": 0.4694407158836689
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.4875256527678232,
+                  "actual_rate": 0.4780974540247886
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.4975876632667834,
+                  "actual_rate": 0.49221476510067114
+                },
+                {
+                  "bin": 6,
+                  "n": 22349,
+                  "pred_mean": 0.5078727366208152,
+                  "actual_rate": 0.4986800304264173
+                },
+                {
+                  "bin": 7,
+                  "n": 22350,
+                  "pred_mean": 0.5194679575484134,
+                  "actual_rate": 0.5133780760626399
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.5351309419665512,
+                  "actual_rate": 0.534586129753915
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.5660685280324282,
+                  "actual_rate": 0.5773601789709172
+                }
+              ]
+            },
+            "slope_only": {
+              "a": 1.4,
+              "b": -0.0404,
+              "bss_raw": 679.1399874636728,
+              "mean_raw": 0.5021653172315982,
+              "bss_trans": 648.9217887463373,
+              "mean_trans": 0.4930508125545833,
+              "dmean": -0.009114504677014912,
+              "delta_vs_champion_blend": -75.22149896543863,
+              "delta_vs_champion_lgb": -62.47580728180321,
+              "delta_raw_vs_champion_blend": -45.00330024810307,
+              "ece": 0.014676288597938634,
+              "calibration_curve": [
+                {
+                  "bin": 0,
+                  "n": 22350,
+                  "pred_mean": 0.390993771839312,
+                  "actual_rate": 0.4197762863534676
+                },
+                {
+                  "bin": 1,
+                  "n": 22350,
+                  "pred_mean": 0.43204210717277375,
+                  "actual_rate": 0.4519910514541387
+                },
+                {
+                  "bin": 2,
+                  "n": 22349,
+                  "pred_mean": 0.4536124029911395,
+                  "actual_rate": 0.4615419034408698
+                },
+                {
+                  "bin": 3,
+                  "n": 22350,
+                  "pred_mean": 0.4714241622782793,
+                  "actual_rate": 0.4694407158836689
+                },
+                {
+                  "bin": 4,
+                  "n": 22349,
+                  "pred_mean": 0.48657582670454647,
+                  "actual_rate": 0.4780974540247886
+                },
+                {
+                  "bin": 5,
+                  "n": 22350,
+                  "pred_mean": 0.500662545703705,
+                  "actual_rate": 0.49221476510067114
+                },
+                {
+                  "bin": 6,
+                  "n": 22349,
+                  "pred_mean": 0.5150574902972556,
+                  "actual_rate": 0.4986800304264173
+                },
+                {
+                  "bin": 7,
+                  "n": 22350,
+                  "pred_mean": 0.5312661412737669,
+                  "actual_rate": 0.5133780760626399
+                },
+                {
+                  "bin": 8,
+                  "n": 22350,
+                  "pred_mean": 0.5530964843429698,
+                  "actual_rate": 0.534586129753915
+                },
+                {
+                  "bin": 9,
+                  "n": 22350,
+                  "pred_mean": 0.5957761232902861,
+                  "actual_rate": 0.5773601789709172
+                }
+              ],
+              "slope_fit": {
+                "best_brier_inner": 0.24389679435856906,
+                "brier_range_over_grid": 0.0025367087758216555,
+                "flat_non_identifiable": true,
+                "at_grid_edge": true
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "acceptance": {
+    "gate_definition": "R-only 3폴드 ΔBSS vs 챔피언 raw 블렌드 > +1.0 AND max|Δmean| ≤ 0.005 (10시드 기준) → accepted | 그 외 rejected",
+    "per_treatment": {
+      "uniform__raw": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -32.60, r2023 -45.50, r2024 -17.49"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -32.60324217562163,
+          "r2023": -45.49961462944066,
+          "r2024": -17.493611375585147
+        },
+        "max_abs_dmean": 0.0
+      },
+      "uniform__policy": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -47.32, r2023 -105.59, r2024 +38.43",
+          "mean-alignment 위반: max|Δmean| 0.0100 > 0.005"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -47.31920092175824,
+          "r2023": -105.59013768870471,
+          "r2024": 38.433116314284916
+        },
+        "max_abs_dmean": 0.010044061479677735
+      },
+      "uniform__slope_only": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -107.89, r2023 -226.06, r2024 -31.71",
+          "mean-alignment 위반: max|Δmean| 0.0109 > 0.005"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -107.89454432504891,
+          "r2023": -226.0599278331332,
+          "r2024": -31.70864319649297
+        },
+        "max_abs_dmean": 0.01087454960399098
+      },
+      "linear_recent__raw": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -50.72, r2023 -51.19, r2024 -31.75"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -50.720198539810895,
+          "r2023": -51.185667392739106,
+          "r2024": -31.745257018134225
+        },
+        "max_abs_dmean": 0.0
+      },
+      "linear_recent__policy": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -72.31, r2023 -116.09, r2024 +28.64",
+          "mean-alignment 위반: max|Δmean| 0.0100 > 0.005"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -72.30580055980204,
+          "r2023": -116.09479059173646,
+          "r2024": 28.638456310226047
+        },
+        "max_abs_dmean": 0.010041799769452686
+      },
+      "linear_recent__slope_only": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -152.87, r2023 -259.76, r2024 -58.96",
+          "mean-alignment 위반: max|Δmean| 0.0106 > 0.005"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -152.86733542868575,
+          "r2023": -259.7567728948369,
+          "r2024": -58.96078909058963
+        },
+        "max_abs_dmean": 0.010631438886200328
+      },
+      "exp_recent__raw": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -51.41, r2023 -53.87, r2024 -41.43"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -51.411106123333525,
+          "r2023": -53.87488714593269,
+          "r2024": -41.433474509311395
+        },
+        "max_abs_dmean": 0.0
+      },
+      "exp_recent__policy": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -69.53, r2023 -116.26, r2024 +19.01",
+          "mean-alignment 위반: max|Δmean| 0.0100 > 0.005"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -69.5313861056701,
+          "r2023": -116.25516347733009,
+          "r2024": 19.012231117676606
+        },
+        "max_abs_dmean": 0.010041014485992483
+      },
+      "exp_recent__slope_only": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -154.07, r2023 -260.23, r2024 -74.65",
+          "mean-alignment 위반: max|Δmean| 0.0106 > 0.005"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -154.069341921792,
+          "r2023": -260.22718116199826,
+          "r2024": -74.65403742595845
+        },
+        "max_abs_dmean": 0.010604870577214764
+      },
+      "regime_step__raw": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -46.97, r2023 -48.58, r2024 -45.00"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -46.973236461145234,
+          "r2023": -48.58470129555087,
+          "r2024": -45.00330024810307
+        },
+        "max_abs_dmean": 0.0
+      },
+      "regime_step__policy": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -68.05, r2023 -113.22, r2024 +15.15",
+          "mean-alignment 위반: max|Δmean| 0.0100 > 0.005"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -68.04926969076189,
+          "r2023": -113.2181225296236,
+          "r2024": 15.148649493701441
+        },
+        "max_abs_dmean": 0.010042339492219499
+      },
+      "regime_step__slope_only": {
+        "verdict": "rejected",
+        "reasons": [
+          "R-only ΔBSS vs 챔피언 블렌드 ≤ +1.0 미충족: r2022 -144.20, r2023 -258.78, r2024 -75.22",
+          "mean-alignment 위반: max|Δmean| 0.0106 > 0.005"
+        ],
+        "r_only_delta_vs_blend": {
+          "r2022": -144.20270284534183,
+          "r2023": -258.7809161684773,
+          "r2024": -75.22149896543863
+        },
+        "max_abs_dmean": 0.0106300070252075
+      }
+    },
+    "accepted": []
+  },
+  "environment": {
+    "python": "3.11.3",
+    "numpy": "1.26.4",
+    "pandas": "3.0.5",
+    "lightgbm": "4.7.0",
+    "torch": "2.1.0+cu121",
+    "cuda_available": false
+  },
+  "git_commit": "6e33cc1fc52574797ee6f257bb1a88f8d6adc221",
+  "recorded_at_utc": "2026-08-13T21:02:03.100224+00:00",
+  "total_time_s": 1762.6064493656158,
+  "negative_tests": {
+    "leakage_injection": {
+      "status": "PASS",
+      "exit_code": 2,
+      "command": "python3 repro_979/calibration_runner.py --leakage-injection",
+      "log": ".omo/evidence/aimers9-top100/task-6-leakage-failure.log",
+      "error": "[LEAKAGE] fold=primary: 캘리브레이션/선택 피팅 셋에 스코어 폴드 행 포함 — 스코어 폴드 라벨로 피팅 시도가 탐지되어 중단합니다.",
+      "note": "스코어 폴드(outer_val) 라벨을 slope 피팅에 주입 → 내장 누수 가드가 LeakageError 로 비정상 종료(exit 2)."
+    },
+    "scored_fold_never_fitted": {
+      "status": "PASS",
+      "detail": "run_study 의 slope 피팅 셋은 inner_val 인덱스만 사용. self-check(assert_leakage_free) 가 inner_val∩outer_val=∅, 2025 부재, inner split ⊂ outer_train 을 4폴드 모두 검증."
+    }
+  }
+}

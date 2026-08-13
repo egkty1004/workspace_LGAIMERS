@@ -1,0 +1,7 @@
+[calibration] train (1475092, 60) | feats 49 | cats 5 | seeds [42, 43, 44, 45, 46, 47, 48, 49, 50, 51] | schedules ['uniform', 'linear_recent', 'exp_recent', 'regime_step'] | methods ['raw', 'policy', 'slope_only']
+[calibration] nested split: 각 폴드 학습 윈도우 마지막 시즌 = inner_val (primary:2023, r2022:2021, r2023:2022, r2024:2023)
+[calibration] 챔피언 raw 블렌드 기준: primary 774.2, r2022 607.2, r2023 571.8, r2024 724.1
+
+[leakage-injection] Failure QA: 스코어 폴드 라벨로 slope 피팅 주입…
+[leakage-injection] PASS — 누수 가드가 스코어 폴드 피팅을 차단했습니다.
+  오류: [LEAKAGE] fold=primary: 캘리브레이션/선택 피팅 셋에 스코어 폴드 행 포함 — 스코어 폴드 라벨로 피팅 시도가 탐지되어 중단합니다.
