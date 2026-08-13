@@ -35,10 +35,13 @@
 
 --smoke: seeds=[42,43], schedules=[uniform], methods=[raw,policy,slope_only]
   4폴드 전체 경로(폴드/스케줄/캘리브레이션/누수/스키마/챔피언 기준) 검증 후 PASS 출력.
+  스모크 증거는 task-6-calibration-smoke.json (별도 경로) + result.json 미기록 —
+  전체 실행 증거(task-6-calibration.json / cache/calibration/task6/result.json)를 덮어쓰지 않음.
   기본(전체 그리드) 동작에 영향 없음.
 
 출력:
   - 증거: .omo/evidence/aimers9-top100/task-6-calibration.{json,log}
+    (--smoke 시 task-6-calibration-smoke.json — 전체 증거와 분리)
   - OOF 로짓(npy, Todo 7 후보 입력): repro_979/cache/calibration/task6/{schedule}/{fold}.npy
     (캐시 산출물 — git 제외). 캘리브레이션은 result.json 의 a/b 파라미터로 재적용 가능.
 """
@@ -552,6 +555,9 @@ def main(argv: list[str] | None = None) -> int:
         Path(args.evidence).expanduser().resolve() if args.evidence
         else PROJECT_ROOT / ".omo" / "evidence" / "aimers9-top100" / "task-6-calibration.json"
     )
+    if smoke:  # 스모크가 전체 실행 증거(task-6-calibration.json)를 덮어쓰지 않도록 별도 경로 사용
+        evidence_path = evidence_path.with_name(
+            f"{evidence_path.stem}-smoke{evidence_path.suffix}")
     t0 = time.time()
 
     # ── 1) 챔피언 49피처 계약 (동결 아티팩트 READ 후 대조) ──
@@ -692,10 +698,11 @@ def main(argv: list[str] | None = None) -> int:
     evidence_path.parent.mkdir(parents=True, exist_ok=True)
     evidence_path.write_text(json.dumps(schema, ensure_ascii=False, indent=2) + "\n",
                              encoding="utf-8")
-    result_path = CALIB_CACHE_DIR / "result.json"
-    result_path.parent.mkdir(parents=True, exist_ok=True)
-    result_path.write_text(json.dumps(schema, ensure_ascii=False, indent=2) + "\n",
-                           encoding="utf-8")
+    if not smoke:  # result.json 은 전체 실행 증거 — 스모크가 덮어쓰지 않도록 분리
+        result_path = CALIB_CACHE_DIR / "result.json"
+        result_path.parent.mkdir(parents=True, exist_ok=True)
+        result_path.write_text(json.dumps(schema, ensure_ascii=False, indent=2) + "\n",
+                               encoding="utf-8")
 
     # ── 7) 요약 ──
     print("\n" + "=" * 100, flush=True)
