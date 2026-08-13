@@ -1,0 +1,626 @@
+{
+  "schema_version": 1,
+  "generated_by": "drift_eda.py (Todo 3 — aimers9-top100-score-improvement)",
+  "generated_at_utc": "2026-08-13T20:01:36.672671+00:00",
+  "leakage_guard_policy": "비협상 가드: ① 2025 라벨 미사용(모든 통계/변환 상수는 학습 윈도우 전용) ② test 행 간 파생 금지(test_row_dependency=false) ③ 외부 데이터 금지. 기각 가설(count_platoon_3b2_same, asof_n_bucket, score_diff_binary, recent_gap_success, return_gap, pitcher_debut, batter_debut, li_risp_flag, outs_count_3b2_2out)은 blocked 로만 기록 — proposed/approved 불가.",
+  "prior_rejection_source": "experiments/screen_all_10seed.json",
+  "gate": "10-seed(42..51) × 4-fold temporal OOF; primary Δ≥+15 & R-only 3/3 & max|Δmean|≤0.005 → 채택, 그 외 기각",
+  "candidates": [
+    {
+      "id": "season_dev_success_pitcher",
+      "name": "투수 최근 성공률 데미안(평균 편차) 안정 변환",
+      "data_source": {
+        "columns": [
+          "asof_pitcher_success_rate"
+        ],
+        "scope": "train+test",
+        "note": "상수(평균)는 학습 윈도우 전용 — 2025 라벨 미사용"
+      },
+      "temporal_availability": "as-of cumulative (공 전 완결); 상수는 학습 윈도우에서 고정",
+      "expected_mechanism": "asof_success 가 target 과 시즌 평균 corr +0.97 로 동조(descriptive_ts §2.3) — 절대값 대신 평균 편차로 디트렌드하면 시즌 드리프트에 안정",
+      "prior_result": {
+        "type": "none",
+        "blocked": false,
+        "note": "신규 — 기각 후보(recent_gap_success)와 다른 신호(asof 성공률 자체의 데미안)"
+      },
+      "transform": "drift_eda.py:season_dev_success_pitcher",
+      "status": "proposed",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환; 통계는 학습 윈도우 상수"
+      },
+      "rejected_relation": {
+        "rejected_id": null,
+        "near_identical": false,
+        "justification": "asof_success_rate 의 안정 변환 — rejected 는 prev1−asof gap"
+      }
+    },
+    {
+      "id": "league_trend_ratio_middle",
+      "name": "middle_rate 리그 추세 비율 (디트렌드 안정 변환)",
+      "data_source": {
+        "columns": [
+          "asof_pitcher_middle_rate",
+          "season"
+        ],
+        "scope": "train+test",
+        "note": "시즌별 리그 평균은 학습 윈도우에서만 계산, 미관측 시즌은 최근 값 폴백"
+      },
+      "temporal_availability": "as-of cumulative; 시즌별 리그 평균 = 학습 윈도우 상수",
+      "expected_mechanism": "middle_rate +35% 리그 변화(descriptive_ts §2.1) — 리그 평균 비율로 리그 전반 투구 성향 변화를 디트렌드, 개인 상대 신호 강화",
+      "prior_result": {
+        "type": "none",
+        "blocked": false,
+        "note": "신규 — 기존 asof_middle_rate 의 비율 변환"
+      },
+      "transform": "drift_eda.py:league_trend_ratio_middle",
+      "status": "proposed",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환; 리그 평균은 학습 윈도우 상수"
+      },
+      "rejected_relation": {
+        "rejected_id": null,
+        "near_identical": false,
+        "justification": "기각 후보와 무관한 신규 안정 변환"
+      }
+    },
+    {
+      "id": "usage_rank_pitcher",
+      "name": "투수 사용량 백분위 랭크 (드리프트 정규화)",
+      "data_source": {
+        "columns": [
+          "asof_pitcher_n"
+        ],
+        "scope": "train+test",
+        "note": "랭크 맵은 학습 윈도우 상수 단조 변환"
+      },
+      "temporal_availability": "as-of cumulative (공 전 완결)",
+      "expected_mechanism": "asof_pitcher_n +411% 드리프트(descriptive_ts §2.1) — 절대값 대신 백분위로 정규화해 시즌 간 사용량 체계 변화에 안정",
+      "prior_result": {
+        "type": "none",
+        "blocked": false,
+        "note": "신규 — 기각된 asof_n_bucket(구간화)이 아닌 연속 랭크 변환"
+      },
+      "transform": "drift_eda.py:usage_rank_pitcher",
+      "status": "proposed",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환; 상수 단조 맵"
+      },
+      "rejected_relation": {
+        "rejected_id": null,
+        "near_identical": false,
+        "justification": "연속 순위 변환 vs rejected 의 정적 구간화(ablation -8.9) — 구간 선택이 아니라 전체 단조 맵으로 메커니즘 상이"
+      }
+    },
+    {
+      "id": "log1p_usage_pitcher",
+      "name": "log1p 투수 사용량 (꼬리 압축 안정 변환)",
+      "data_source": {
+        "columns": [
+          "asof_pitcher_n"
+        ],
+        "scope": "train+test"
+      },
+      "temporal_availability": "as-of cumulative (공 전 완결)",
+      "expected_mechanism": "asof_n 우측 꼬리(skew 1.6, descriptive_ts §1.1) + 연도별 레벨 상승 — log 압축으로 분산 안정화",
+      "prior_result": {
+        "type": "none",
+        "blocked": false,
+        "note": "신규 — 기각된 asof_n_bucket 과 다른 단조 연속 변환"
+      },
+      "transform": "drift_eda.py:log1p_usage_pitcher",
+      "status": "proposed",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환"
+      },
+      "rejected_relation": {
+        "rejected_id": null,
+        "near_identical": false,
+        "justification": "연속 log 변환 vs rejected 의 이산 구간화"
+      }
+    },
+    {
+      "id": "count_state_abs_regime",
+      "name": "ABS 레짐 × count_state 결합 범주 (레짐별 전처리)",
+      "data_source": {
+        "columns": [
+          "balls_before",
+          "strikes_before",
+          "season"
+        ],
+        "scope": "train+test"
+      },
+      "temporal_availability": "pre-pitch static (카운트 + season, 공 전 확정)",
+      "expected_mechanism": "ABS(2024) 가 R count 계수를 비균등 하락(1-1 -2.1pp vs 3-2 -0.5pp, eda_regime) — season>=2024 는 12 count_state 유지, 미만은 PRE 단일 버킷으로 분리 학습",
+      "prior_result": {
+        "type": "none",
+        "blocked": false,
+        "note": "신규 — 기각된 카운트 셀 플래그들(count_platoon_3b2_same, outs_count_3b2_2out)과 다른 레짐 분리 전처리"
+      },
+      "transform": "drift_eda.py:count_state_abs_regime",
+      "status": "proposed",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환; season 은 공 전에 알려짐"
+      },
+      "rejected_relation": {
+        "rejected_id": null,
+        "near_identical": false,
+        "justification": "레짐(연도) 분리 버킷 vs rejected 의 특정 셀 플래그 — 기각된 셀을 재현하지 않음"
+      }
+    },
+    {
+      "id": "debut_league_impute_success",
+      "name": "투수 데뷔(G2) asof 성공률 레짐별 리그 대체 (결측 처리)",
+      "data_source": {
+        "columns": [
+          "asof_pitcher_n",
+          "asof_pitcher_success_rate",
+          "season"
+        ],
+        "scope": "train+test"
+      },
+      "temporal_availability": "as-of cumulative; 대체 평균은 학습 윈도우 레짐별 상수",
+      "expected_mechanism": "G2(792행, n==0) NaN 을 레짐별 리그 평균으로 대체 — 모델에 NaN 대신 정보성 있는 추정값 제공. 플래그(pitcher_debut 기각)가 아닌 값 대체",
+      "prior_result": {
+        "type": "none",
+        "blocked": false,
+        "note": "신규 — rejected pitcher_debut 은 이진 플래그(단독 BSS≈0), 본 항목은 asof rate 값 자체의 결측 대체로 메커니즘이 다름"
+      },
+      "transform": "drift_eda.py:debut_league_impute_success",
+      "status": "proposed",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환; 레짐 평균은 학습 윈도우 상수"
+      },
+      "rejected_relation": {
+        "rejected_id": "pitcher_debut",
+        "near_identical": false,
+        "justification": "플래그(지시자) vs 값 대체 — 동일 792행에 작동하나 메커니즘(imputation)이 다름을 명시"
+      }
+    },
+    {
+      "id": "batter_debut_league_impute_success",
+      "name": "타자 데뷔(G3) asof 성공률 레짐별 리그 대체 (결측 처리)",
+      "data_source": {
+        "columns": [
+          "asof_batter_n",
+          "asof_batter_success_rate",
+          "season"
+        ],
+        "scope": "train+test"
+      },
+      "temporal_availability": "as-of cumulative; 대체 평균은 학습 윈도우 레짐별 상수",
+      "expected_mechanism": "G3(830행, n==0) NaN 을 레짐별 리그 평균으로 대체 — 투수 대체와 대칭되는 결측 처리",
+      "prior_result": {
+        "type": "none",
+        "blocked": false,
+        "note": "신규 — rejected batter_debut 은 이진 플래그, 본 항목은 값 대체"
+      },
+      "transform": "drift_eda.py:batter_debut_league_impute_success",
+      "status": "proposed",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환; 레짐 평균은 학습 윈도우 상수"
+      },
+      "rejected_relation": {
+        "rejected_id": "batter_debut",
+        "near_identical": false,
+        "justification": "플래그 vs 값 대체 — 메커니즘이 다름"
+      }
+    },
+    {
+      "id": "f_game_post2023_label_mapping",
+      "name": "F 게임 post-2023 라벨 레짐 매핑 (레짐별 전처리/캘리브레이션 정책)",
+      "data_source": {
+        "columns": [
+          "game_type"
+        ],
+        "scope": "train+test",
+        "note": "F 존재 여부는 평가 test 미확정(로컬 5행 샘플은 R-only)"
+      },
+      "temporal_availability": "pre-pitch static (game_type 공 전 확정); 정책 상수는 학습 윈도우",
+      "expected_mechanism": "F 레이블 레짐 전환: pre2023 +15.3pp → 2023~ -3.0pp(eda_regime). 2025 test 에 F 가 있으면 post-2023 레짐(≈0.46)으로 매핑 — Todo 6 캘리브레이션 입력용 정책(모델 피처 아님)",
+      "prior_result": {
+        "type": "none",
+        "blocked": false,
+        "note": "신규 — 기각 후보와 무관한 레짐 매핑 정책"
+      },
+      "transform": "drift_eda.py:f_game_post2023_label_mapping",
+      "status": "proposed",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "game_type 은 공 전 알려짐; 정책 상수는 학습 윈도우"
+      },
+      "rejected_relation": {
+        "rejected_id": null,
+        "near_identical": false,
+        "justification": "기각 후보와 무관한 라벨 레짐 정책"
+      }
+    },
+    {
+      "id": "count_platoon_3b2_same",
+      "name": "3-2 카운트 & 동손 플래그",
+      "data_source": {
+        "columns": [
+          "balls_before",
+          "strikes_before",
+          "pitcher_hand",
+          "batter_hand"
+        ],
+        "scope": "train+test",
+        "note": "행 단위 조건 변환 — 원래 10시드 스크리닝에서 평가됨"
+      },
+      "temporal_availability": "pre-pitch static (모두 예측 시점에 관측 가능)",
+      "expected_mechanism": "기각 판정 레코드 — 신규 채택 금지",
+      "prior_result": {
+        "type": "screening",
+        "source": "experiments/screen_all_10seed.json",
+        "mode": "addition",
+        "primary_delta_bss": 4.9,
+        "r_only_improved": 3,
+        "verdict": "기각 (10시드 게이트 all-reject, screen_all_10seed.json)",
+        "blocked": true,
+        "blocked_reason": "10시드 강화 게이트: primary +4.9 < +15 미달 → 기각 (screen_all_10seed.json)"
+      },
+      "transform": "common.py:add_cross_cell_features",
+      "status": "blocked",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환이나 10시드 게이트 all-reject로 인해 채택 불가(기각 동일 가설)"
+      },
+      "rejected_relation": {
+        "rejected_id": "count_platoon_3b2_same",
+        "near_identical": true,
+        "justification": "동일 가설 — 화려한 재실행 금지 (승자 저주 방지)"
+      }
+    },
+    {
+      "id": "asof_n_bucket",
+      "name": "asof_pitcher_n 구간화",
+      "data_source": {
+        "columns": [
+          "asof_pitcher_n"
+        ],
+        "scope": "train+test",
+        "note": "행 단위 조건 변환 — 원래 10시드 스크리닝에서 평가됨"
+      },
+      "temporal_availability": "pre-pitch static (모두 예측 시점에 관측 가능)",
+      "expected_mechanism": "기각 판정 레코드 — 신규 채택 금지",
+      "prior_result": {
+        "type": "screening",
+        "source": "experiments/screen_all_10seed.json",
+        "mode": "ablation",
+        "primary_delta_bss": -8.9,
+        "r_only_improved": 1,
+        "verdict": "기각 (10시드 게이트 all-reject, screen_all_10seed.json)",
+        "blocked": true,
+        "blocked_reason": "10시드 강화 게이트: ablation primary -8.9 (제거 시 개선) → 기각"
+      },
+      "transform": "common.py:add_asof_n_bucket_feature",
+      "status": "blocked",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환이나 10시드 게이트 all-reject로 인해 채택 불가(기각 동일 가설)"
+      },
+      "rejected_relation": {
+        "rejected_id": "asof_n_bucket",
+        "near_identical": true,
+        "justification": "동일 가설 — 화려한 재실행 금지 (승자 저주 방지)"
+      }
+    },
+    {
+      "id": "score_diff_binary",
+      "name": "접전 |diff|<=1 이진화",
+      "data_source": {
+        "columns": [
+          "score_diff_pitcher_team"
+        ],
+        "scope": "train+test",
+        "note": "행 단위 조건 변환 — 원래 10시드 스크리닝에서 평가됨"
+      },
+      "temporal_availability": "pre-pitch static (모두 예측 시점에 관측 가능)",
+      "expected_mechanism": "기각 판정 레코드 — 신규 채택 금지",
+      "prior_result": {
+        "type": "screening",
+        "source": "experiments/screen_all_10seed.json",
+        "mode": "ablation",
+        "primary_delta_bss": -8.6,
+        "r_only_improved": 2,
+        "verdict": "기각 (10시드 게이트 all-reject, screen_all_10seed.json)",
+        "blocked": true,
+        "blocked_reason": "10시드 강화 게이트: ablation primary -8.6 → 기각"
+      },
+      "transform": "common.py:add_cross_cell_features",
+      "status": "blocked",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환이나 10시드 게이트 all-reject로 인해 채택 불가(기각 동일 가설)"
+      },
+      "rejected_relation": {
+        "rejected_id": "score_diff_binary",
+        "near_identical": true,
+        "justification": "동일 가설 — 화려한 재실행 금지 (승자 저주 방지)"
+      }
+    },
+    {
+      "id": "recent_gap_success",
+      "name": "직전 1경기 성공률 − 누적 성공률 gap",
+      "data_source": {
+        "columns": [
+          "asof_pitcher_prev1_game_success_rate",
+          "asof_pitcher_success_rate"
+        ],
+        "scope": "train+test",
+        "note": "행 단위 조건 변환 — 원래 10시드 스크리닝에서 평가됨"
+      },
+      "temporal_availability": "pre-pitch static (모두 예측 시점에 관측 가능)",
+      "expected_mechanism": "기각 판정 레코드 — 신규 채택 금지",
+      "prior_result": {
+        "type": "screening",
+        "source": "experiments/screen_all_10seed.json",
+        "mode": "ablation",
+        "primary_delta_bss": -8.4,
+        "r_only_improved": 2,
+        "verdict": "기각 (10시드 게이트 all-reject, screen_all_10seed.json)",
+        "blocked": true,
+        "blocked_reason": "10시드 강화 게이트: ablation primary -8.4 → 기각"
+      },
+      "transform": "common.py:add_recent_gap_feature",
+      "status": "blocked",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환이나 10시드 게이트 all-reject로 인해 채택 불가(기각 동일 가설)"
+      },
+      "rejected_relation": {
+        "rejected_id": "recent_gap_success",
+        "near_identical": true,
+        "justification": "동일 가설 — 화려한 재실행 금지 (승자 저주 방지)"
+      }
+    },
+    {
+      "id": "return_gap",
+      "name": "복귀/공백(prev1 결측 & n<100) 플래그",
+      "data_source": {
+        "columns": [
+          "asof_pitcher_prev1_game_success_rate",
+          "asof_pitcher_n"
+        ],
+        "scope": "train+test",
+        "note": "행 단위 조건 변환 — 원래 10시드 스크리닝에서 평가됨"
+      },
+      "temporal_availability": "pre-pitch static (모두 예측 시점에 관측 가능)",
+      "expected_mechanism": "기각 판정 레코드 — 신규 채택 금지",
+      "prior_result": {
+        "type": "screening",
+        "source": "experiments/screen_all_10seed.json",
+        "mode": "ablation",
+        "primary_delta_bss": -3.4,
+        "r_only_improved": 1,
+        "verdict": "기각 (10시드 게이트 all-reject, screen_all_10seed.json)",
+        "blocked": true,
+        "blocked_reason": "10시드 강화 게이트: ablation primary -3.4 → 기각"
+      },
+      "transform": "common.py:add_return_gap_feature",
+      "status": "blocked",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환이나 10시드 게이트 all-reject로 인해 채택 불가(기각 동일 가설)"
+      },
+      "rejected_relation": {
+        "rejected_id": "return_gap",
+        "near_identical": true,
+        "justification": "동일 가설 — 화려한 재실행 금지 (승자 저주 방지)"
+      }
+    },
+    {
+      "id": "pitcher_debut",
+      "name": "투수 데뷔(asof_pitcher_n==0) 플래그",
+      "data_source": {
+        "columns": [
+          "asof_pitcher_n"
+        ],
+        "scope": "train+test",
+        "note": "행 단위 조건 변환 — 원래 10시드 스크리닝에서 평가됨"
+      },
+      "temporal_availability": "pre-pitch static (모두 예측 시점에 관측 가능)",
+      "expected_mechanism": "기각 판정 레코드 — 신규 채택 금지",
+      "prior_result": {
+        "type": "screening",
+        "source": "experiments/screen_all_10seed.json",
+        "mode": "ablation",
+        "primary_delta_bss": -3.4,
+        "r_only_improved": 1,
+        "verdict": "기각 (10시드 게이트 all-reject, screen_all_10seed.json)",
+        "blocked": true,
+        "blocked_reason": "10시드 강화 게이트: ablation primary -3.4 → 기각"
+      },
+      "transform": "common.py:add_debut_feature",
+      "status": "blocked",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환이나 10시드 게이트 all-reject로 인해 채택 불가(기각 동일 가설)"
+      },
+      "rejected_relation": {
+        "rejected_id": "pitcher_debut",
+        "near_identical": true,
+        "justification": "동일 가설 — 화려한 재실행 금지 (승자 저주 방지)"
+      }
+    },
+    {
+      "id": "batter_debut",
+      "name": "타자 데뷔(asof_batter_n==0) 플래그",
+      "data_source": {
+        "columns": [
+          "asof_batter_n"
+        ],
+        "scope": "train+test",
+        "note": "행 단위 조건 변환 — 원래 10시드 스크리닝에서 평가됨"
+      },
+      "temporal_availability": "pre-pitch static (모두 예측 시점에 관측 가능)",
+      "expected_mechanism": "기각 판정 레코드 — 신규 채택 금지",
+      "prior_result": {
+        "type": "screening",
+        "source": "experiments/screen_all_10seed.json",
+        "mode": "ablation",
+        "primary_delta_bss": -3.4,
+        "r_only_improved": 0,
+        "verdict": "기각 (10시드 게이트 all-reject, screen_all_10seed.json)",
+        "blocked": true,
+        "blocked_reason": "10시드 강화 게이트: ablation primary -3.4, R-only 0/3 → 기각"
+      },
+      "transform": "common.py:add_debut_feature",
+      "status": "blocked",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환이나 10시드 게이트 all-reject로 인해 채택 불가(기각 동일 가설)"
+      },
+      "rejected_relation": {
+        "rejected_id": "batter_debut",
+        "near_identical": true,
+        "justification": "동일 가설 — 화려한 재실행 금지 (승자 저주 방지)"
+      }
+    },
+    {
+      "id": "li_risp_flag",
+      "name": "RISP & LI>=1.0 플래그",
+      "data_source": {
+        "columns": [
+          "runner_on_2b",
+          "runner_on_3b",
+          "li"
+        ],
+        "scope": "train+test",
+        "note": "행 단위 조건 변환 — 원래 10시드 스크리닝에서 평가됨"
+      },
+      "temporal_availability": "pre-pitch static (모두 예측 시점에 관측 가능)",
+      "expected_mechanism": "기각 판정 레코드 — 신규 채택 금지",
+      "prior_result": {
+        "type": "screening",
+        "source": "experiments/screen_all_10seed.json",
+        "mode": "ablation",
+        "primary_delta_bss": -4.2,
+        "r_only_improved": 1,
+        "verdict": "기각 (10시드 게이트 all-reject, screen_all_10seed.json)",
+        "blocked": true,
+        "blocked_reason": "10시드 강화 게이트: ablation primary -4.2 → 기각"
+      },
+      "transform": "common.py:add_cross_cell_features",
+      "status": "blocked",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환이나 10시드 게이트 all-reject로 인해 채택 불가(기각 동일 가설)"
+      },
+      "rejected_relation": {
+        "rejected_id": "li_risp_flag",
+        "near_identical": true,
+        "justification": "동일 가설 — 화려한 재실행 금지 (승자 저주 방지)"
+      }
+    },
+    {
+      "id": "outs_count_3b2_2out",
+      "name": "3-2 & 2아웃 플래그",
+      "data_source": {
+        "columns": [
+          "balls_before",
+          "strikes_before",
+          "outs_before"
+        ],
+        "scope": "train+test",
+        "note": "행 단위 조건 변환 — 원래 10시드 스크리닝에서 평가됨"
+      },
+      "temporal_availability": "pre-pitch static (모두 예측 시점에 관측 가능)",
+      "expected_mechanism": "기각 판정 레코드 — 신규 채택 금지",
+      "prior_result": {
+        "type": "screening",
+        "source": "experiments/screen_all_10seed.json",
+        "mode": "ablation",
+        "primary_delta_bss": -5.3,
+        "r_only_improved": 1,
+        "verdict": "기각 (10시드 게이트 all-reject, screen_all_10seed.json)",
+        "blocked": true,
+        "blocked_reason": "10시드 강화 게이트: ablation primary -5.3 → 기각"
+      },
+      "transform": "common.py:add_cross_cell_features",
+      "status": "blocked",
+      "leakage_check": {
+        "test_row_dependency": false,
+        "no_2025_labels": true,
+        "no_external_data": true,
+        "note": "행 단위 변환이나 10시드 게이트 all-reject로 인해 채택 불가(기각 동일 가설)"
+      },
+      "rejected_relation": {
+        "rejected_id": "outs_count_3b2_2out",
+        "near_identical": true,
+        "justification": "동일 가설 — 화려한 재실행 금지 (승자 저주 방지)"
+      }
+    }
+  ],
+  "summary": {
+    "n_proposed": 8,
+    "n_blocked": 9,
+    "n_total": 17,
+    "proposed_ids": [
+      "season_dev_success_pitcher",
+      "league_trend_ratio_middle",
+      "usage_rank_pitcher",
+      "log1p_usage_pitcher",
+      "count_state_abs_regime",
+      "debut_league_impute_success",
+      "batter_debut_league_impute_success",
+      "f_game_post2023_label_mapping"
+    ],
+    "blocked_ids": [
+      "count_platoon_3b2_same",
+      "asof_n_bucket",
+      "score_diff_binary",
+      "recent_gap_success",
+      "return_gap",
+      "pitcher_debut",
+      "batter_debut",
+      "li_risp_flag",
+      "outs_count_3b2_2out"
+    ],
+    "evidence_refs": [
+      "docs/waveb_eda_descriptive_ts.md §2.1/§2.3/§1.1",
+      "docs/waveb_eda_full_report.md §3.2/§3.3/§5.3",
+      "repro_979/experiments/eda_regime.json / eda_missing.json",
+      "repro_979/experiments/screen_all_10seed.json"
+    ]
+  }
+}
