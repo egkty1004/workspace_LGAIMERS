@@ -49,6 +49,9 @@ team_member_materials/
 # repro_979 캐시 (실험 산출물)
 **/cache/*.npy
 
+# qualification 러너 중첩 캐시 (repro_979/cache/qualification/ — 로짓/스키마 산출물)
+**/cache/
+
 # δ mean-sweep 스테이징 (생성물)
 repro_979/submit_sweep/
 
