@@ -509,6 +509,9 @@ def main(argv: list[str] | None = None) -> int:
         Path(args.evidence).expanduser().resolve() if args.evidence
         else PROJECT_ROOT / ".omo" / "evidence" / "aimers9-top100" / "task-5-models.json"
     )
+    if args.check_env:  # check-env 증거는 통합 경로(task-5-models.json)를 덮어쓰지 않도록 분리
+        evidence_path = evidence_path.with_name(
+            evidence_path.name.replace("-models", "-check-env"))
     if smoke:  # 스모크가 전체 실행 증거를 덮어쓰지 않도록 별도 경로 사용
         evidence_path = evidence_path.with_name(
             f"{evidence_path.stem}-smoke{evidence_path.suffix}")
