@@ -1,0 +1,3460 @@
+{
+  "schema_version": 1,
+  "task": "blend-selection",
+  "smoke": false,
+  "selection_fold": "primary",
+  "selection_fold_rationale": "primary = 2024 검증 기간; 챔피언 w=0.51 도 primary 에서 피팅된 원점과 동일 — R-only 홀드아웃만 고정 가중치 평가",
+  "held_out_folds": [
+    "r2022",
+    "r2023",
+    "r2024"
+  ],
+  "weight_fit_procedure": {
+    "method": "numpy simplex grid w≥0, Σw=1",
+    "step": 0.05,
+    "scipy_used": false,
+    "bootstrap_seed": 42,
+    "n_boot": 1000
+  },
+  "transfer_gate": {
+    "delta_threshold_bss_each_fold": 1.0,
+    "mean_shift_max_abs": 0.005,
+    "diversity_corr_max": 0.99,
+    "residual_align_min": 0.02,
+    "bootstrap_lower_bound_gt_0": true,
+    "standalone_bss_promotion_forbidden": true
+  },
+  "member_manifest": [
+    {
+      "id": "champion",
+      "task": "Task 2",
+      "desc": "챔피언 블렌드 로짓 (LGB×0.51 + MLP×0.49, Task 2 qualification)",
+      "note": "현재 제출 기준선 (primary blend 774.159, R-only +28.8/+20.9/+12.7)",
+      "registered": true,
+      "digest_source": "Task 2 qualification 증거(동결) — .omo/evidence/aimers9-top100/task-2-control.json",
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/qualification/champion/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "7302f5673cfbcfdfec524d174ff3eb901d89adc3b28e30989be29c1385ff5ec7",
+          "expected_sha256": "7302f5673cfbcfdfec524d174ff3eb901d89adc3b28e30989be29c1385ff5ec7",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/qualification/champion/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "c5e32ff829ca43b49521398df167e22007c5c3301ba5e2d78d3d8fa65794f189",
+          "expected_sha256": "c5e32ff829ca43b49521398df167e22007c5c3301ba5e2d78d3d8fa65794f189",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/qualification/champion/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "178f6632e8ee2099e7448e7ec11d29a84155e7811ea2b057f105bbb9b50ce745",
+          "expected_sha256": "178f6632e8ee2099e7448e7ec11d29a84155e7811ea2b057f105bbb9b50ce745",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/qualification/champion/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "5d098720d8922dcce43ef09fe81b2af28e087321d0bc74698157558eb84131cc",
+          "expected_sha256": "5d098720d8922dcce43ef09fe81b2af28e087321d0bc74698157558eb84131cc",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "lgb",
+      "task": "Task 2",
+      "desc": "LGB F3 10시드 평균 로짓 (Task 2 캐시 백업 컴포넌트)",
+      "note": "챔피언 블렌드의 LGB 컴포넌트",
+      "registered": true,
+      "digest_source": "Task 2 qualification 증거(동결) — .omo/evidence/aimers9-top100/task-2-control.json",
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/preds_primary_lgb_f3.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "e482cc869f9964b013223e7e97828b2825a4ee722e0259454627b376d46aceda",
+          "expected_sha256": "e482cc869f9964b013223e7e97828b2825a4ee722e0259454627b376d46aceda",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/h2b_r2022_lgb_f3.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "7960fdff1216f0a275e50f063218d6ac9d07f326da916e31decd03022162e2bd",
+          "expected_sha256": "7960fdff1216f0a275e50f063218d6ac9d07f326da916e31decd03022162e2bd",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/h2b_r2023_lgb_f3.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "ae02faa114a961dc1d7d7fce8d34097558a1a889250ba8dffc9944067fddbe44",
+          "expected_sha256": "ae02faa114a961dc1d7d7fce8d34097558a1a889250ba8dffc9944067fddbe44",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/h2b_r2024_lgb_f3.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "a931358a81a0df2c4bcca0dea4b6f20a9a5b0640bfb9a083673d4d5029584c44",
+          "expected_sha256": "a931358a81a0df2c4bcca0dea4b6f20a9a5b0640bfb9a083673d4d5029584c44",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "mlp",
+      "task": "Task 2",
+      "desc": "MLP 5시드 평균 로짓 (Task 2 캐시 백업 컴포넌트)",
+      "note": "챔피언 블렌드의 MLP 컴포넌트",
+      "registered": true,
+      "digest_source": "Task 2 qualification 증거(동결) — .omo/evidence/aimers9-top100/task-2-control.json",
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/mlp_primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "9504e89a94af082818f3329c270c751d24025996a629e3cd3ed934374f429e1e",
+          "expected_sha256": "9504e89a94af082818f3329c270c751d24025996a629e3cd3ed934374f429e1e",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/mlp_r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "fe85410baff20b33cb6dba7c7a138920a4ff375a53ec7532f88cbff29aedbb31",
+          "expected_sha256": "fe85410baff20b33cb6dba7c7a138920a4ff375a53ec7532f88cbff29aedbb31",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/mlp_r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "c754e5c4ac4fa2365a5cbd5795f3377beb18bc4cdefd3928a987b011d0e5c87d",
+          "expected_sha256": "c754e5c4ac4fa2365a5cbd5795f3377beb18bc4cdefd3928a987b011d0e5c87d",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/mlp_r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "c48dad0501220009b94b74a1474c8a2090c6e8c8d6edbd6bbcb4bbf9416ab1dc",
+          "expected_sha256": "c48dad0501220009b94b74a1474c8a2090c6e8c8d6edbd6bbcb4bbf9416ab1dc",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "xgboost",
+      "task": "Task 5",
+      "desc": "XGBoost 평균 로짓 (Task 5, GPU 부재 시 CPU-hist 폴백)",
+      "note": "Task 5 기각: R-only 전이 없음 (OOF 행렬은 블렌드 분석 전용)",
+      "registered": true,
+      "digest_source": "task-5 smoke evidence (2시드, full OOF 덮어씀)",
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/qualification/xgboost/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "72b4a772313a976f6133b80c762a7f379af03d97f5d1f737d2b3ff682a6d9bec",
+          "expected_sha256": "72b4a772313a976f6133b80c762a7f379af03d97f5d1f737d2b3ff682a6d9bec",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/qualification/xgboost/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "2ec5b4b55cc6f379e722e4b181de18d4ebdad2277a0954079dc1f91215648f34",
+          "expected_sha256": "2ec5b4b55cc6f379e722e4b181de18d4ebdad2277a0954079dc1f91215648f34",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/qualification/xgboost/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "5c0f007ce575eab8e83c108ec9f7f3854a27c0b798434c076c72ffc10a5e1b4a",
+          "expected_sha256": "5c0f007ce575eab8e83c108ec9f7f3854a27c0b798434c076c72ffc10a5e1b4a",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/qualification/xgboost/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "6f35099e46c06af87c528552c9f1c25c2cd25528550b8106d58b89a384e5c6c3",
+          "expected_sha256": "6f35099e46c06af87c528552c9f1c25c2cd25528550b8106d58b89a384e5c6c3",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "catboost",
+      "task": "Task 5",
+      "desc": "CatBoost 평균 로짓 (Task 5, depth7 CPU)",
+      "note": "Task 5 기각: R-only 전이 없음 + 배포 install_risk (OOF 행렬은 블렌드 분석 전용)",
+      "registered": true,
+      "digest_source": "task-5 full evidence (10시드)",
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/qualification/catboost/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "e6470f40e2f2fe6cc705c3af5fd5b4687393a6549f6b98f99f204b76479bd660",
+          "expected_sha256": "e6470f40e2f2fe6cc705c3af5fd5b4687393a6549f6b98f99f204b76479bd660",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/qualification/catboost/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "6a9fcdb8fe698d8cffc6589bfa131f9145512361f349fb0125e70822da12f606",
+          "expected_sha256": "6a9fcdb8fe698d8cffc6589bfa131f9145512361f349fb0125e70822da12f606",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/qualification/catboost/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "3bffe62d4e3da2547d07e649eab0a3d7560cf80f87e5992e2e036110192289e4",
+          "expected_sha256": "3bffe62d4e3da2547d07e649eab0a3d7560cf80f87e5992e2e036110192289e4",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/qualification/catboost/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "d453162ccfc3043d406b74abd45d7152c643312f0f7d126f43a5931977186798",
+          "expected_sha256": "d453162ccfc3043d406b74abd45d7152c643312f0f7d126f43a5931977186798",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task4_batter_debut_league_impute_success",
+      "task": "Task 4",
+      "desc": "Task 4 피처 후보 batter_debut_league_impute_success OOF 로짓 (10시드, 전부 기각)",
+      "note": "Task 4 기각 (primary Δ<0, bootstrap 하한<0) — OOF 행렬은 블렌드 분석 전용",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/qualification/task4_batter_debut_league_impute_success/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "5b9b911deee24edd13b6c5d0fa85f3c12e82af93ac0ba5c1d2a75b28fa918f87",
+          "expected_sha256": "5b9b911deee24edd13b6c5d0fa85f3c12e82af93ac0ba5c1d2a75b28fa918f87",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/qualification/task4_batter_debut_league_impute_success/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "c075bb684d093ba0112f38e938c0ef9360ca3820bd1fd5792cc48f702e41ced8",
+          "expected_sha256": "c075bb684d093ba0112f38e938c0ef9360ca3820bd1fd5792cc48f702e41ced8",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/qualification/task4_batter_debut_league_impute_success/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "dcb40ff76d13f11204fa8b808df16c53a46259e952e891ce528ddaac9e9029f9",
+          "expected_sha256": "dcb40ff76d13f11204fa8b808df16c53a46259e952e891ce528ddaac9e9029f9",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/qualification/task4_batter_debut_league_impute_success/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "a77d6601cc7bfda55b97ffe81a80937786925f20c7d7385d501984fce39f0418",
+          "expected_sha256": "a77d6601cc7bfda55b97ffe81a80937786925f20c7d7385d501984fce39f0418",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task4_count_state_abs_regime",
+      "task": "Task 4",
+      "desc": "Task 4 피처 후보 count_state_abs_regime OOF 로짓 (10시드, 전부 기각)",
+      "note": "Task 4 기각 (primary Δ<0, bootstrap 하한<0) — OOF 행렬은 블렌드 분석 전용",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/qualification/task4_count_state_abs_regime/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "eafeea9326f5094b731a3853565b435566ec2e1bf94ec5be146a0c75d9632638",
+          "expected_sha256": "eafeea9326f5094b731a3853565b435566ec2e1bf94ec5be146a0c75d9632638",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/qualification/task4_count_state_abs_regime/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "2ff3aff18d21325291a4c46284e3aad70efdfe1fb1ae933c5090170396d705dd",
+          "expected_sha256": "2ff3aff18d21325291a4c46284e3aad70efdfe1fb1ae933c5090170396d705dd",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/qualification/task4_count_state_abs_regime/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "49b3a653d84df89156eb467e56a56f65d95228eed28c3538b8b1ae1eb37a32bd",
+          "expected_sha256": "49b3a653d84df89156eb467e56a56f65d95228eed28c3538b8b1ae1eb37a32bd",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/qualification/task4_count_state_abs_regime/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "fb3c47383c39be98c53a56c6c76c6566059c541144658ef9cd5c7959200083ba",
+          "expected_sha256": "fb3c47383c39be98c53a56c6c76c6566059c541144658ef9cd5c7959200083ba",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task4_debut_league_impute_success",
+      "task": "Task 4",
+      "desc": "Task 4 피처 후보 debut_league_impute_success OOF 로짓 (10시드, 전부 기각)",
+      "note": "Task 4 기각 (primary Δ<0, bootstrap 하한<0) — OOF 행렬은 블렌드 분석 전용",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/qualification/task4_debut_league_impute_success/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "c3e785e7603ef0596369fe328c60bfa18d991fe1287cacae75388b78a8034558",
+          "expected_sha256": "c3e785e7603ef0596369fe328c60bfa18d991fe1287cacae75388b78a8034558",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/qualification/task4_debut_league_impute_success/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "244b1f4092a7bb28ffa0c19cb0e2339cecfc1db68d15319c77a92f5114302f36",
+          "expected_sha256": "244b1f4092a7bb28ffa0c19cb0e2339cecfc1db68d15319c77a92f5114302f36",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/qualification/task4_debut_league_impute_success/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "f58c8c31e1c185afc923eec50e2ae27f9ba0166b48552dd4529f6e6ce0246cd5",
+          "expected_sha256": "f58c8c31e1c185afc923eec50e2ae27f9ba0166b48552dd4529f6e6ce0246cd5",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/qualification/task4_debut_league_impute_success/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "71e82d64142d1d1d61db1d0463f5c9802377a803406693b5c76a5b947106bd95",
+          "expected_sha256": "71e82d64142d1d1d61db1d0463f5c9802377a803406693b5c76a5b947106bd95",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task4_f_game_post2023_label_mapping",
+      "task": "Task 4",
+      "desc": "Task 4 피처 후보 f_game_post2023_label_mapping OOF 로짓 (10시드, 전부 기각)",
+      "note": "Task 4 기각 (primary Δ<0, bootstrap 하한<0) — OOF 행렬은 블렌드 분석 전용",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/qualification/task4_f_game_post2023_label_mapping/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "59317c9c15cfe39cd5b863a48f04c69f57bd73383ba1f796ef00a7ae385f9e4e",
+          "expected_sha256": "59317c9c15cfe39cd5b863a48f04c69f57bd73383ba1f796ef00a7ae385f9e4e",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/qualification/task4_f_game_post2023_label_mapping/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "7960fdff1216f0a275e50f063218d6ac9d07f326da916e31decd03022162e2bd",
+          "expected_sha256": "7960fdff1216f0a275e50f063218d6ac9d07f326da916e31decd03022162e2bd",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/qualification/task4_f_game_post2023_label_mapping/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "ae02faa114a961dc1d7d7fce8d34097558a1a889250ba8dffc9944067fddbe44",
+          "expected_sha256": "ae02faa114a961dc1d7d7fce8d34097558a1a889250ba8dffc9944067fddbe44",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/qualification/task4_f_game_post2023_label_mapping/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "a931358a81a0df2c4bcca0dea4b6f20a9a5b0640bfb9a083673d4d5029584c44",
+          "expected_sha256": "a931358a81a0df2c4bcca0dea4b6f20a9a5b0640bfb9a083673d4d5029584c44",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task4_league_trend_ratio_middle",
+      "task": "Task 4",
+      "desc": "Task 4 피처 후보 league_trend_ratio_middle OOF 로짓 (10시드, 전부 기각)",
+      "note": "Task 4 기각 (primary Δ<0, bootstrap 하한<0) — OOF 행렬은 블렌드 분석 전용",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/qualification/task4_league_trend_ratio_middle/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "443efb38972cbd93c095053e4e6f435a53c390588cabff37aaead9ef4d1ff343",
+          "expected_sha256": "443efb38972cbd93c095053e4e6f435a53c390588cabff37aaead9ef4d1ff343",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/qualification/task4_league_trend_ratio_middle/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "8105e314b7c64aeca106fa3afda04a7e5627e315cc0c950b645033780d030abd",
+          "expected_sha256": "8105e314b7c64aeca106fa3afda04a7e5627e315cc0c950b645033780d030abd",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/qualification/task4_league_trend_ratio_middle/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "beb77366e65775e65df61131b3db7040a2ef8f5d9f9742e89d85d5760a5da64d",
+          "expected_sha256": "beb77366e65775e65df61131b3db7040a2ef8f5d9f9742e89d85d5760a5da64d",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/qualification/task4_league_trend_ratio_middle/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "e27f995f0b9b57e065e30d684f78ffea8c16f4b6ab54e7ad4512e5f02aa76d74",
+          "expected_sha256": "e27f995f0b9b57e065e30d684f78ffea8c16f4b6ab54e7ad4512e5f02aa76d74",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task4_log1p_usage_pitcher",
+      "task": "Task 4",
+      "desc": "Task 4 피처 후보 log1p_usage_pitcher OOF 로짓 (10시드, 전부 기각)",
+      "note": "Task 4 기각 (primary Δ<0, bootstrap 하한<0) — OOF 행렬은 블렌드 분석 전용",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/qualification/task4_log1p_usage_pitcher/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "c8846d803d885be4b5d6fe8fd56144425a618ce28a177cbe94db3f61a529bafa",
+          "expected_sha256": "c8846d803d885be4b5d6fe8fd56144425a618ce28a177cbe94db3f61a529bafa",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/qualification/task4_log1p_usage_pitcher/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "72de067451372a0fc39bd37e42a3857dad1b82da1892492c3b9709d61fe2ffd6",
+          "expected_sha256": "72de067451372a0fc39bd37e42a3857dad1b82da1892492c3b9709d61fe2ffd6",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/qualification/task4_log1p_usage_pitcher/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "b1160e3e2ab45d3fdbb490a2611b851bb8076339edf001e36e1c24b864e3c201",
+          "expected_sha256": "b1160e3e2ab45d3fdbb490a2611b851bb8076339edf001e36e1c24b864e3c201",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/qualification/task4_log1p_usage_pitcher/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "745db20ef2c1a45f0e93a33626bc24f5aeea2402112c1b5628a944b26c1c7bdb",
+          "expected_sha256": "745db20ef2c1a45f0e93a33626bc24f5aeea2402112c1b5628a944b26c1c7bdb",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task4_season_dev_success_pitcher",
+      "task": "Task 4",
+      "desc": "Task 4 피처 후보 season_dev_success_pitcher OOF 로짓 (10시드, 전부 기각)",
+      "note": "Task 4 기각 (primary Δ<0, bootstrap 하한<0) — OOF 행렬은 블렌드 분석 전용",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/qualification/task4_season_dev_success_pitcher/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "2d6dfd2fc7ffc0241904741e30378e6ca59cc93e4225310000908034c9d5f32c",
+          "expected_sha256": "2d6dfd2fc7ffc0241904741e30378e6ca59cc93e4225310000908034c9d5f32c",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/qualification/task4_season_dev_success_pitcher/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "02deddd8a947c44fd6370d3e14a1687de4e1bba3206d391c617790d947aa80db",
+          "expected_sha256": "02deddd8a947c44fd6370d3e14a1687de4e1bba3206d391c617790d947aa80db",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/qualification/task4_season_dev_success_pitcher/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "9322bd18cb321e1eeb5433f3002fd3c156cecd2d1726b5350c8d8f7a42f79f63",
+          "expected_sha256": "9322bd18cb321e1eeb5433f3002fd3c156cecd2d1726b5350c8d8f7a42f79f63",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/qualification/task4_season_dev_success_pitcher/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "b80b143c92b7f445b2538f712ef44a9149d22dd6a7c784721947c0427cb38487",
+          "expected_sha256": "b80b143c92b7f445b2538f712ef44a9149d22dd6a7c784721947c0427cb38487",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task4_usage_rank_pitcher",
+      "task": "Task 4",
+      "desc": "Task 4 피처 후보 usage_rank_pitcher OOF 로짓 (10시드, 전부 기각)",
+      "note": "Task 4 기각 (primary Δ<0, bootstrap 하한<0) — OOF 행렬은 블렌드 분석 전용",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/qualification/task4_usage_rank_pitcher/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "e33d672b60d161fd838dd276383607d0b48bc915f6758c9659ffd5d5dadbfa89",
+          "expected_sha256": "e33d672b60d161fd838dd276383607d0b48bc915f6758c9659ffd5d5dadbfa89",
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/qualification/task4_usage_rank_pitcher/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "72de067451372a0fc39bd37e42a3857dad1b82da1892492c3b9709d61fe2ffd6",
+          "expected_sha256": "72de067451372a0fc39bd37e42a3857dad1b82da1892492c3b9709d61fe2ffd6",
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/qualification/task4_usage_rank_pitcher/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "b1160e3e2ab45d3fdbb490a2611b851bb8076339edf001e36e1c24b864e3c201",
+          "expected_sha256": "b1160e3e2ab45d3fdbb490a2611b851bb8076339edf001e36e1c24b864e3c201",
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/qualification/task4_usage_rank_pitcher/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "80e410b032438dc8c256b63cfcfaecd24364ecf61ad1655267e71e5b0ccdbc35",
+          "expected_sha256": "80e410b032438dc8c256b63cfcfaecd24364ecf61ad1655267e71e5b0ccdbc35",
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task6_uniform",
+      "task": "Task 6",
+      "desc": "Task 6 캘리브레이션 스케줄 uniform OOF 로짓 (고정 109라운드 중첩 프로토콜)",
+      "note": "Task 6 기각 (R-only Δ<0) + 다른 학습 프로토콜(고정109라운드) — OOF 행렬은 블렌드 분석 전용, 챔피언과 스케일 불일치 가능",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/calibration/task6/uniform/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "4249cc9cfb932103ea09c9340e8bde8d4b9e47965e575b56887c756ac087b90b",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/calibration/task6/uniform/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "688819fc8d022deec407a20229de85b64a420692808823774edf0b34dd084740",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/calibration/task6/uniform/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "dc2741e8b67dc31075d7c43b28606211416e2e478fbe12c938f7ca7fd6dbf8fe",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/calibration/task6/uniform/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "a0d622b974dc0198f97f2496d064f17cb9ed796b9ca8f834c07499cf057878eb",
+          "expected_sha256": null,
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task6_linear_recent",
+      "task": "Task 6",
+      "desc": "Task 6 캘리브레이션 스케줄 linear_recent OOF 로짓 (고정 109라운드 중첩 프로토콜)",
+      "note": "Task 6 기각 (R-only Δ<0) + 다른 학습 프로토콜(고정109라운드) — OOF 행렬은 블렌드 분석 전용, 챔피언과 스케일 불일치 가능",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/calibration/task6/linear_recent/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "d3c514934828f63ffb38eacca80e70df1a53c3cf7e7f4c871b5b30249ea9d54c",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/calibration/task6/linear_recent/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "a460c6c32e5a2fade1a606039c1059c50a4d1771ac313a0dfdfb4c962ac964f3",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/calibration/task6/linear_recent/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "b3063df706de82ee31ae7d2dd32e6de78349c8042bfec0c191e14538256b7c56",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/calibration/task6/linear_recent/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "c2a2009c4e55bfb2590ce9b85ee632674a8f9e4318a8a4f1e186047219255f68",
+          "expected_sha256": null,
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task6_exp_recent",
+      "task": "Task 6",
+      "desc": "Task 6 캘리브레이션 스케줄 exp_recent OOF 로짓 (고정 109라운드 중첩 프로토콜)",
+      "note": "Task 6 기각 (R-only Δ<0) + 다른 학습 프로토콜(고정109라운드) — OOF 행렬은 블렌드 분석 전용, 챔피언과 스케일 불일치 가능",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/calibration/task6/exp_recent/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "13513ccd20c4a12f154c23161d65e55624a359f70468360f101809837c0e887c",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/calibration/task6/exp_recent/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "fa42c53e292a28b977b8495c06a310111373e1091baef386ab924f3068a05f5b",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/calibration/task6/exp_recent/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "9bccfd172330362d9a0ac383b6f5aad4d6e8da423777e977daba49f1d1c49860",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/calibration/task6/exp_recent/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "c1e4966c31b913ac8ff48cc514befb5e710f0f400a9d3927e426f3ab40ad21a8",
+          "expected_sha256": null,
+          "digest_match": true
+        }
+      }
+    },
+    {
+      "id": "task6_regime_step",
+      "task": "Task 6",
+      "desc": "Task 6 캘리브레이션 스케줄 regime_step OOF 로짓 (고정 109라운드 중첩 프로토콜)",
+      "note": "Task 6 기각 (R-only Δ<0) + 다른 학습 프로토콜(고정109라운드) — OOF 행렬은 블렌드 분석 전용, 챔피언과 스케일 불일치 가능",
+      "registered": true,
+      "digest_source": null,
+      "rows_match": true,
+      "digest_match_all": true,
+      "fold_files": {
+        "primary": {
+          "file": "cache/calibration/task6/regime_step/primary.npy",
+          "rows": 253507,
+          "expected_rows": 253507,
+          "rows_match": true,
+          "sha256": "ec8e85ff22e00c5cb82ce378bfffa1a86eb0137bf884debedd103b4c8ce5c548",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2022": {
+          "file": "cache/calibration/task6/regime_step/r2022.npy",
+          "rows": 217024,
+          "expected_rows": 217024,
+          "rows_match": true,
+          "sha256": "87906e5700a02d4589ca03b13771200b9acdc8c357ad2ce82a32025b0b23e8fd",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2023": {
+          "file": "cache/calibration/task6/regime_step/r2023.npy",
+          "rows": 219839,
+          "expected_rows": 219839,
+          "rows_match": true,
+          "sha256": "e653f65d1459d345101b818fcc5d85de51f259ef0804e51681469d5adae62fe7",
+          "expected_sha256": null,
+          "digest_match": true
+        },
+        "r2024": {
+          "file": "cache/calibration/task6/regime_step/r2024.npy",
+          "rows": 223497,
+          "expected_rows": 223497,
+          "rows_match": true,
+          "sha256": "7fd96fecd175a98c5fc615a313c70d31f3dac418c01dcfe4276e2791b89c05bb",
+          "expected_sha256": null,
+          "digest_match": true
+        }
+      }
+    }
+  ],
+  "registered_members": [
+    "catboost",
+    "champion",
+    "lgb",
+    "mlp",
+    "task4_batter_debut_league_impute_success",
+    "task4_count_state_abs_regime",
+    "task4_debut_league_impute_success",
+    "task4_f_game_post2023_label_mapping",
+    "task4_league_trend_ratio_middle",
+    "task4_log1p_usage_pitcher",
+    "task4_season_dev_success_pitcher",
+    "task4_usage_rank_pitcher",
+    "task6_exp_recent",
+    "task6_linear_recent",
+    "task6_regime_step",
+    "task6_uniform",
+    "xgboost"
+  ],
+  "skipped_members": [],
+  "candidates": [
+    {
+      "id": "lgb_mlp",
+      "kind": "recovery",
+      "members": [
+        "lgb",
+        "mlp"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          0.5,
+          0.5
+        ],
+        "weights_by_member": {
+          "lgb": 0.5,
+          "mlp": 0.5
+        },
+        "selection_bss": 774.1368605468035,
+        "member_selection_bss": {
+          "lgb": 729.6801091066562,
+          "mlp": 726.1006419439498
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.3395851163843,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.11051931451129349,
+          "pred_mean": 0.5071946269584359,
+          "champion_corr": 0.9999898310526492,
+          "member_pairwise_corr": {
+            "0_1": 0.9030597532099904
+          },
+          "mean_shift": -2.4732953229911203e-06,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.9256661713579,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.09503758081621072,
+          "pred_mean": 0.5017460859835785,
+          "champion_corr": 0.9999933326835795,
+          "member_pairwise_corr": {
+            "0_1": 0.9354812875712879
+          },
+          "mean_shift": -3.076447619521083e-05,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 723.9026635053714,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": -0.24062420640450455,
+          "pred_mean": 0.4977171785954592,
+          "champion_corr": 0.999992834760511,
+          "member_pairwise_corr": {
+            "0_1": 0.9306352879330336
+          },
+          "mean_shift": -6.348536133321536e-05,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9354812875712879,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.006135166837006743,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": -0.13209975194058723,
+        "pct_50": -0.014722846228380188,
+        "pct_95": 0.09895667262956803,
+        "mean": -0.016513874467090007,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 6.348536133321536e-05,
+        "per_fold": {
+          "r2022": -2.4732953229911203e-06,
+          "r2023": -3.076447619521083e-05,
+          "r2024": -6.348536133321536e-05
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.11, r2023 +0.10, r2024 -0.24",
+        "(e) 부트스트랩 하한(5%) -0.13 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": 0.006135166837006743,
+          "member_1": -0.0061504347412709845
+        },
+        "pairwise_residual_corr": {
+          "0_1": -0.9999999999999889
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "2c482cd2407397d8",
+      "redundant": false
+    },
+    {
+      "id": "champ_xgb",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "xgboost"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "xgboost": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "xgboost": 702.2807320147373
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.9584345068060166
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9707366607598321
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9704239212038412
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9707366607598321,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.005018580089737999,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.005018580089737999
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "9b1203a773794b9a",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['xgboost'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    },
+    {
+      "id": "champ_cat",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "catboost"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          0.8500000000000001,
+          0.1499999999999999
+        ],
+        "weights_by_member": {
+          "champion": 0.8500000000000001,
+          "catboost": 0.1499999999999999
+        },
+        "selection_bss": 775.746820795975,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "catboost": 732.7600845669302
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 608.6805565848952,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 1.451490783022109,
+          "pred_mean": 0.5072642910564195,
+          "champion_corr": 0.9992809681680159,
+          "member_pairwise_corr": {
+            "0_1": 0.9704408203854944
+          },
+          "mean_shift": 6.71908026605994e-05,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 573.8332291669201,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 2.002600576378427,
+          "pred_mean": 0.5018474418796712,
+          "champion_corr": 0.9995321051577413,
+          "member_pairwise_corr": {
+            "0_1": 0.9804088366487824
+          },
+          "mean_shift": 7.059141989751438e-05,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 729.6994135023826,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 5.556125790606757,
+          "pred_mean": 0.4979025926948649,
+          "champion_corr": 0.9992650084339622,
+          "member_pairwise_corr": {
+            "0_1": 0.9695071225897848
+          },
+          "mean_shift": 0.00012192873807248539,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9804088366487824,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.0062477619486517024,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 2.0631735497200907,
+        "pct_50": 3.016820730786776,
+        "pct_95": 4.045561103320538,
+        "mean": 3.024763438891608,
+        "lower_bound_gt_0": true
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.00012192873807248539,
+        "per_fold": {
+          "r2022": 6.71908026605994e-05,
+          "r2023": 7.059141989751438e-05,
+          "r2024": 0.00012192873807248539
+        }
+      },
+      "clipping": {},
+      "verdict": "accepted",
+      "reasons": [],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.0062477619486517024
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "691a2947b2b1879c",
+      "redundant": false,
+      "standalone_bss_note": "단독 BSS 가 아닌 전이 게이트(홀드아웃 Δ)로만 승격 — 단독 BSS 만으로 승격하지 않음"
+    },
+    {
+      "id": "champ_xgb_cat",
+      "kind": "triple",
+      "members": [
+        "champion",
+        "xgboost",
+        "catboost"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          0.8500000000000001,
+          0.0,
+          0.1499999999999999
+        ],
+        "weights_by_member": {
+          "champion": 0.8500000000000001,
+          "xgboost": 0.0,
+          "catboost": 0.1499999999999999
+        },
+        "selection_bss": 775.746820795975,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "xgboost": 702.2807320147373,
+          "catboost": 732.7600845669302
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 608.6805565848952,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 1.451490783022109,
+          "pred_mean": 0.5072642910564195,
+          "champion_corr": 0.9992809681680159,
+          "member_pairwise_corr": {
+            "0_1": 0.9584345068060166,
+            "0_2": 0.9704408203854944,
+            "1_2": 0.9527394304037508
+          },
+          "mean_shift": 6.71908026605994e-05,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 573.8332291669201,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 2.002600576378427,
+          "pred_mean": 0.5018474418796712,
+          "champion_corr": 0.9995321051577413,
+          "member_pairwise_corr": {
+            "0_1": 0.9707366607598321,
+            "0_2": 0.9804088366487824,
+            "1_2": 0.9648295423383559
+          },
+          "mean_shift": 7.059141989751438e-05,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 729.6994135023826,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 5.556125790606757,
+          "pred_mean": 0.4979025926948649,
+          "champion_corr": 0.9992650084339622,
+          "member_pairwise_corr": {
+            "0_1": 0.9704239212038412,
+            "0_2": 0.9695071225897848,
+            "1_2": 0.9523708030582804
+          },
+          "mean_shift": 0.00012192873807248539,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9804088366487824,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.0062477619486517024,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 2.0631735497200907,
+        "pct_50": 3.016820730786776,
+        "pct_95": 4.045561103320538,
+        "mean": 3.024763438891608,
+        "lower_bound_gt_0": true
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.00012192873807248539,
+        "per_fold": {
+          "r2022": 6.71908026605994e-05,
+          "r2023": 7.059141989751438e-05,
+          "r2024": 0.00012192873807248539
+        }
+      },
+      "clipping": {},
+      "verdict": "accepted",
+      "reasons": [],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.005018580089737999,
+          "member_2": 0.0062477619486517024
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN,
+          "0_2": NaN,
+          "1_2": 0.43901262056486345
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "e8ab61af0eb60fa6",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['xgboost'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)",
+      "standalone_bss_note": "단독 BSS 가 아닌 전이 게이트(홀드아웃 Δ)로만 승격 — 단독 BSS 만으로 승격하지 않음"
+    },
+    {
+      "id": "lgb_mlp_xgb",
+      "kind": "triple",
+      "members": [
+        "lgb",
+        "mlp",
+        "xgboost"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          0.45,
+          0.5,
+          0.050000000000000044
+        ],
+        "weights_by_member": {
+          "lgb": 0.45,
+          "mlp": 0.5,
+          "xgboost": 0.050000000000000044
+        },
+        "selection_bss": 774.154263373239,
+        "member_selection_bss": {
+          "lgb": 729.6801091066562,
+          "mlp": 726.1006419439498,
+          "xgboost": 702.2807320147373
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.5890081742141,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.3599423723410382,
+          "pred_mean": 0.507210202461209,
+          "champion_corr": 0.9999336002100324,
+          "member_pairwise_corr": {
+            "0_1": 0.9030597532099904,
+            "0_2": 0.9798036294647325,
+            "1_2": 0.8862591972616186
+          },
+          "mean_shift": 1.3102207450099712e-05,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 572.7604714851675,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.9298428946258355,
+          "pred_mean": 0.5017718321344777,
+          "champion_corr": 0.9999516351629872,
+          "member_pairwise_corr": {
+            "0_1": 0.9354812875712879,
+            "0_2": 0.9845517891016882,
+            "1_2": 0.9242615532872548
+          },
+          "mean_shift": -5.0183252959801194e-06,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 722.9310406638101,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": -1.212247047965775,
+          "pred_mean": 0.49770933482899865,
+          "champion_corr": 0.999940829463718,
+          "member_pairwise_corr": {
+            "0_1": 0.9306352879330336,
+            "0_2": 0.9824970409500576,
+            "1_2": 0.9215319974362821
+          },
+          "mean_shift": -7.132912779378442e-05,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9845517891016882,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.006135166837006743,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": -0.2864071799100969,
+        "pct_50": 0.029013061079483593,
+        "pct_95": 0.32716355370286093,
+        "mean": 0.024773246189466174,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 7.132912779378442e-05,
+        "per_fold": {
+          "r2022": 1.3102207450099712e-05,
+          "r2023": -5.0183252959801194e-06,
+          "r2024": -7.132912779378442e-05
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.36, r2023 +0.93, r2024 -1.21",
+        "(e) 부트스트랩 하한(5%) -0.29 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": 0.006135166837006743,
+          "member_1": -0.0061504347412709845,
+          "member_2": 0.005018580089737999
+        },
+        "pairwise_residual_corr": {
+          "0_1": -0.9999999999999889,
+          "0_2": 0.7389166918795094,
+          "1_2": -0.7389166936424527
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "f4cde21f7d05b1d2",
+      "redundant": false
+    },
+    {
+      "id": "lgb_mlp_cat",
+      "kind": "triple",
+      "members": [
+        "lgb",
+        "mlp",
+        "catboost"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          0.30000000000000004,
+          0.45,
+          0.24999999999999994
+        ],
+        "weights_by_member": {
+          "lgb": 0.30000000000000004,
+          "mlp": 0.45,
+          "catboost": 0.24999999999999994
+        },
+        "selection_bss": 776.4630225207459,
+        "member_selection_bss": {
+          "lgb": 729.6801091066562,
+          "mlp": 726.1006419439498,
+          "catboost": 732.7600845669302
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 610.0393478771005,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 2.8102820752274056,
+          "pred_mean": 0.5072886940962879,
+          "champion_corr": 0.9981523350915141,
+          "member_pairwise_corr": {
+            "0_1": 0.9030597532099904,
+            "0_2": 0.9668426567749585,
+            "1_2": 0.9247654032831117
+          },
+          "mean_shift": 9.159384252899194e-05,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 575.5507105916546,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 3.720082001112928,
+          "pred_mean": 0.5016407614218128,
+          "champion_corr": 0.9987497661867067,
+          "member_pairwise_corr": {
+            "0_1": 0.9354812875712879,
+            "0_2": 0.9762512346222774,
+            "1_2": 0.9522532384025975
+          },
+          "mean_shift": -0.0001360890379609181,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 730.6576057679704,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 6.514318056194497,
+          "pred_mean": 0.4974602153869169,
+          "champion_corr": 0.9980566729965604,
+          "member_pairwise_corr": {
+            "0_1": 0.9306352879330336,
+            "0_2": 0.9671110288413798,
+            "1_2": 0.9365869905466291
+          },
+          "mean_shift": -0.00032044856987550885,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9762512346222774,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.0062477619486517024,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 2.6728406269734477,
+        "pct_50": 4.321529858123077,
+        "pct_95": 6.007863515928157,
+        "mean": 4.342753839472562,
+        "lower_bound_gt_0": true
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.00032044856987550885,
+        "per_fold": {
+          "r2022": 9.159384252899194e-05,
+          "r2023": -0.0001360890379609181,
+          "r2024": -0.00032044856987550885
+        }
+      },
+      "clipping": {},
+      "verdict": "accepted",
+      "reasons": [],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": 0.006135166837006743,
+          "member_1": -0.0061504347412709845,
+          "member_2": 0.0062477619486517024
+        },
+        "pairwise_residual_corr": {
+          "0_1": -0.9999999999999889,
+          "0_2": 0.5548520491040053,
+          "1_2": -0.5548520426203273
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "7771a019594deedd",
+      "redundant": false,
+      "standalone_bss_note": "단독 BSS 가 아닌 전이 게이트(홀드아웃 Δ)로만 승격 — 단독 BSS 만으로 승격하지 않음"
+    },
+    {
+      "id": "champ_batter_debut_league_impute_success",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task4_batter_debut_league_impute_success"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "task4_batter_debut_league_impute_success": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task4_batter_debut_league_impute_success": 719.5481332444631
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.9765853316811506
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.982260650827467
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.982791059032605
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.982791059032605,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.004586345221407015,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.004586345221407015
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "3e60ab9b00160b54",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['task4_batter_debut_league_impute_success'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    },
+    {
+      "id": "champ_count_state_abs_regime",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task4_count_state_abs_regime"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "task4_count_state_abs_regime": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task4_count_state_abs_regime": 724.600908819073
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.9758856784513971
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9829452884722912
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9825027869677
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9829452884722912,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.005529861748620864,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.005529861748620864
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "83d3df98811c1936",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['task4_count_state_abs_regime'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    },
+    {
+      "id": "champ_debut_league_impute_success",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task4_debut_league_impute_success"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "task4_debut_league_impute_success": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task4_debut_league_impute_success": 725.6201137934903
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.9750912794929613
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9816269721522445
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9824377743337014
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9824377743337014,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.005808829985401474,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.005808829985401474
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "dd6522b77fb4d953",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['task4_debut_league_impute_success'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    },
+    {
+      "id": "champ_f_game_post2023_label_mapping",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task4_f_game_post2023_label_mapping"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "task4_f_game_post2023_label_mapping": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task4_f_game_post2023_label_mapping": 722.6587414379316
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.9774691672253893
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9843301368546402
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9841698437948103
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9843301368546402,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.0054912730167630324,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.0054912730167630324
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "a9df5aabdf0c3cb3",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['task4_f_game_post2023_label_mapping'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    },
+    {
+      "id": "champ_league_trend_ratio_middle",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task4_league_trend_ratio_middle"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "task4_league_trend_ratio_middle": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task4_league_trend_ratio_middle": 726.9341918379246
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.9762149353367298
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9828599414123947
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.982925149445865
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.982925149445865,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.006063083152278158,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.006063083152278158
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "3fe52461cf3de06a",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['task4_league_trend_ratio_middle'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    },
+    {
+      "id": "champ_log1p_usage_pitcher",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task4_log1p_usage_pitcher"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "task4_log1p_usage_pitcher": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task4_log1p_usage_pitcher": 724.2182469189951
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.9753964467468407
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9827132624009042
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9833029720346996
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9833029720346996,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.0060419276232714526,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.0060419276232714526
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "ec452c9a7ba56372",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['task4_log1p_usage_pitcher'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    },
+    {
+      "id": "champ_season_dev_success_pitcher",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task4_season_dev_success_pitcher"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "task4_season_dev_success_pitcher": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task4_season_dev_success_pitcher": 713.6138568790029
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.9663110268645327
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9752680710945792
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9745624616262104
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9752680710945792,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.005292983619076097,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.005292983619076097
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "5871d1dd52f6d8ee",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['task4_season_dev_success_pitcher'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    },
+    {
+      "id": "champ_usage_rank_pitcher",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task4_usage_rank_pitcher"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "task4_usage_rank_pitcher": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task4_usage_rank_pitcher": 724.8524694883573
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.9753964467468407
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9827132624009042
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9831474890885168
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9831474890885168,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.0062250743833434765,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.0062250743833434765
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "dcbc445838d9540f",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['task4_usage_rank_pitcher'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    },
+    {
+      "id": "champ_uniform",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task6_uniform"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "task6_uniform": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task6_uniform": 724.7778698156293
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.9751232303263827
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9712862357013612
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.979734552666447
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.979734552666447,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.006072793061400144,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.006072793061400144
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "0febdc74e062d4c8",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['task6_uniform'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    },
+    {
+      "id": "champ_linear_recent",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task6_linear_recent"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "task6_linear_recent": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task6_linear_recent": 714.3886133006428
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.9613172542663415
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9560750358555898
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9679187024378573
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9679187024378573,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.007056301649614701,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.007056301649614701
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "e9bd1d1c6524c78a",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['task6_linear_recent'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    },
+    {
+      "id": "champ_exp_recent",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task6_exp_recent"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          0.9500000000000001,
+          0.04999999999999993
+        ],
+        "weights_by_member": {
+          "champion": 0.9500000000000001,
+          "task6_exp_recent": 0.04999999999999993
+        },
+        "selection_bss": 774.1724080858492,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task6_exp_recent": 715.5086518597975
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 606.8906597518242,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": -0.3384060500488886,
+          "pred_mean": 0.5071602141052631,
+          "champion_corr": 0.9998816176635339,
+          "member_pairwise_corr": {
+            "0_1": 0.9609852074250784
+          },
+          "mean_shift": -3.6886148495729465e-05,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 572.1509181469187,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.32028955637701984,
+          "pred_mean": 0.5017052710004543,
+          "champion_corr": 0.9998523355136614,
+          "member_pairwise_corr": {
+            "0_1": 0.9557379867694009
+          },
+          "mean_shift": -7.157945931945964e-05,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.8017864504575,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.658498738681601,
+          "pred_mean": 0.4980020010661996,
+          "champion_corr": 0.999898910165264,
+          "member_pairwise_corr": {
+            "0_1": 0.9664643175698505
+          },
+          "mean_shift": 0.00022133710940713813,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9664643175698505,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.007313385828357321,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": -0.24227720462040928,
+        "pct_50": 0.2222853680025515,
+        "pct_95": 0.6589668650120077,
+        "mean": 0.22499739945719635,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.00022133710940713813,
+        "per_fold": {
+          "r2022": -3.6886148495729465e-05,
+          "r2023": -7.157945931945964e-05,
+          "r2024": 0.00022133710940713813
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -0.34, r2023 +0.32, r2024 +0.66",
+        "(e) 부트스트랩 하한(5%) -0.24 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.007313385828357321
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "334b109b285dca99",
+      "redundant": false
+    },
+    {
+      "id": "champ_regime_step",
+      "kind": "pair",
+      "members": [
+        "champion",
+        "task6_regime_step"
+      ],
+      "weight_fit": {
+        "procedure": "numpy 시플렉스 격자 w≥0, Σw=1, step=0.05, 선택 폴드 BSS 최대화",
+        "fit_fold": "primary",
+        "weights": [
+          1.0,
+          0.0
+        ],
+        "weights_by_member": {
+          "champion": 1.0,
+          "task6_regime_step": 0.0
+        },
+        "selection_bss": 774.1586482109209,
+        "member_selection_bss": {
+          "champion": 774.1586482109209,
+          "task6_regime_step": 706.8669631104863
+        },
+        "labels_used": [
+          "selection_fold_only"
+        ],
+        "held_out_folds_untouched": true
+      },
+      "per_fold": {
+        "r2022": {
+          "blend_bss": 607.229065801873,
+          "champion_bss": 607.229065801873,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5071971002537589,
+          "champion_corr": 0.9999999999999998,
+          "member_pairwise_corr": {
+            "0_1": 0.96208501932191
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2023": {
+          "blend_bss": 571.8306285905417,
+          "champion_bss": 571.8306285905417,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.5017768504597737,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9499211976980488
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        },
+        "r2024": {
+          "blend_bss": 724.1432877117759,
+          "champion_bss": 724.1432877117759,
+          "delta_vs_champion": 0.0,
+          "pred_mean": 0.49778066395679244,
+          "champion_corr": 1.0,
+          "member_pairwise_corr": {
+            "0_1": 0.9663370929235017
+          },
+          "mean_shift": 0.0,
+          "clipping": {
+            "frac_below_0.30_pre": 0.0,
+            "frac_above_0.70_pre": 0.0,
+            "frac_below_0.30_post": 0.0,
+            "frac_above_0.70_post": 0.0,
+            "clip_bounds": [
+              0.3,
+              0.7
+            ],
+            "note": "진단 전용 — 검증 BSS 는 raw 시그모이드(캘리브레이션 불변), C_LOGIT=-0.0404 는 제출 정렬 상수"
+          }
+        }
+      },
+      "diversity": {
+        "max_pairwise_member_corr": 0.9663370929235017,
+        "threshold_corr": 0.99,
+        "max_residual_alignment_sel": 0.00562416887988298,
+        "threshold_residual_align": 0.02,
+        "non_trivial": true
+      },
+      "bootstrap": {
+        "n_iter": 1000,
+        "seed": 42,
+        "pct_5": 0.0,
+        "pct_50": 0.0,
+        "pct_95": 0.0,
+        "mean": 0.0,
+        "lower_bound_gt_0": false
+      },
+      "mean_shift": {
+        "max_abs_over_held_out": 0.0,
+        "per_fold": {
+          "r2022": 0.0,
+          "r2023": 0.0,
+          "r2024": 0.0
+        }
+      },
+      "clipping": {},
+      "verdict": "rejected",
+      "reasons": [
+        "(b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 +0.00, r2023 +0.00, r2024 +0.00",
+        "(e) 부트스트랩 하한(5%) +0.00 ≤ 0 (풀링)"
+      ],
+      "residual_analysis_sel_fold": {
+        "residual_alignment": {
+          "member_0": null,
+          "member_1": 0.00562416887988298
+        },
+        "pairwise_residual_corr": {
+          "0_1": NaN
+        },
+        "note": "선택 폴드 라벨만 사용하는 진단 (홀드아웃 라벨 미사용)"
+      },
+      "candidate_id": "3ff6761b94d786c3",
+      "redundant": true,
+      "redundant_note": "가중치 0 멤버 ['task6_regime_step'] — 유효 블렌드는 나머지 멤버만으로 구성된 것과 동일 (중복 후보)"
+    }
+  ],
+  "acceptance": {
+    "accepted_ids": [
+      "champ_cat",
+      "champ_xgb_cat",
+      "lgb_mlp_cat"
+    ],
+    "rejected_ids": [
+      "lgb_mlp",
+      "champ_xgb",
+      "lgb_mlp_xgb",
+      "champ_batter_debut_league_impute_success",
+      "champ_count_state_abs_regime",
+      "champ_debut_league_impute_success",
+      "champ_f_game_post2023_label_mapping",
+      "champ_league_trend_ratio_middle",
+      "champ_log1p_usage_pitcher",
+      "champ_season_dev_success_pitcher",
+      "champ_usage_rank_pitcher",
+      "champ_uniform",
+      "champ_linear_recent",
+      "champ_exp_recent",
+      "champ_regime_step"
+    ],
+    "redundant_accepted_ids": [
+      "champ_xgb_cat"
+    ],
+    "deployment_note": "수락 블렌드에 catboost 가 포함됨 — Task 5 기록상 평가환경 기본 패키지에 catboost 가 없어 배포 등급 install_risk. Todo 8 에서 requirements.txt 설치 검증(오프라인, 10분 한도)이 승인 선행 조건. 미충족 시 챔피언 컨트롤로 롤백.",
+    "baseline_statement": "전이 게이트 통과 블렌드가 있더라도 단독 BSS 가 아닌 홀드아웃 Δ로만 승격. 통과 없었을 경우 챔피언 컨트롤(LGB×0.51 + MLP×0.49)이 Todo 8 제출 기준선. 기각 후보의 OOF 행렬은 블렌드 분석 전용이며 승인된 것처럼 재도입하지 않는다."
+  },
+  "leakage_guard": {
+    "fit_allowed_folds": [
+      "primary"
+    ],
+    "no_2025_in_any_validation_mask": true,
+    "leakage_injection_ran": false,
+    "force_negative_ran": false
+  },
+  "environment": {
+    "python": "3.11.3",
+    "numpy": "1.26.4",
+    "pandas": "3.0.5"
+  },
+  "git_commit": "c392f060abb34fd6d8fc1da4625a952842875a8c",
+  "recorded_at_utc": "2026-08-13T23:59:20.513571+00:00",
+  "total_time_s": 312.66689348220825
+}

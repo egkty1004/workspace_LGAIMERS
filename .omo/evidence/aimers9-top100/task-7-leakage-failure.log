@@ -1,0 +1,3 @@
+[leakage-injection] exit 2 (LeakageError) at 2026-08-13T23:30:29.604982+00:00
+fit_fold=r2022 는 홀드아웃 — 선택 폴드 primary 만 허용.
+[LEAKAGE] 가중치 피팅 폴드 'r2022' 는 홀드아웃 폴드입니다. 피팅은 선택 폴드 'primary' 만 허용. (누수 가드)

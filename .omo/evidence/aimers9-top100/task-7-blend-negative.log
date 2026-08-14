@@ -1,0 +1,191 @@
+[blend_selector] Todo 7 — 홀드아웃 앙상블 선택 (smoke=False, leakage_injection=False, force_negative=True)
+[blend_selector] 폴드: selection=primary held_out=['r2022', 'r2023', 'r2024'] | 라벨 로드 OK (2025 부재 확인)
+[manifest] 등록 17/17 멤버: ['catboost', 'champion', 'lgb', 'mlp', 'task4_batter_debut_league_impute_success', 'task4_count_state_abs_regime', 'task4_debut_league_impute_success', 'task4_f_game_post2023_label_mapping', 'task4_league_trend_ratio_middle', 'task4_log1p_usage_pitcher', 'task4_season_dev_success_pitcher', 'task4_usage_rank_pitcher', 'task6_exp_recent', 'task6_linear_recent', 'task6_regime_step', 'task6_uniform', 'xgboost']
+[manifest] OK    champion (task=Task 2, digest=OK)
+[manifest] OK    lgb (task=Task 2, digest=OK)
+[manifest] OK    mlp (task=Task 2, digest=OK)
+[manifest] OK    xgboost (task=Task 5, digest=OK)
+[manifest] OK    catboost (task=Task 5, digest=OK)
+[manifest] OK    task4_batter_debut_league_impute_success (task=Task 4, digest=OK)
+[manifest] OK    task4_count_state_abs_regime (task=Task 4, digest=OK)
+[manifest] OK    task4_debut_league_impute_success (task=Task 4, digest=OK)
+[manifest] OK    task4_f_game_post2023_label_mapping (task=Task 4, digest=OK)
+[manifest] OK    task4_league_trend_ratio_middle (task=Task 4, digest=OK)
+[manifest] OK    task4_log1p_usage_pitcher (task=Task 4, digest=OK)
+[manifest] OK    task4_season_dev_success_pitcher (task=Task 4, digest=OK)
+[manifest] OK    task4_usage_rank_pitcher (task=Task 4, digest=OK)
+[manifest] OK    task6_uniform (task=Task 6, digest=OK)
+[manifest] OK    task6_linear_recent (task=Task 6, digest=OK)
+[manifest] OK    task6_exp_recent (task=Task 6, digest=OK)
+[manifest] OK    task6_regime_step (task=Task 6, digest=OK)
+[blend_selector] 후보 18개: lgb_mlp, champ_xgb, champ_cat, champ_xgb_cat, lgb_mlp_xgb, lgb_mlp_cat, champ_batter_debut_league_impute_success, champ_count_state_abs_regime, champ_debut_league_impute_success, champ_f_game_post2023_label_mapping, champ_league_trend_ratio_middle, champ_log1p_usage_pitcher, champ_season_dev_success_pitcher, champ_usage_rank_pitcher, champ_uniform, champ_linear_recent, champ_exp_recent, champ_regime_step
+
+=== candidate lgb_mlp (members=['lgb', 'mlp'], kind=recovery) ===
+  weight_fit(selection=primary): lgb=0.50, mlp=0.50 | sel_bss=774.137 | candidate_id=2c482cd2407397d8
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4983 Δmean=-0.0035 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5023 Δmean=+0.0045 corr_champ=-1.000
+  bootstrap(pooled): p5=-2382.40 p50=-2324.36 p95=-2274.05 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.935 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2382.40 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_xgb (members=['champion', 'xgboost'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, xgboost=0.00 | sel_bss=774.159 | candidate_id=9b1203a773794b9a
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.971 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_cat (members=['champion', 'catboost'], kind=pair) ===
+  weight_fit(selection=primary): champion=0.85, catboost=0.15 | sel_bss=775.747 | candidate_id=691a2947b2b1879c
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4927 Δmean=-0.0145 corr_champ=-0.999
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5021 Δmean=+0.0043 corr_champ=-0.999
+  bootstrap(pooled): p5=-2392.53 p50=-2335.13 p95=-2284.20 LB>0=False
+  mean_shift max|Δmean|=0.0145 | diversity max_pairwise_corr=0.980 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0145 > 0.005; (e) 부트스트랩 하한(5%) -2392.53 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_xgb_cat (members=['champion', 'xgboost', 'catboost'], kind=triple) ===
+  weight_fit(selection=primary): champion=0.85, xgboost=0.00, catboost=0.15 | sel_bss=775.747 | candidate_id=e8ab61af0eb60fa6
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4927 Δmean=-0.0145 corr_champ=-0.999
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5021 Δmean=+0.0043 corr_champ=-0.999
+  bootstrap(pooled): p5=-2392.53 p50=-2335.13 p95=-2284.20 LB>0=False
+  mean_shift max|Δmean|=0.0145 | diversity max_pairwise_corr=0.980 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0145 > 0.005; (e) 부트스트랩 하한(5%) -2392.53 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate lgb_mlp_xgb (members=['lgb', 'mlp', 'xgboost'], kind=triple) ===
+  weight_fit(selection=primary): lgb=0.45, mlp=0.50, xgboost=0.05 | sel_bss=774.154 | candidate_id=f4cde21f7d05b1d2
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0035 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5023 Δmean=+0.0045 corr_champ=-1.000
+  bootstrap(pooled): p5=-2380.55 p50=-2322.52 p95=-2272.07 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.985 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2380.55 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate lgb_mlp_cat (members=['lgb', 'mlp', 'catboost'], kind=triple) ===
+  weight_fit(selection=primary): lgb=0.30, mlp=0.45, catboost=0.25 | sel_bss=776.463 | candidate_id=7771a019594deedd
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4927 Δmean=-0.0145 corr_champ=-0.998
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4984 Δmean=-0.0034 corr_champ=-0.999
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5025 Δmean=+0.0048 corr_champ=-0.998
+  bootstrap(pooled): p5=-2394.08 p50=-2336.36 p95=-2285.64 LB>0=False
+  mean_shift max|Δmean|=0.0145 | diversity max_pairwise_corr=0.976 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0145 > 0.005; (e) 부트스트랩 하한(5%) -2394.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_batter_debut_league_impute_success (members=['champion', 'task4_batter_debut_league_impute_success'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, task4_batter_debut_league_impute_success=0.00 | sel_bss=774.159 | candidate_id=3e60ab9b00160b54
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.983 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_count_state_abs_regime (members=['champion', 'task4_count_state_abs_regime'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, task4_count_state_abs_regime=0.00 | sel_bss=774.159 | candidate_id=83d3df98811c1936
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.983 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_debut_league_impute_success (members=['champion', 'task4_debut_league_impute_success'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, task4_debut_league_impute_success=0.00 | sel_bss=774.159 | candidate_id=dd6522b77fb4d953
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.982 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_f_game_post2023_label_mapping (members=['champion', 'task4_f_game_post2023_label_mapping'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, task4_f_game_post2023_label_mapping=0.00 | sel_bss=774.159 | candidate_id=a9df5aabdf0c3cb3
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.984 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_league_trend_ratio_middle (members=['champion', 'task4_league_trend_ratio_middle'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, task4_league_trend_ratio_middle=0.00 | sel_bss=774.159 | candidate_id=3fe52461cf3de06a
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.983 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_log1p_usage_pitcher (members=['champion', 'task4_log1p_usage_pitcher'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, task4_log1p_usage_pitcher=0.00 | sel_bss=774.159 | candidate_id=ec452c9a7ba56372
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.983 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_season_dev_success_pitcher (members=['champion', 'task4_season_dev_success_pitcher'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, task4_season_dev_success_pitcher=0.00 | sel_bss=774.159 | candidate_id=5871d1dd52f6d8ee
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.975 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_usage_rank_pitcher (members=['champion', 'task4_usage_rank_pitcher'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, task4_usage_rank_pitcher=0.00 | sel_bss=774.159 | candidate_id=dcbc445838d9540f
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.983 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_uniform (members=['champion', 'task6_uniform'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, task6_uniform=0.00 | sel_bss=774.159 | candidate_id=0febdc74e062d4c8
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.980 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_linear_recent (members=['champion', 'task6_linear_recent'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, task6_linear_recent=0.00 | sel_bss=774.159 | candidate_id=e9bd1d1c6524c78a
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.968 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_exp_recent (members=['champion', 'task6_exp_recent'], kind=pair) ===
+  weight_fit(selection=primary): champion=0.95, task6_exp_recent=0.05 | sel_bss=774.172 | candidate_id=334b109b285dca99
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4983 Δmean=-0.0035 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5020 Δmean=+0.0042 corr_champ=-1.000
+  bootstrap(pooled): p5=-2391.96 p50=-2334.06 p95=-2283.43 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.966 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2391.96 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+=== candidate champ_regime_step (members=['champion', 'task6_regime_step'], kind=pair) ===
+  weight_fit(selection=primary): champion=1.00, task6_regime_step=0.00 | sel_bss=774.159 | candidate_id=3ff6761b94d786c3
+  [r2022   ] blend=     0.0 champ=   607.2 Δ=-607.23 mean=0.4928 Δmean=-0.0144 corr_champ=-1.000
+  [r2023   ] blend=     0.0 champ=   571.8 Δ=-571.83 mean=0.4982 Δmean=-0.0036 corr_champ=-1.000
+  [r2024   ] blend=     0.0 champ=   724.1 Δ=-724.14 mean=0.5022 Δmean=+0.0044 corr_champ=-1.000
+  bootstrap(pooled): p5=-2383.08 p50=-2325.10 p95=-2274.79 LB>0=False
+  mean_shift max|Δmean|=0.0144 | diversity max_pairwise_corr=0.966 non_trivial=True
+  verdict: rejected — 사유: (b) R-only 전이 미충족 (ΔBSS > +1.0 각각): r2022 -607.23, r2023 -571.83, r2024 -724.14; (c) 평균 이동 위반: max|Δmean| 0.0144 > 0.005; (e) 부트스트랩 하한(5%) -2383.08 ≤ 0 (풀링); (주입) --force-negative-transfer: 홀드아웃 로짓 반전 — 전이 게이트 기각 예상
+
+[blend_selector] 전이 게이트 결과: accepted 0/18
+[blend_selector] 승격 가능한 블렌드 없음 — 챔피언 컨트롤 (LGB×0.51 + MLP×0.49, w=0.51) 이 Todo 8 제출 기준선 유지.
+
+[blend_selector] 증거 JSON → /home/2022113165/workspace_LGAIMERS/.omo/evidence/aimers9-top100/task-7-blend-negative.json
+[blend_selector] 증거 LOG  → /home/2022113165/workspace_LGAIMERS/.omo/evidence/aimers9-top100/task-7-blend-negative.log
+[blend_selector] 총 298s
+[force-negative-transfer] PASS — 강제 음성 전이에서 전부 rejected (전이 게이트 기각 확인)
