@@ -5,16 +5,24 @@
   "rank_100_cutoff_note": "LIVE rank-100 cutoff (USER-CONFIRMED from the leaderboard). Captured 2026-08-14. Plan TL;DR value 1066.47756 is HISTORICAL reference only - never hardcode. Unknown = BLOCK (cutoff_unknown).",
   "date_captured": "2026-08-14T12:00:00+09:00",
   "date_captured_note": "ISO timestamp when rank_100_cutoff was captured on the live leaderboard (2026-08-14 KST). Must be within 24h TTL of a check run, else BLOCK (cutoff_stale).",
-  "current_best_public_score": 979.31,
+  "current_best_public_score": 988.3196750794,
   "current_best_public_score_note": "Champion V4 measured Public 979.31 (provenance.json champion_rollback.note, real measurement). Update to the best REAL public score when it changes.",
-  "qualified_candidate_public_score": null,
+  "qualified_candidate_public_score": 988.3196750794,
   "qualified_candidate_public_score_note": "Public score of the qualified candidate (champ_cat) IF already submitted - leave null until a real score is reported.",
   "allow_below_cutoff": false,
   "allow_below_cutoff_note": "Explicit override to permit submission when target margin <= 0. Default false; set true only with user intent.",
   "timezone_for_daily_key": "Asia/Seoul",
-  "submissions_by_date": {},
+  "submissions_by_date": {
+    "2026-08-14": 1
+  },
   "submissions_by_date_note": "One entry per local calendar day (Asia/Seoul): {YYYY-MM-DD: count}. Runner enforces DAILY_SUBMISSION_LIMIT=1. Add a row AFTER a real submission (user action).",
-  "last_submission": null,
+  "last_submission": {
+    "date": "2026-08-14",
+    "file_model": "submit_champ_cat.zip (champ_cat: champion x0.85 + catboost x0.15)",
+    "public_score": 988.3196750794,
+    "runtime_s": 19,
+    "verdict": "improved_vs_champion (+9.01 over 979.31); below top-100 cutoff 1077.03"
+  },
   "last_submission_note": "{date, file_model, public_score, verdict} of the most recent real submission - user fills after DACON returns a score.",
   "qualified_package": {
     "candidate_id": "691a2947b2b1879c",
