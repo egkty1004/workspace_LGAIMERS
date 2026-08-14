@@ -14,7 +14,7 @@
   7) 챔피언 구성요소(0.51·LGB+0.49·MLP)가 GIHO extract script.py 와 일치 (5행, < 1e-6)
      → byte-frozen 모델 복사 무결성 증명
   8) zip 레이아웃: 필수 최상위 항목만 존재, 잡 파일(__pycache__/.npy/로그) 부재
-  9) provenance.json 과 model/* sha256 일치 (candidate_id 7771a019594deedd)
+  9) provenance.json 과 model/* sha256 일치 (candidate_id 5890a4c54f502c4e)
   10) migration_audit.py --strict PASS 유지
 
 사용법:
@@ -41,10 +41,10 @@ import pandas as pd
 REPO = Path(__file__).resolve().parent
 PROJECT_ROOT = REPO.parent
 
-# lgb_mlp_cat 블렌드 상수 (Todo 7: lgb×0.30 + mlp×0.45 + catboost×0.25, 로짓 공간)
+# lgb_mlp_cat 블렌드 상수 (Todo 7b 스윕 승자: lgb×0.30 + mlp×0.35 + catboost×0.35, 로짓 공간)
 W_LGB = 0.30
-W_MLP = 0.45
-W_CAT = 0.25
+W_MLP = 0.35
+W_CAT = 0.35
 C_LOGIT = -0.0404       # 챔피언 정책 상수 (동결)
 CLIP_LO, CLIP_HI = 0.30, 0.70
 SEEDS = list(range(42, 52))
@@ -214,7 +214,7 @@ def check_full_245k(submit_dir: Path, out245: Path) -> tuple[bool, dict, pd.Seri
 # 3) 참조 계산 (독립 구현 — 동일 모델 + 공용 전처리, script.py 재실행 아님)
 # ────────────────────────────────────────────────────────────────────────────
 def reference_predict(submit_dir: Path, test_path: Path) -> np.ndarray:
-    """lgb_mlp_cat 독립 참조: z = 0.30*z_lgb + 0.45*z_mlp + 0.25*z_cat."""
+    """lgb_mlp_cat 독립 참조: z = 0.30*z_lgb + 0.35*z_mlp + 0.35*z_catboost."""
     sys.path.insert(0, str(submit_dir))
     import common as sub_common  # type: ignore  # noqa: F401
     import mlp_model as sub_mlp  # type: ignore  # noqa: F401
@@ -354,7 +354,7 @@ def check_provenance(submit_dir: Path) -> tuple[bool, dict]:
             problems.append(f"{rel}: 파일 없음")
         elif _sha256(path) != expected:
             problems.append(f"{rel}: sha256 불일치")
-    ok = not problems and prov.get("candidate_id") == "7771a019594deedd"
+    ok = not problems and prov.get("candidate_id") == "5890a4c54f502c4e"
     print(f"[{'PASS' if ok else 'FAIL'}] provenance: candidate={prov.get('candidate_id')} "
           f"hashed_files={len(hashes)} problems={problems}")
     return ok, {"candidate_id": prov.get("candidate_id"),
@@ -380,7 +380,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--submission-dir", default=os.environ.get("LGA_SUBMIT_DIR"))
     args = parser.parse_args(argv)
     submit_dir = Path(args.submission_dir or
-                      REPO / "submit_lgb_mlp_cat_20260814-2006").resolve()
+                      REPO / "submit_lgb_mlp_cat_20260814-2258").resolve()
     print("=" * 72)
     print(f"패키지 검증기: {submit_dir}")
     print("=" * 72)
@@ -462,7 +462,7 @@ def main(argv: list[str]) -> int:
         "schema_version": 1,
         "task": "aimers9-top100/task-8-package-lgbmlpcat",
         "submission_dir": str(submit_dir.relative_to(PROJECT_ROOT)),
-        "candidate": {"id": "lgb_mlp_cat", "candidate_id": "7771a019594deedd",
+        "candidate": {"id": "lgb_mlp_cat", "candidate_id": "5890a4c54f502c4e",
                       "weights": {"lgb": W_LGB, "mlp": W_MLP, "catboost": W_CAT},
                       "c_logit": C_LOGIT, "clip": [CLIP_LO, CLIP_HI],
                       "seeds": SEEDS,

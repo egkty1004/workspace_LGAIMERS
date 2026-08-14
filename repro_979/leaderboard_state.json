@@ -25,10 +25,10 @@
   },
   "last_submission_note": "{date, file_model, public_score, verdict} of the most recent real submission - user fills after DACON returns a score.",
   "qualified_package": {
-    "candidate_id": "691a2947b2b1879c",
-    "candidate": "champ_cat",
-    "package_dir": "/home/2022113165/workspace_LGAIMERS/repro_979/submit_champ_cat_20260814-0929",
-    "qualification_digest": "431a8c93f6c3cf1debd5b39c5d0ae6c35d3abaa9e3dccfebadf82f4859dd4ae2",
+    "candidate_id": "5890a4c54f502c4e",
+    "candidate": "lgb_mlp_cat",
+    "package_dir": "/home/2022113165/workspace_LGAIMERS/repro_979/submit_lgb_mlp_cat_20260814-2258",
+    "qualification_digest": "e3e047dde80f28b31bb9b98b498e37c9ca95cca80686e23207fe875b50487f72",
     "qualification_date": "2026-08-14",
     "package_validated": true
   },

@@ -1,0 +1,530 @@
+{
+  "schema_version": 1,
+  "task": "aimers9-top100/task-10-catboost9-schema",
+  "variant": "catboost9",
+  "mode": "full",
+  "smoke": false,
+  "seeds_requested": [
+    42,
+    47
+  ],
+  "folds": [
+    "primary",
+    "r2022",
+    "r2023",
+    "r2024"
+  ],
+  "r_folds": [
+    "r2022",
+    "r2023",
+    "r2024"
+  ],
+  "categorical_schema": {
+    "n_cats": 9,
+    "assertion": "exactly 9 unique categorical names asserted",
+    "cat_features": [
+      "pitcher_id",
+      "batter_id",
+      "pitcher_team_id",
+      "batter_team_id",
+      "top_bottom",
+      "game_type",
+      "base_state",
+      "platoon",
+      "count_state"
+    ],
+    "source": "qualification_runner.MLP_CATS (model/mlp_meta.json frozen, 9)",
+    "vs_prior": {
+      "prior_catboost_cats": [
+        "top_bottom",
+        "game_type",
+        "base_state",
+        "platoon",
+        "count_state"
+      ],
+      "added_id_fields": [
+        "pitcher_id",
+        "batter_id",
+        "pitcher_team_id",
+        "batter_team_id"
+      ],
+      "meaning": "native ordered target statistics(CTR) on high-cardinality ID fields pitcher_id/batter_id/pitcher_team_id/batter_team_id + one_hot/low-card CTR on top_bottom/game_type/base_state/platoon/count_state"
+    },
+    "dtype_policy": {
+      "version": 1,
+      "rule": "categorical column dtype must be category or integer; float dtype rejected (no silent numeric coercion); null count must be 0",
+      "report_all_rows": {
+        "pitcher_id": {
+          "dtype": "int32",
+          "n_nulls_all": 0,
+          "n_unique_all": 792,
+          "is_integer": true,
+          "is_category": false
+        },
+        "batter_id": {
+          "dtype": "int32",
+          "n_nulls_all": 0,
+          "n_unique_all": 830,
+          "is_integer": true,
+          "is_category": false
+        },
+        "pitcher_team_id": {
+          "dtype": "int32",
+          "n_nulls_all": 0,
+          "n_unique_all": 13,
+          "is_integer": true,
+          "is_category": false
+        },
+        "batter_team_id": {
+          "dtype": "int32",
+          "n_nulls_all": 0,
+          "n_unique_all": 13,
+          "is_integer": true,
+          "is_category": false
+        },
+        "top_bottom": {
+          "dtype": "category",
+          "n_nulls_all": 0,
+          "n_unique_all": 2,
+          "is_integer": false,
+          "is_category": true
+        },
+        "game_type": {
+          "dtype": "category",
+          "n_nulls_all": 0,
+          "n_unique_all": 2,
+          "is_integer": false,
+          "is_category": true
+        },
+        "base_state": {
+          "dtype": "category",
+          "n_nulls_all": 0,
+          "n_unique_all": 8,
+          "is_integer": false,
+          "is_category": true
+        },
+        "platoon": {
+          "dtype": "category",
+          "n_nulls_all": 0,
+          "n_unique_all": 4,
+          "is_integer": false,
+          "is_category": true
+        },
+        "count_state": {
+          "dtype": "category",
+          "n_nulls_all": 0,
+          "n_unique_all": 12,
+          "is_integer": false,
+          "is_category": true
+        }
+      }
+    }
+  },
+  "hyperparameters": {
+    "params_base": {
+      "loss_function": "Logloss",
+      "eval_metric": "Logloss",
+      "learning_rate": 0.05,
+      "depth": 7,
+      "l2_leaf_reg": 3.0,
+      "bootstrap_type": "Bernoulli",
+      "subsample": 0.8,
+      "random_strength": 1.0,
+      "thread_count": 32,
+      "allow_writing_files": false,
+      "verbose": false
+    },
+    "iterations": 4000,
+    "od_type": "Iter",
+    "od_wait": 100,
+    "use_best_model": true,
+    "random_seed": "per seed",
+    "example_params_without_seed": {
+      "loss_function": "Logloss",
+      "eval_metric": "Logloss",
+      "learning_rate": 0.05,
+      "depth": 7,
+      "l2_leaf_reg": 3.0,
+      "bootstrap_type": "Bernoulli",
+      "subsample": 0.8,
+      "random_strength": 1.0,
+      "thread_count": 32,
+      "allow_writing_files": false,
+      "verbose": false,
+      "iterations": 4000,
+      "od_type": "Iter",
+      "od_wait": 100
+    }
+  },
+  "cache": {
+    "dir": "cache/qualification/catboost9",
+    "digest": "a41e9b220d8b12c6a74138c3118b21c162e7c4c73493b2680be98f513d056ea0",
+    "digest_components": [
+      "cat_schema (names+order)",
+      "dtype_policy_version",
+      "features",
+      "seeds",
+      "folds+fold_definitions",
+      "params_digest"
+    ],
+    "stale_guard": "digest mismatch → overwrite refused (--overwrite-cache only)",
+    "note": "기존 cache/qualification/catboost/ (5종) 캐시 미접촉 — 별도 variant"
+  },
+  "integrity": {
+    "gate": "PASS",
+    "feature_contract": {
+      "ok": true,
+      "detail": "피처 49개 / LGB cats 5 / MLP cats 9 — 동결 아티팩트 READ 후 계약 대조"
+    },
+    "cat_schema_asserted": true,
+    "leakage_guard": {
+      "no_2025_in_any_validation_mask": true,
+      "no_2025_in_any_training_mask": true
+    },
+    "expected_n_va_matched": {
+      "primary": [
+        true,
+        253507
+      ],
+      "r2022": [
+        true,
+        217024
+      ],
+      "r2023": [
+        true,
+        219839
+      ],
+      "r2024": [
+        true,
+        223497
+      ]
+    }
+  },
+  "bss_policy": {
+    "metric": "BSS (common.score)",
+    "transform": "raw sigmoid — C_LOGIT 무적용 (제출 정렬 상수, Task 2 규약 유지)",
+    "c_logit_applied": false
+  },
+  "per_fold": {
+    "primary": {
+      "fold": "primary",
+      "variant": "catboost9",
+      "digest": "a41e9b220d8b12c6a74138c3118b21c162e7c4c73493b2680be98f513d056ea0",
+      "seeds": [
+        42,
+        47
+      ],
+      "n_rows": 253507,
+      "bss": 617.7551080470467,
+      "pred_mean": 0.49698614108082617,
+      "logits_digest": "089107b48169bcacb1bf942c9a22c18afc5ba1beb55adf59ed453b7c0b1e5df4",
+      "logits_path": "cache/qualification/catboost9/primary.npy",
+      "runtime_s": 198.77,
+      "inputs_sha256": "37459267f45a381fcf2b915d6e48a4b39e1c35ebd9c7d9bce4263fb6dee44196",
+      "dtype_report": {
+        "pitcher_id": {
+          "dtype": "int32",
+          "n_unique_train": 711,
+          "n_nulls_train": 0
+        },
+        "batter_id": {
+          "dtype": "int32",
+          "n_unique_train": 742,
+          "n_nulls_train": 0
+        },
+        "pitcher_team_id": {
+          "dtype": "int32",
+          "n_unique_train": 12,
+          "n_nulls_train": 0
+        },
+        "batter_team_id": {
+          "dtype": "int32",
+          "n_unique_train": 12,
+          "n_nulls_train": 0
+        },
+        "top_bottom": {
+          "dtype": "category",
+          "n_unique_train": 2,
+          "n_nulls_train": 0
+        },
+        "game_type": {
+          "dtype": "category",
+          "n_unique_train": 2,
+          "n_nulls_train": 0
+        },
+        "base_state": {
+          "dtype": "category",
+          "n_unique_train": 8,
+          "n_nulls_train": 0
+        },
+        "platoon": {
+          "dtype": "category",
+          "n_unique_train": 4,
+          "n_nulls_train": 0
+        },
+        "count_state": {
+          "dtype": "category",
+          "n_unique_train": 12,
+          "n_nulls_train": 0
+        }
+      },
+      "per_seed": {
+        "42": {
+          "best_iteration": 68,
+          "bss": 576.4114123725128,
+          "runtime_s": 83.12
+        },
+        "47": {
+          "best_iteration": 153,
+          "bss": 635.5230654853217,
+          "runtime_s": 113.31
+        }
+      }
+    },
+    "r2022": {
+      "fold": "r2022",
+      "variant": "catboost9",
+      "digest": "a41e9b220d8b12c6a74138c3118b21c162e7c4c73493b2680be98f513d056ea0",
+      "seeds": [
+        42,
+        47
+      ],
+      "n_rows": 217024,
+      "bss": 508.21437814563274,
+      "pred_mean": 0.5072765952040799,
+      "logits_digest": "e4f00e959488f15bece586747bf17fa4daf5deb562e71f96d6535ab5644ebc30",
+      "logits_path": "cache/qualification/catboost9/r2022.npy",
+      "runtime_s": 87.65,
+      "inputs_sha256": "e642ed51d304860b1da2bbf93a984163d5d275fbc13afc88e7f1807ad1585d42",
+      "dtype_report": {
+        "pitcher_id": {
+          "dtype": "int32",
+          "n_unique_train": 440,
+          "n_nulls_train": 0
+        },
+        "batter_id": {
+          "dtype": "int32",
+          "n_unique_train": 428,
+          "n_nulls_train": 0
+        },
+        "pitcher_team_id": {
+          "dtype": "int32",
+          "n_unique_train": 10,
+          "n_nulls_train": 0
+        },
+        "batter_team_id": {
+          "dtype": "int32",
+          "n_unique_train": 10,
+          "n_nulls_train": 0
+        },
+        "top_bottom": {
+          "dtype": "category",
+          "n_unique_train": 2,
+          "n_nulls_train": 0
+        },
+        "game_type": {
+          "dtype": "category",
+          "n_unique_train": 1,
+          "n_nulls_train": 0
+        },
+        "base_state": {
+          "dtype": "category",
+          "n_unique_train": 8,
+          "n_nulls_train": 0
+        },
+        "platoon": {
+          "dtype": "category",
+          "n_unique_train": 4,
+          "n_nulls_train": 0
+        },
+        "count_state": {
+          "dtype": "category",
+          "n_unique_train": 12,
+          "n_nulls_train": 0
+        }
+      },
+      "per_seed": {
+        "42": {
+          "best_iteration": 140,
+          "bss": 506.4042769217347,
+          "runtime_s": 50.87
+        },
+        "47": {
+          "best_iteration": 68,
+          "bss": 489.1271555475085,
+          "runtime_s": 35.39
+        }
+      }
+    },
+    "r2023": {
+      "fold": "r2023",
+      "variant": "catboost9",
+      "digest": "a41e9b220d8b12c6a74138c3118b21c162e7c4c73493b2680be98f513d056ea0",
+      "seeds": [
+        42,
+        47
+      ],
+      "n_rows": 219839,
+      "bss": 429.9082302269941,
+      "pred_mean": 0.5036022295787996,
+      "logits_digest": "49125c3dac7362dad8bc353dab63a4d99a52d773adabdd566db92f35f6d60db0",
+      "logits_path": "cache/qualification/catboost9/r2023.npy",
+      "runtime_s": 93.2,
+      "inputs_sha256": "7c96f01b73f8b529c2845761104d2c664d98b5ec7f1f854f5d807292097faabe",
+      "dtype_report": {
+        "pitcher_id": {
+          "dtype": "int32",
+          "n_unique_train": 502,
+          "n_nulls_train": 0
+        },
+        "batter_id": {
+          "dtype": "int32",
+          "n_unique_train": 486,
+          "n_nulls_train": 0
+        },
+        "pitcher_team_id": {
+          "dtype": "int32",
+          "n_unique_train": 10,
+          "n_nulls_train": 0
+        },
+        "batter_team_id": {
+          "dtype": "int32",
+          "n_unique_train": 10,
+          "n_nulls_train": 0
+        },
+        "top_bottom": {
+          "dtype": "category",
+          "n_unique_train": 2,
+          "n_nulls_train": 0
+        },
+        "game_type": {
+          "dtype": "category",
+          "n_unique_train": 1,
+          "n_nulls_train": 0
+        },
+        "base_state": {
+          "dtype": "category",
+          "n_unique_train": 8,
+          "n_nulls_train": 0
+        },
+        "platoon": {
+          "dtype": "category",
+          "n_unique_train": 4,
+          "n_nulls_train": 0
+        },
+        "count_state": {
+          "dtype": "category",
+          "n_unique_train": 12,
+          "n_nulls_train": 0
+        }
+      },
+      "per_seed": {
+        "42": {
+          "best_iteration": 46,
+          "bss": 437.37039028619586,
+          "runtime_s": 42.38
+        },
+        "47": {
+          "best_iteration": 65,
+          "bss": 404.50261534242804,
+          "runtime_s": 49.33
+        }
+      }
+    },
+    "r2024": {
+      "fold": "r2024",
+      "variant": "catboost9",
+      "digest": "a41e9b220d8b12c6a74138c3118b21c162e7c4c73493b2680be98f513d056ea0",
+      "seeds": [
+        42,
+        47
+      ],
+      "n_rows": 223497,
+      "bss": 573.9698334299104,
+      "pred_mean": 0.49658799347647253,
+      "logits_digest": "8033d91decc34519bc0a52cebb2f5d53bc1290db24c45dcbcea82dc3e00d3bda",
+      "logits_path": "cache/qualification/catboost9/r2024.npy",
+      "runtime_s": 245.92,
+      "inputs_sha256": "558dab509ffd2da9c4d4e22e803543a2bbbb9c471ebeeb0b254d2d4e3e9d8ca6",
+      "dtype_report": {
+        "pitcher_id": {
+          "dtype": "int32",
+          "n_unique_train": 554,
+          "n_nulls_train": 0
+        },
+        "batter_id": {
+          "dtype": "int32",
+          "n_unique_train": 530,
+          "n_nulls_train": 0
+        },
+        "pitcher_team_id": {
+          "dtype": "int32",
+          "n_unique_train": 10,
+          "n_nulls_train": 0
+        },
+        "batter_team_id": {
+          "dtype": "int32",
+          "n_unique_train": 10,
+          "n_nulls_train": 0
+        },
+        "top_bottom": {
+          "dtype": "category",
+          "n_unique_train": 2,
+          "n_nulls_train": 0
+        },
+        "game_type": {
+          "dtype": "category",
+          "n_unique_train": 1,
+          "n_nulls_train": 0
+        },
+        "base_state": {
+          "dtype": "category",
+          "n_unique_train": 8,
+          "n_nulls_train": 0
+        },
+        "platoon": {
+          "dtype": "category",
+          "n_unique_train": 4,
+          "n_nulls_train": 0
+        },
+        "count_state": {
+          "dtype": "category",
+          "n_unique_train": 12,
+          "n_nulls_train": 0
+        }
+      },
+      "per_seed": {
+        "42": {
+          "best_iteration": 197,
+          "bss": 564.4198021151792,
+          "runtime_s": 108.42
+        },
+        "47": {
+          "best_iteration": 248,
+          "bss": 548.2000688547095,
+          "runtime_s": 135.6
+        }
+      }
+    }
+  },
+  "seed_aggregation": {
+    "seeds": [
+      42,
+      47
+    ],
+    "aggregation": "mean of per-seed logits",
+    "note": "Task 2 seed_aggregation 동일 규약"
+  },
+  "environment": {
+    "python": "3.11.3",
+    "numpy": "1.26.4",
+    "pandas": "3.0.5",
+    "lightgbm": "4.7.0",
+    "torch": "2.1.0+cu121",
+    "cuda_available": false,
+    "catboost": "1.2.10"
+  },
+  "git_commit": "d89cf6cc0ff6292b93e6c04d1ceb8a55fc6e0857",
+  "recorded_at_utc": "2026-08-14T14:25:50.255459+00:00",
+  "total_time_s": 633.61
+}

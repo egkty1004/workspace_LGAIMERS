@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "task": "aimers9-top100/task-8-package-lgbmlpcat",
+  "submission_dir": "repro_979/submit_lgb_mlp_cat_20260814-2258",
+  "candidate": {
+    "id": "lgb_mlp_cat",
+    "candidate_id": "5890a4c54f502c4e",
+    "weights": {
+      "lgb": 0.3,
+      "mlp": 0.35,
+      "catboost": 0.35
+    },
+    "c_logit": -0.0404,
+    "clip": [
+      0.3,
+      0.7
+    ],
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "champion_component": {
+      "lgb": 0.51,
+      "mlp": 0.49
+    }
+  },
+  "policy": {
+    "mean_align_tol": 0.005,
+    "champion_policy_note": "C_LOGIT=-0.0404 는 실 2025 test 분포(로컬 부재) 대상 정렬 상수. 합성 픽스처는 훈련 분포이므로 절대 목표 0.477 대신 참조 대비 |Δmean| 게이트 사용."
+  },
+  "checks": {
+    "offline_install_sim": {
+      "package": "offline-install-simulation",
+      "install_s": 0.56,
+      "pip_rc": 0,
+      "install_s_ok": true,
+      "installed": {
+        "lightgbm": "4.7.0",
+        "catboost": "1.2.10",
+        "numpy": "1.26.4",
+        "pandas": "2.0.3",
+        "scipy": "1.15.3"
+      },
+      "versions_ok": true
+    },
+    "five_row": {
+      "n_rows": 5,
+      "wall_s": 5.289821147918701,
+      "min": 0.4231069135960494,
+      "max": 0.4796782669508133,
+      "in_bounds": true
+    },
+    "full_245789": {
+      "n_rows": 245789,
+      "wall_s": 25.943232536315918,
+      "mean": 0.5141466295908544,
+      "frac_below_0.30": 0.0,
+      "frac_above_0.70": 0.0,
+      "min": 0.3064061779593754,
+      "max": 0.7,
+      "runtime_ok": true,
+      "rows_ok": true,
+      "clip_ok": true,
+      "mean_sanity_ok": true
+    },
+    "parity_script_vs_reference": {
+      "max_abs_diff": 5.551115123125783e-17,
+      "tol": 1e-06,
+      "mean_ref": 0.5141466295908544,
+      "mean_script": 0.5141466295908544
+    },
+    "mean_alignment": {
+      "abs_mean_shift": 0.0,
+      "tol": 0.005
+    },
+    "mean_alignment_vs_champion_policy": {
+      "champion_policy_mean": 0.5143436448129521,
+      "candidate_mean": 0.5141466295908544,
+      "abs_shift": 0.00019701522209769617,
+      "tol": 0.005,
+      "note": "챔피언 C_LOGIT=-0.0404 정책 하 lgb_mlp_cat 추가가 평균을 흔드는지 검증"
+    },
+    "champion_component_vs_giho": {
+      "max_abs_diff": 5.551115123125783e-17,
+      "giho_rc": 0
+    },
+    "zip_layout": {
+      "zip_path": "/home/2022113165/workspace_LGAIMERS/repro_979/cache/t8_install_sim/lgbmlpcat_fixtures/submit_lgb_mlp_cat_20260814-2258.zip",
+      "top_level": [
+        "README.md",
+        "common.py",
+        "mlp_model.py",
+        "model/",
+        "provenance.json",
+        "requirements.txt",
+        "script.py"
+      ],
+      "stray": [],
+      "missing": [],
+      "n_model_files": 33,
+      "bad_entries": [],
+      "model_files_ok": true
+    },
+    "provenance_integrity": {
+      "candidate_id": "5890a4c54f502c4e",
+      "hashed_files": 33,
+      "problems": []
+    },
+    "migration_audit_strict": {
+      "output_tail": "[PASS] executable hardcoded GPU paths: 0 / scanned files: 10576\n[WARNING] historical reference preserved: repro_979/boundary_check.py:21 — module docstring preserving the original invocation\n[WARNING] historical reference preserved: repro_979/gate_verdict.py:188 — ledger payload preserving the command that produced historical results\n[PASS] dataset headers: {'train.csv': True, 'test.csv': True, 'sample_submission.csv': True}\n[PASS] champion control files: 24 hashed\n[WARNING] environment: pandas 3.0.5 != evaluation expectation 2.0.3\n[WARNING] environment: torch CUDA unavailable; evaluation environment provides an L4 GPU with CUDA 12.8\n[INFO] evidence: /home/2022113165/workspace_LGAIMERS/.omo/evidence/aimers9-top100/task-1-portability.json\nRESULT: PASS\n"
+    }
+  },
+  "result": "PASS",
+  "recorded_at_utc": "2026-08-14T14:17:04.645219+00:00"
+}

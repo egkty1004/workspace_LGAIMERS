@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "task": "aimers9-top100/task-9-submission",
+  "decision": "BLOCK",
+  "exit_code": 1,
+  "recorded_at_utc": "2026-08-14T14:31:27.261939+00:00",
+  "git_commit": "d89cf6cc0ff6292b93e6c04d1ceb8a55fc6e0857",
+  "candidate": {
+    "candidate_id": "5890a4c54f502c4e",
+    "candidate": "lgb_mlp_cat",
+    "package_dir": "/home/2022113165/workspace_LGAIMERS/repro_979/submit_lgb_mlp_cat_20260814-2258"
+  },
+  "qualification_digest": "e3e047dde80f28b31bb9b98b498e37c9ca95cca80686e23207fe875b50487f72",
+  "qualification_digest_registered": "e3e047dde80f28b31bb9b98b498e37c9ca95cca80686e23207fe875b50487f72",
+  "package_validator": {
+    "result": "PASS",
+    "recorded_at_utc": "2026-08-14T14:17:04.645219+00:00"
+  },
+  "leaderboard": {
+    "local_today": "2026-08-14",
+    "timezone": "Asia/Seoul",
+    "rank_100_cutoff": 1077.02694,
+    "date_captured": "2026-08-14T12:00:00+09:00",
+    "current_best_public_score": 988.3196750794,
+    "qualified_candidate_public_score": 988.3196750794,
+    "target_margin": 88.70726492059998,
+    "submissions_today": 1,
+    "unused_daily_slots": 0
+  },
+  "policy": {
+    "cutoff_ttl_hours": 24,
+    "daily_submission_limit": 1,
+    "allow_below_cutoff": false,
+    "timezone_for_daily_key": "Asia/Seoul"
+  },
+  "gates": [
+    {
+      "gate": "a-package-pass",
+      "ok": true,
+      "reason": "ok",
+      "detail": "Todo 8 패키지 검증기 result == PASS"
+    },
+    {
+      "gate": "b-qualification-digest",
+      "ok": true,
+      "reason": "ok",
+      "detail": "등록 다이제스트 == 현재 패키지 재계산 (모델 파일 33건 해시 일치)"
+    },
+    {
+      "gate": "c-cutoff-freshness",
+      "ok": true,
+      "reason": "ok",
+      "detail": "컷오프 1077.02694 캡처 2026-08-14T12:00:00+09:00 (TTL 24h 이내)"
+    },
+    {
+      "gate": "d-daily-slot",
+      "ok": false,
+      "reason": "daily_slot_exhausted",
+      "detail": "2026-08-14(Asia/Seoul) 제출 1회 — 하루 1회 제한 초과/도달"
+    },
+    {
+      "gate": "e-target-margin",
+      "ok": true,
+      "reason": "ok",
+      "detail": "목표 마진 +88.71 = cutoff 1077.02694 − best 988.3196750794 > 0"
+    }
+  ],
+  "block_reasons": [
+    "daily_slot_exhausted"
+  ]
+}

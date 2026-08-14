@@ -1,0 +1,43 @@
+/home/2022113165/.local/lib/python3.11/site-packages/pandas/core/computation/expressions.py:23: UserWarning: Pandas requires version '2.10.2' or newer of 'numexpr' (version '2.8.4' currently installed).
+  from pandas.core.computation.check import NUMEXPR_INSTALLED
+/home/2022113165/.local/lib/python3.11/site-packages/pandas/core/arrays/masked.py:56: UserWarning: Pandas requires version '1.4.2' or newer of 'bottleneck' (version '1.3.5' currently installed).
+  from pandas.core import (
+========================================================================
+패키지 검증기: /home/2022113165/workspace_LGAIMERS/repro_979/submit_lgb_mlp_cat_20260814-2258
+========================================================================
+[PASS] offline install sim: 0.56s rc=0 {'lightgbm': '4.7.0', 'catboost': '1.2.10', 'numpy': '1.26.4', 'pandas': '2.0.3', 'scipy': '1.15.3'}
+[run:5row] rc=0 wall=5.3s
+    LGB 10시드: 0.3s
+    MLP 10시드: 0.2s
+    CatBoost 10시드: 0.6s
+    submission: /home/2022113165/workspace_LGAIMERS/repro_979/cache/t8_install_sim/lgbmlpcat_fixtures/out_5row.csv (5행, mean=0.4562)  (1.2s)
+[PASS] 5행: n=5 range=(0.4231,0.4797)
+[run:245k] rc=0 wall=25.9s
+    LGB 10시드: 2.4s
+    MLP 10시드: 15.5s
+    CatBoost 10시드: 1.7s
+    submission: /home/2022113165/workspace_LGAIMERS/repro_979/cache/t8_install_sim/lgbmlpcat_fixtures/out_245789.csv (245789행, mean=0.5141)  (21.7s)
+[PASS] 245,789행: n=245789 wall=25.9s(<600s) mean=0.5141 clip_lo=0.00e+00 clip_hi=0.00e+00
+[PASS] mean 정렬: |Δmean|=0.00e+00 (≤0.005)
+[PASS] parity max|Δ|=5.551e-17
+[PASS] mean 정렬 vs 챔피언 정책: champ_only=0.5143 lgb_mlp_cat=0.5141 |Δ|=1.97e-04
+[PASS] champion 구성요소 vs GIHO V4 max|Δ|=5.551e-17
+[PASS] zip 레이아웃: top=['README.md', 'common.py', 'mlp_model.py', 'model/', 'provenance.json', 'requirements.txt', 'script.py'] model_files=33 stray=[] missing=[] bad=[]
+[PASS] provenance: candidate=5890a4c54f502c4e hashed_files=33 problems=[]
+[PASS] migration_audit --strict rc=0
+    [WARNING] environment: torch CUDA unavailable; evaluation environment provides an L4 GPU with CUDA 12.8
+    [INFO] evidence: /home/2022113165/workspace_LGAIMERS/.omo/evidence/aimers9-top100/task-1-portability.json
+    RESULT: PASS
+------------------------------------------------------------------------
+[PASS] offline_install_sim
+[PASS] five_row
+[PASS] full_245789
+[PASS] parity_script_vs_reference
+[PASS] mean_alignment
+[PASS] mean_alignment_vs_champion_policy
+[PASS] champion_component_vs_giho
+[PASS] zip_layout
+[PASS] provenance_integrity
+[PASS] migration_audit_strict
+RESULT: PASS
+[evidence] /home/2022113165/workspace_LGAIMERS/.omo/evidence/aimers9-top100/task-8-package-lgbmlpcat.json

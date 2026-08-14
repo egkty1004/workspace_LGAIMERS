@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "task": "aimers9-top100/task-11-catboost9-promotion",
+  "evaluation_mode": "pure cached-OOF logit arithmetic; no training",
+  "candidate": {
+    "id": "catboost9",
+    "seeds": [42, 47],
+    "cache_config_digest": "a41e9b220d8b12c6a74138c3118b21c162e7c4c73493b2680be98f513d056ea0",
+    "source_evidence": ".omo/evidence/aimers9-top100/task-10-catboost9-schema-full.json"
+  },
+  "protocol": {
+    "selection_fold": "primary",
+    "held_out_folds": ["r2022", "r2023", "r2024"],
+    "bss_transform": "raw sigmoid; C_LOGIT not applied",
+    "screening_rule": "PASS iff primary delta(catboost9 - 5-cat) >= -10 and (all four primary logit correlations < 0.96 or champion residual-error correlation < 0.98)",
+    "residual_alignment_alternative": "Task-5 diagnostic corr(p_catboost9-p_champion, y-p_champion) >= 0.02; reported in addition to the stated residual-error-correlation rule",
+    "blend_probe_rule": "Run only after screening PASS; fit nonnegative simplex weights using primary labels only, then evaluate fixed weights on R-only folds",
+    "promotion_rule": "incremental BSS > +1 on each R-only fold versus the best accepted baseline, pooled bootstrap 5% LB > 0, and max|delta mean| <= 0.005"
+  },
+  "alignment": {
+    "gate": "PASS",
+    "fold_builder": "qualification_runner.build_folds",
+    "same_validation_masks": true,
+    "proof": "Each positional OOF vector equals the frozen validation-mask row count; catboost9 Task-10 generation and champion Task-2 provenance use the same build_folds definitions. Packed-mask SHA256 values freeze the masks used to load labels in this evaluation.",
+    "no_2025_in_validation": true,
+    "folds": {
+      "primary": {
+        "expected_rows": 253507,
+        "mask_rows": 253507,
+        "mask_sha256_packbits": "6b377708ec9d6588f746692112dc39941f5ae78e2c159e591686c57dcb6aa246",
+        "files": {
+          "catboost9": {"rows": 253507, "sha256": "089107b48169bcacb1bf942c9a22c18afc5ba1beb55adf59ed453b7c0b1e5df4", "expected_sha256": "089107b48169bcacb1bf942c9a22c18afc5ba1beb55adf59ed453b7c0b1e5df4", "digest_match": true},
+          "champion": {"rows": 253507, "sha256": "7302f5673cfbcfdfec524d174ff3eb901d89adc3b28e30989be29c1385ff5ec7", "expected_sha256": "7302f5673cfbcfdfec524d174ff3eb901d89adc3b28e30989be29c1385ff5ec7", "digest_match": true},
+          "lgb": {"rows": 253507, "sha256": "e482cc869f9964b013223e7e97828b2825a4ee722e0259454627b376d46aceda", "expected_sha256": "e482cc869f9964b013223e7e97828b2825a4ee722e0259454627b376d46aceda", "digest_match": true},
+          "mlp": {"rows": 253507, "sha256": "9504e89a94af082818f3329c270c751d24025996a629e3cd3ed934374f429e1e", "expected_sha256": "9504e89a94af082818f3329c270c751d24025996a629e3cd3ed934374f429e1e", "digest_match": true},
+          "catboost5": {"rows": 253507, "sha256": "e6470f40e2f2fe6cc705c3af5fd5b4687393a6549f6b98f99f204b76479bd660", "expected_sha256": "e6470f40e2f2fe6cc705c3af5fd5b4687393a6549f6b98f99f204b76479bd660", "digest_match": true}
+        }
+      },
+      "r2022": {
+        "expected_rows": 217024,
+        "mask_rows": 217024,
+        "mask_sha256_packbits": "fee07c470d743c45b22d9384f47f9ded85604310a7228a562954a0e2a246447c",
+        "files": {
+          "catboost9": {"rows": 217024, "sha256": "e4f00e959488f15bece586747bf17fa4daf5deb562e71f96d6535ab5644ebc30", "expected_sha256": "e4f00e959488f15bece586747bf17fa4daf5deb562e71f96d6535ab5644ebc30", "digest_match": true},
+          "champion": {"rows": 217024, "sha256": "c5e32ff829ca43b49521398df167e22007c5c3301ba5e2d78d3d8fa65794f189", "expected_sha256": "c5e32ff829ca43b49521398df167e22007c5c3301ba5e2d78d3d8fa65794f189", "digest_match": true},
+          "lgb": {"rows": 217024, "sha256": "7960fdff1216f0a275e50f063218d6ac9d07f326da916e31decd03022162e2bd", "expected_sha256": "7960fdff1216f0a275e50f063218d6ac9d07f326da916e31decd03022162e2bd", "digest_match": true},
+          "mlp": {"rows": 217024, "sha256": "fe85410baff20b33cb6dba7c7a138920a4ff375a53ec7532f88cbff29aedbb31", "expected_sha256": "fe85410baff20b33cb6dba7c7a138920a4ff375a53ec7532f88cbff29aedbb31", "digest_match": true},
+          "catboost5": {"rows": 217024, "sha256": "6a9fcdb8fe698d8cffc6589bfa131f9145512361f349fb0125e70822da12f606", "expected_sha256": "6a9fcdb8fe698d8cffc6589bfa131f9145512361f349fb0125e70822da12f606", "digest_match": true}
+        }
+      },
+      "r2023": {
+        "expected_rows": 219839,
+        "mask_rows": 219839,
+        "mask_sha256_packbits": "5d2308217590f0a48178c8e86d430fa66ec3216e3a496e245e1e49e569626003",
+        "files": {
+          "catboost9": {"rows": 219839, "sha256": "49125c3dac7362dad8bc353dab63a4d99a52d773adabdd566db92f35f6d60db0", "expected_sha256": "49125c3dac7362dad8bc353dab63a4d99a52d773adabdd566db92f35f6d60db0", "digest_match": true},
+          "champion": {"rows": 219839, "sha256": "178f6632e8ee2099e7448e7ec11d29a84155e7811ea2b057f105bbb9b50ce745", "expected_sha256": "178f6632e8ee2099e7448e7ec11d29a84155e7811ea2b057f105bbb9b50ce745", "digest_match": true},
+          "lgb": {"rows": 219839, "sha256": "ae02faa114a961dc1d7d7fce8d34097558a1a889250ba8dffc9944067fddbe44", "expected_sha256": "ae02faa114a961dc1d7d7fce8d34097558a1a889250ba8dffc9944067fddbe44", "digest_match": true},
+          "mlp": {"rows": 219839, "sha256": "c754e5c4ac4fa2365a5cbd5795f3377beb18bc4cdefd3928a987b011d0e5c87d", "expected_sha256": "c754e5c4ac4fa2365a5cbd5795f3377beb18bc4cdefd3928a987b011d0e5c87d", "digest_match": true},
+          "catboost5": {"rows": 219839, "sha256": "3bffe62d4e3da2547d07e649eab0a3d7560cf80f87e5992e2e036110192289e4", "expected_sha256": "3bffe62d4e3da2547d07e649eab0a3d7560cf80f87e5992e2e036110192289e4", "digest_match": true}
+        }
+      },
+      "r2024": {
+        "expected_rows": 223497,
+        "mask_rows": 223497,
+        "mask_sha256_packbits": "c78d82e5cf54fcaf88b13880409c9aa27f68ca49cb56b0948f45096e132751e4",
+        "files": {
+          "catboost9": {"rows": 223497, "sha256": "8033d91decc34519bc0a52cebb2f5d53bc1290db24c45dcbcea82dc3e00d3bda", "expected_sha256": "8033d91decc34519bc0a52cebb2f5d53bc1290db24c45dcbcea82dc3e00d3bda", "digest_match": true},
+          "champion": {"rows": 223497, "sha256": "5d098720d8922dcce43ef09fe81b2af28e087321d0bc74698157558eb84131cc", "expected_sha256": "5d098720d8922dcce43ef09fe81b2af28e087321d0bc74698157558eb84131cc", "digest_match": true},
+          "lgb": {"rows": 223497, "sha256": "a931358a81a0df2c4bcca0dea4b6f20a9a5b0640bfb9a083673d4d5029584c44", "expected_sha256": "a931358a81a0df2c4bcca0dea4b6f20a9a5b0640bfb9a083673d4d5029584c44", "digest_match": true},
+          "mlp": {"rows": 223497, "sha256": "c48dad0501220009b94b74a1474c8a2090c6e8c8d6edbd6bbcb4bbf9416ab1dc", "expected_sha256": "c48dad0501220009b94b74a1474c8a2090c6e8c8d6edbd6bbcb4bbf9416ab1dc", "digest_match": true},
+          "catboost5": {"rows": 223497, "sha256": "d453162ccfc3043d406b74abd45d7152c643312f0f7d126f43a5931977186798", "expected_sha256": "d453162ccfc3043d406b74abd45d7152c643312f0f7d126f43a5931977186798", "digest_match": true}
+        }
+      }
+    }
+  },
+  "standalone_bss": {
+    "primary": {"catboost9": 617.7551080470467, "champion": 774.1586482109209, "catboost5": 732.7600845669302, "delta_catboost9_vs_champion": -156.40354016387414, "delta_catboost9_vs_catboost5": -115.00497651988348},
+    "r2022": {"catboost9": 508.21437814563274, "champion": 607.229065801873, "catboost5": 591.1753518190621, "delta_catboost9_vs_champion": -99.01468765624031, "delta_catboost9_vs_catboost5": -82.96097367342941},
+    "r2023": {"catboost9": 429.9082302269941, "champion": 571.8306285905417, "catboost5": 568.3533788442885, "delta_catboost9_vs_champion": -141.9223983635476, "delta_catboost9_vs_catboost5": -138.44514861729442},
+    "r2024": {"catboost9": 573.9698334299104, "champion": 724.1432877117759, "catboost5": 728.8661761879144, "delta_catboost9_vs_champion": -150.17345428186547, "delta_catboost9_vs_catboost5": -154.89634275800404}
+  },
+  "logit_correlations": {
+    "primary": {"champion": 0.8726938105577898, "lgb": 0.874740433762961, "mlp": 0.8241141803415136, "catboost5": 0.9101175724309909},
+    "r2022": {"champion": 0.8523691753729005, "lgb": 0.8345278169866183, "mlp": 0.8281938671075704, "catboost5": 0.8664287459630233},
+    "r2023": {"champion": 0.8856629369636194, "lgb": 0.8828070631402987, "mlp": 0.8592949288292208, "catboost5": 0.8957351845254863},
+    "r2024": {"champion": 0.8823719671390574, "lgb": 0.88093284162361, "mlp": 0.8515936473103445, "catboost5": 0.8842382422042416}
+  },
+  "residual_diagnostics": {
+    "definition": {
+      "residual_error_corr_with_champion": "corr(y-p_catboost9, y-p_champion); stated strong-diversity gate is < 0.98",
+      "residual_diversity": "1 - residual_error_corr_with_champion; equivalent stated threshold is > 0.02",
+      "residual_alignment": "corr(p_catboost9-p_champion, y-p_champion); inherited Task-5 alternative threshold is >= 0.02"
+    },
+    "primary": {"residual_error_corr_with_champion": 0.9992031089895346, "residual_diversity": 0.0007968910104654281, "residual_alignment": 0.003760832887376978},
+    "r2022": {"residual_error_corr_with_champion": 0.9992781681520919, "residual_diversity": 0.0007218318479080832, "residual_alignment": 0.005928338213144544},
+    "r2023": {"residual_error_corr_with_champion": 0.9994567980757042, "residual_diversity": 0.0005432019242957997, "residual_alignment": -0.005245514406576214},
+    "r2024": {"residual_error_corr_with_champion": 0.9992916419395782, "residual_diversity": 0.0007083580604217987, "residual_alignment": -0.002210895227408381}
+  },
+  "screening_gate": {
+    "primary_quality_floor": {"threshold_delta_vs_catboost5_bss": -10.0, "actual_delta_bss": -115.00497651988348, "pass": false},
+    "primary_correlation_complementarity": {
+      "threshold_each_less_than": 0.96,
+      "values": {"champion": 0.8726938105577898, "lgb": 0.874740433762961, "mlp": 0.8241141803415136, "catboost5": 0.9101175724309909},
+      "pass": true
+    },
+    "primary_residual_error_diversity": {"threshold_corr_less_than": 0.98, "actual_corr": 0.9992031089895346, "pass": false},
+    "primary_residual_alignment_task5_alternative": {"threshold_at_least": 0.02, "actual": 0.003760832887376978, "pass": false},
+    "screen_pass": false,
+    "rationale": "The candidate is diverse in raw logits, but misses the mandatory primary quality floor by 105.005 BSS beyond the allowed -10 margin. Its prediction errors remain almost identical to the champion's (corr 0.999203), and residual alignment is only 0.003761, so raw-logit decorrelation does not constitute useful residual complementarity."
+  },
+  "accepted_baseline_references": {
+    "source": ".omo/evidence/aimers9-top100/task-7-blend.json",
+    "champ_cat": {
+      "members": ["champion", "catboost5"],
+      "weights": {"champion": 0.85, "catboost5": 0.15},
+      "primary_selection_bss": 775.746820795975,
+      "r_only_bss": {"r2022": 608.6805565848952, "r2023": 573.8332291669201, "r2024": 729.6994135023826},
+      "pooled_bootstrap_5pct_lb_vs_champion": 2.0631735497200907
+    },
+    "lgb_mlp_cat": {
+      "members": ["lgb", "mlp", "catboost5"],
+      "weights": {"lgb": 0.30, "mlp": 0.45, "catboost5": 0.25},
+      "primary_selection_bss": 776.4630225207459,
+      "r_only_bss": {"r2022": 610.0393478771005, "r2023": 575.5507105916546, "r2024": 730.6576057679704},
+      "pooled_bootstrap_5pct_lb_vs_champion": 2.6728406269734477
+    },
+    "best_existing_by_r_fold": {"r2022": "lgb_mlp_cat", "r2023": "lgb_mlp_cat", "r2024": "lgb_mlp_cat"}
+  },
+  "blend_transfer_probe": {
+    "status": "SKIPPED_BY_PROTOCOL",
+    "reason": "Two-seed screening failed; protocol step 3 is conditional on screening PASS. No candidate weights were fitted and no R-only labels were consumed for candidate selection or transfer testing.",
+    "labels_used_for_weight_fitting": [],
+    "r_only_labels_used": false,
+    "candidate_results": [
+      {"id": "champion_catboost9", "members": ["champion", "catboost9"], "primary_fit_weights": null, "r_only_delta_vs_champ_cat": null, "r_only_delta_vs_lgb_mlp_cat": null, "pooled_bootstrap_5pct_lb": null, "max_abs_delta_mean": null},
+      {"id": "lgb_mlp_catboost9", "members": ["lgb", "mlp", "catboost9"], "primary_fit_weights": null, "r_only_delta_vs_champ_cat": null, "r_only_delta_vs_lgb_mlp_cat": null, "pooled_bootstrap_5pct_lb": null, "max_abs_delta_mean": null},
+      {"id": "lgb_mlp_catboost5_catboost9", "members": ["lgb", "mlp", "catboost5", "catboost9"], "primary_fit_weights": null, "r_only_delta_vs_champ_cat": null, "r_only_delta_vs_lgb_mlp_cat": null, "pooled_bootstrap_5pct_lb": null, "max_abs_delta_mean": null}
+    ],
+    "promotion_gate_evaluated": false,
+    "promotion_gate_pass": false
+  },
+  "decision": {
+    "verdict": "REJECTED",
+    "two_seed_screen": "REJECT",
+    "promote_to_10_seed_full_data_training": false,
+    "proceed_to_todo_7_8": false,
+    "rationale": "Primary catboost9 BSS is 617.755 versus 732.760 for the frozen 5-cat control (delta -115.005, below the -10 floor). Although all primary raw-logit correlations are below 0.96, residual-error correlation with champion is 0.999203 (not <0.98) and Task-5 residual alignment is 0.003761 (not >=0.02). Screening therefore fails before blend transfer."
+  }
+}

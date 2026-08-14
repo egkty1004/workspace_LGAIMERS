@@ -1,0 +1,55 @@
+[task-11] catboost9 deterministic promotion evaluation
+mode=pure cached-OOF arithmetic; training=false; candidate seeds=[42,47]
+selection_fold=primary; held_out=[r2022,r2023,r2024]
+
+[alignment] PASS
+fold      rows    mask_sha256(packbits)                                             catboost9_sha256                                                digest
+primary   253507  6b377708ec9d6588f746692112dc39941f5ae78e2c159e591686c57dcb6aa246  089107b48169bcacb1bf942c9a22c18afc5ba1beb55adf59ed453b7c0b1e5df4  MATCH
+r2022     217024  fee07c470d743c45b22d9384f47f9ded85604310a7228a562954a0e2a246447c  e4f00e959488f15bece586747bf17fa4daf5deb562e71f96d6535ab5644ebc30  MATCH
+r2023     219839  5d2308217590f0a48178c8e86d430fa66ec3216e3a496e245e1e49e569626003  49125c3dac7362dad8bc353dab63a4d99a52d773adabdd566db92f35f6d60db0  MATCH
+r2024     223497  c78d82e5cf54fcaf88b13880409c9aa27f68ca49cb56b0948f45096e132751e4  8033d91decc34519bc0a52cebb2f5d53bc1290db24c45dcbcea82dc3e00d3bda  MATCH
+cache_config_digest=a41e9b220d8b12c6a74138c3118b21c162e7c4c73493b2680be98f513d056ea0
+All champion/LGB/MLP/5-cat rows and SHA256 values also match Task-2/Task-5 evidence.
+
+[standalone BSS: raw sigmoid]
+fold      catboost9   champion    5-cat       delta9-champion  delta9-5cat
+primary    617.7551    774.1586    732.7601       -156.4035      -115.0050
+r2022     508.2144    607.2291    591.1754        -99.0147       -82.9610
+r2023     429.9082    571.8306    568.3534       -141.9224      -138.4451
+r2024     573.9698    724.1433    728.8662       -150.1735      -154.8963
+
+[catboost9 logit correlations]
+fold      champion    lgb         mlp         5-cat
+primary   0.872694    0.874740    0.824114    0.910118
+r2022     0.852369    0.834528    0.828194    0.866429
+r2023     0.885663    0.882807    0.859295    0.895735
+r2024     0.882372    0.880933    0.851594    0.884238
+
+[residual diagnostics versus champion]
+fold      corr(error9,errorChampion)  1-corr       corr(p9-pChamp,y-pChamp)
+primary                     0.999203  0.000797                      0.003761
+r2022                       0.999278  0.000722                      0.005928
+r2023                       0.999457  0.000543                     -0.005246
+r2024                       0.999292  0.000708                     -0.002211
+
+[two-seed screening]
+quality floor: primary delta9-5cat >= -10         actual=-115.004977  FAIL
+correlation: each primary family corr < 0.96      max=0.910118        PASS
+residual-error diversity: corr < 0.98             actual=0.999203     FAIL
+Task-5 residual alignment alternative: >= 0.02   actual=0.003761     FAIL
+SCREEN RESULT: REJECT
+
+[accepted baseline references; not re-fit]
+champ_cat weights={champion:0.85,5cat:0.15}; R BSS={r2022:608.680557,r2023:573.833229,r2024:729.699414}; bootstrap LB5 vs champion=+2.063174
+lgb_mlp_cat weights={lgb:0.30,mlp:0.45,5cat:0.25}; R BSS={r2022:610.039348,r2023:575.550711,r2024:730.657606}; bootstrap LB5 vs champion=+2.672841
+
+[blend transfer]
+SKIPPED_BY_PROTOCOL: screen failed. No primary candidate weights were fitted. No candidate R-only deltas, pooled bootstrap LB, or max|delta mean| were computed. R-only labels were not used for selection.
+champion+catboost9 weights=N/A deltas=N/A bootstrap_LB=N/A max|delta mean|=N/A
+lgb+mlp+catboost9 weights=N/A deltas=N/A bootstrap_LB=N/A max|delta mean|=N/A
+lgb+mlp+5cat+catboost9 weights=N/A deltas=N/A bootstrap_LB=N/A max|delta mean|=N/A
+
+[decision]
+REJECTED
+Do not promote catboost9 to 10-seed full-data training or Todo 7-8 packaging.
+Reason: primary quality misses the allowed 5-cat margin by 105.005 additional BSS, while error residuals are still 0.999203-correlated with champion and residual alignment is only 0.003761.
