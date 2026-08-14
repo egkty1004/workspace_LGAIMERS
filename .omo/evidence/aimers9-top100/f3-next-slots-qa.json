@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "task": "aimers9-top100/f3-next-slots-qa",
+  "title": "F3 approval gate — hands-on QA of qualified package + submission decision protocol",
+  "package": {
+    "dir": "repro_979/submit_lgb_mlp_cat_20260814-2258",
+    "candidate_id": "5890a4c54f502c4e",
+    "candidate": "lgb_mlp_cat"
+  },
+  "recorded_at_utc": "2026-08-14T14:50:00+00:00",
+  "environment": "local CPU-only (6 vCPU equivalent); pandas 3.0.5 / lightgbm 4.7.0 / catboost 1.2.10; Asia/Seoul local date 2026-08-14",
+  "data_note": "Local 데이터/open/data/test.csv is the official 5-row sample (6 lines incl. header). The 245,789-row full test set is NOT shipped locally; the full-inference run uses the same synthetic fixture (train bootstrap seed 42, control_success dropped) as package_validator_lgb_mlp_cat.py / task-8 evidence.",
+  "checks": {
+    "1-package-inference-5row": {
+      "fixture": "first 5 rows of the real test.csv (copied to /tmp/qa_f3/fixtures/test5.csv) + real sample_submission.csv",
+      "command": "LGA_TEST_PATH=/tmp/qa_f3/fixtures/test5.csv LGA_SAMPLE_PATH=/tmp/qa_f3/fixtures/sample5.csv LGA_OUT_PATH=/tmp/qa_f3/fixtures/out5.csv python3 script.py (cwd=package dir)",
+      "exit_code": 0,
+      "wall_s": 4.2,
+      "script_wall_s": 0.9,
+      "n_rows": 5,
+      "n_nan": 0,
+      "min": 0.4231069135960494,
+      "max": 0.4796782669508133,
+      "mean": 0.4562,
+      "all_in_0.30_0.70": true,
+      "result": "PASS"
+    },
+    "2-package-inference-full-245789": {
+      "fixture": "cache/t8_install_sim/lgbmlpcat_fixtures/test_245789.csv (245,789 rows, synthetic train bootstrap seed 42) + sample_submission_245789.csv",
+      "command": "LGA_TEST_PATH=.../test_245789.csv LGA_SAMPLE_PATH=.../sample_submission_245789.csv LGA_OUT_PATH=/tmp/qa_f3/fixtures/out245789.csv python3 script.py (cwd=package dir)",
+      "exit_code": 0,
+      "wall_s": 19.1,
+      "script_wall_s": 16.0,
+      "runtime_budget_s": 600,
+      "runtime_ok": true,
+      "n_rows": 245789,
+      "n_nan": 0,
+      "mean": 0.5141466295908544,
+      "mean_in_0.40_0.55": true,
+      "frac_below_0.30": 0.0,
+      "frac_above_0.70": 0.0,
+      "min": 0.3064061779593754,
+      "max": 0.7,
+      "clip_note": "max == 0.70 is exactly the clip bound (CLIP_HI), not a violation; frac > 0.70 = 0",
+      "result": "PASS"
+    },
+    "3-validator-rerun": {
+      "command": "python3 repro_979/package_validator_lgb_mlp_cat.py --submission-dir repro_979/submit_lgb_mlp_cat_20260814-2258 (cwd=workspace root)",
+      "exit_code": 0,
+      "result": "PASS",
+      "gates": {
+        "offline_install_sim": {"ok": true, "install_s": 0.52, "versions": "lightgbm 4.7.0 / catboost 1.2.10 / numpy 1.26.4 / pandas 2.0.3 / scipy 1.15.3"},
+        "five_row": {"ok": true, "n_rows": 5, "wall_s": 3.8},
+        "full_245789": {"ok": true, "n_rows": 245789, "wall_s": 19.4, "mean": 0.5141, "clip_lo": 0.0, "clip_hi": 0.0},
+        "parity_script_vs_reference": {"ok": true, "max_abs_diff": 5.551115123125783e-17},
+        "mean_alignment": {"ok": true, "abs_mean_shift": 0.0},
+        "mean_alignment_vs_champion_policy": {"ok": true, "abs_shift": 0.00019701522209769617},
+        "champion_component_vs_giho": {"ok": true, "max_abs_diff": 5.551115123125783e-17},
+        "zip_layout": {"ok": true, "model_files": 33, "stray": [], "bad": []},
+        "provenance_integrity": {"ok": true, "hashed_files": 33},
+        "migration_audit_strict": {"ok": true}
+      },
+      "evidence_handling": "Validator writes task-8 evidence unconditionally (no CLI override for the evidence path — verified in package_validator_lgb_mlp_cat.py main()). Backed up committed evidence to /tmp/qa_f3/task-8-package-lgbmlpcat.json.bak BEFORE the run; restored AFTER; sha256 of restored file identical to committed (adb0c2a91cf591ce9f5aa1b021ac40f1b891071914b4dd4cb0501bb507d2d82d). git status clean.",
+      "note_attempt1": "First invocation from cwd=repro_979 with --submission-dir repro_979/... failed FileNotFoundError (path resolved relative to cwd) — operator error, not a package defect; rerun from workspace root as README instructs.",
+      "result": "PASS"
+    },
+    "4a-decision-current-state": {
+      "command": "python3 repro_979/submission_decision.py --package-dir repro_979/submit_lgb_mlp_cat_20260814-2258 --evidence-base /tmp/qa_f3/evidence/fixture-a-current",
+      "state": "real leaderboard_state.json (read-only; --state not passed)",
+      "expected": "BLOCK daily_slot_exhausted",
+      "exit_code": 1,
+      "decision": "BLOCK",
+      "block_reasons": ["daily_slot_exhausted"],
+      "gates": {"a-package-pass": "PASS", "b-qualification-digest": "PASS", "c-cutoff-freshness": "PASS", "d-daily-slot": "BLOCK", "e-target-margin": "PASS"},
+      "detail": "2026-08-14 (Asia/Seoul) submissions 1/1; gate d blocks. Digest e3e047dd... matches registered. Matches task-9 evidence from 23:31 KST.",
+      "result": "PASS"
+    },
+    "4b-decision-stale-cutoff": {
+      "command": "python3 repro_979/submission_decision.py --package-dir repro_979/submit_lgb_mlp_cat_20260814-2258 --state /tmp/qa_f3/states/state_b_stale.json --evidence-base /tmp/qa_f3/evidence/fixture-b-stale",
+      "fixture": "COPY of leaderboard_state.json with date_captured set to 2026-08-12T12:00:00+09:00 (~50h > 24h TTL). Real state never modified.",
+      "expected": "BLOCK cutoff_stale",
+      "exit_code": 1,
+      "decision": "BLOCK",
+      "block_reasons": ["cutoff_stale", "daily_slot_exhausted"],
+      "gates": {"a-package-pass": "PASS", "b-qualification-digest": "PASS", "c-cutoff-freshness": "BLOCK", "d-daily-slot": "BLOCK", "e-target-margin": "PASS"},
+      "note": "daily_slot also fires because the copy inherits today's 1 submission; the fixture's target gate (c) fires as expected.",
+      "result": "PASS"
+    },
+    "4c-decision-digest-mismatch": {
+      "command": "python3 repro_979/submission_decision.py --package-dir repro_979/submit_lgb_mlp_cat_20260814-2006 --evidence-base /tmp/qa_f3/evidence/fixture-c-digest-mismatch",
+      "fixture": "OLD 2006 package (candidate_id 7771a019594deedd, weights 0.30/0.45/0.25) with NEW (2258) task-8 evidence. Registered digest in state is for 2258.",
+      "expected": "BLOCK qualification_digest_mismatch",
+      "exit_code": 1,
+      "decision": "BLOCK",
+      "block_reasons": ["qualification_digest_mismatch", "daily_slot_exhausted"],
+      "digest_computed": "bcc33f6fd0fb23c2d3f232884134ec2cbb5100258c671ecf630176988a2fb621",
+      "digest_registered": "e3e047dde80f28b31bb9b98b498e37c9ca95cca80686e23207fe875b50487f72",
+      "note": "model_file_sha256 identical between 2006 and 2258 (33/33), so gate b reaches the digest comparison (not model_files_changed) and fires qualification_digest_mismatch — anti-tamper gate verified.",
+      "result": "PASS"
+    },
+    "4d-decision-allow": {
+      "command": "python3 repro_979/submission_decision.py --package-dir repro_979/submit_lgb_mlp_cat_20260814-2258 --state /tmp/qa_f3/states/state_d_allow.json --evidence-base /tmp/qa_f3/evidence/fixture-d-allow",
+      "fixture": "COPY of leaderboard_state.json with submissions_by_date={\"2026-08-15\": 0} (no entry for today) and date_captured=fresh (2026-08-14T23:47:19+09:00, <24h). Real state never modified.",
+      "expected": "ALLOW exit 0",
+      "exit_code": 0,
+      "decision": "ALLOW",
+      "block_reasons": [],
+      "gates": {"a-package-pass": "PASS", "b-qualification-digest": "PASS", "c-cutoff-freshness": "PASS", "d-daily-slot": "PASS", "e-target-margin": "PASS"},
+      "detail": "submissions_today=0, unused_daily_slots=1, margin +88.71.",
+      "result": "PASS"
+    }
+  },
+  "not_executed_fixtures": "None — submission_decision.py supports --state and --package-dir CLI overrides (lines 512-518), so all four decision fixtures ran against copies/real-state-read-only. The only unavailable input is the real 245,789-row test.csv (not shipped locally); the full run used the validator's documented synthetic fixture (same input as task-8 evidence).",
+  "verdict": "APPROVE",
+  "verdict_reason": "5-row inference PASS (exit 0, 5 rows, [0.30,0.70], no NaN); full 245,789-row inference PASS (exit 0, 19.1s << 600s, 245,789 rows, mean 0.5141 in [0.40,0.55], zero clip violations); validator re-run RESULT: PASS 10/10 gates (parity 5.6e-17, provenance 33/33 hashes) with committed evidence restored byte-identical; decision protocol verified bidirectionally — BLOCK on daily_slot_exhausted / cutoff_stale / qualification_digest_mismatch (all exit 1 with correct block_reasons) and ALLOW when all gates pass (exit 0). No committed files modified."
+}
