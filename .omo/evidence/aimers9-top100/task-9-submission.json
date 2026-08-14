@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "task": "aimers9-top100/task-9-submission",
-  "decision": "BLOCK",
-  "exit_code": 1,
-  "recorded_at_utc": "2026-08-14T14:31:27.261939+00:00",
-  "git_commit": "d89cf6cc0ff6292b93e6c04d1ceb8a55fc6e0857",
+  "decision": "ALLOW",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-14T14:54:26.040958+00:00",
+  "git_commit": "1b34f5a67df8cef1ac2206d0c948238d78122a55",
   "candidate": {
     "candidate_id": "5890a4c54f502c4e",
     "candidate": "lgb_mlp_cat",
@@ -25,11 +25,11 @@
     "qualified_candidate_public_score": 988.3196750794,
     "target_margin": 88.70726492059998,
     "submissions_today": 1,
-    "unused_daily_slots": 0
+    "unused_daily_slots": 4
   },
   "policy": {
     "cutoff_ttl_hours": 24,
-    "daily_submission_limit": 1,
+    "daily_submission_limit": 5,
     "allow_below_cutoff": false,
     "timezone_for_daily_key": "Asia/Seoul"
   },
@@ -54,9 +54,9 @@
     },
     {
       "gate": "d-daily-slot",
-      "ok": false,
-      "reason": "daily_slot_exhausted",
-      "detail": "2026-08-14(Asia/Seoul) 제출 1회 — 하루 1회 제한 초과/도달"
+      "ok": true,
+      "reason": "ok",
+      "detail": "2026-08-14(Asia/Seoul) 제출 1회 — 슬롯 사용 가능"
     },
     {
       "gate": "e-target-margin",
@@ -65,7 +65,5 @@
       "detail": "목표 마진 +88.71 = cutoff 1077.02694 − best 988.3196750794 > 0"
     }
   ],
-  "block_reasons": [
-    "daily_slot_exhausted"
-  ]
+  "block_reasons": []
 }

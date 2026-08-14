@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""submission_decision.py — Todo 9 제출 의사결정 러너 (live leaderboard + 하루 1회 정책).
+"""submission_decision.py — Todo 9 제출 의사결정 러너 (live leaderboard + 일일 5회 정책).
 
 aimers9-top100-score-improvement Todo 9: 리더보드 제출 전, 아래를 캡처해 사용자 제출 행동이
-허용될 때만 ALLOW 를 내보낸다. 자동 업로드 금지, 하루 1회 초과 금지, 기각 후보 챔피언화 금지.
+허용될 때만 ALLOW 를 내보낸다. 자동 업로드 금지, 하루 5회 초과 금지, 기각 후보 챔피언화 금지.
 
 프로토콜:
   1. 사용자가 live DACON 리더보드를 확인한 뒤 `repro_979/leaderboard_state.json` 의
@@ -19,7 +19,7 @@ aimers9-top100-score-improvement Todo 9: 리더보드 제출 전, 아래를 캡�
       + 디스크의 model/* 파일이 provenance.model_file_sha256 과 일치(재해시).
       패키지 변조/모델 파일 변경/증거 재생성은 BLOCK
   (c) 컷오프 신선도: `date_captured` 가 CUTOFF_TTL_HOURS(=24h) 이내 (없거나 TTL 초과면 BLOCK)
-  (d) 오늘(`submissions_by_date[local_today]`) 제출 0회 — 하루 1회 정책 (1회 초과 시 BLOCK)
+  (d) 오늘(`submissions_by_date[local_today]`) 제출 N회 — 하루 5회 정책 (5회 초과/도달 시 BLOCK)
   (e) 목표 마진 `rank_100_cutoff - current_best_public_score > 0` 또는 명시적 오버라이드
       `allow_below_cutoff: true` (기본 false). 컷오프/최고 점수 미확인 시 BLOCK (margin_unknown).
 
@@ -54,7 +54,7 @@ JSON = dict[str, Any]  # JSON 페이로드 타입 별칭 (provenance/증거/상�
 # ── 상수 ──────────────────────────────────────────────────────────────
 SCHEMA_VERSION = 1
 CUTOFF_TTL_HOURS = 24          # 컷오프 신선도 TTL (문서화: .omo/notepads + REPORT)
-DAILY_SUBMISSION_LIMIT = 1     # 하루 1회 정책 (플랜 Todo 9 지침)
+DAILY_SUBMISSION_LIMIT = 5     # 하루 5회 (대회 규칙 — docs 191행 일일 제출 횟수 기준; 플랜 Todo 9의 1회 정책은 대회 규칙에 맞춰 5회로 상향)
 LOCAL_TZ_NAME = "Asia/Seoul"   # 하루 단위 키 타임존 (문서화)
 FALLBACK_TZ_NAME = "UTC"
 
@@ -265,7 +265,7 @@ def evaluate_gates(
                           "reason": "ok",
                           "detail": f"컷오프 {cutoff} 캡처 {captured} (TTL {CUTOFF_TTL_HOURS}h 이내)"})
 
-    # ── (d) 하루 1회 제출 슬롯 ──
+    # ── (d) 일일 제출 슬롯 ──
     if submitted_today >= DAILY_SUBMISSION_LIMIT:
         gates.append({"gate": "d-daily-slot", "ok": False,
                       "reason": "daily_slot_exhausted",
@@ -492,7 +492,7 @@ def cmd_register(args: argparse.Namespace) -> int:
          "date_captured": state.get("date_captured"),
          "current_best_public_score": state.get("current_best_public_score"),
          "qualified_candidate_public_score": state.get("qualified_candidate_public_score"),
-         "target_margin": None, "submissions_today": 0, "unused_daily_slots": 1},
+         "target_margin": None, "submissions_today": 0, "unused_daily_slots": 5},
         package_dir, digest,
     )
     write_evidence(record, evidence_base)
@@ -505,7 +505,7 @@ def cmd_register(args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Todo 9 제출 의사결정 — live 리더보드 컷오프 + 하루 1회 정책 게이트",
+        description="Todo 9 제출 의사결정 — live 리더보드 컷오프 + 하루 5회 정책 게이트",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--mode", choices=("check", "register"), default="check",
                         help="check(기본, 5개 게이트 평가) | register(자격 다이제스트 등록)")
