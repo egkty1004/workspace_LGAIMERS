@@ -1,0 +1,193 @@
+{
+  "schema_version": 1,
+  "task": "aimers9-top100/task-8-package",
+  "candidate_id": "7771a019594deedd",
+  "candidate": "lgb_mlp_cat",
+  "blend": {
+    "space": "logit",
+    "weights": {
+      "lgb": 0.3,
+      "mlp": 0.45,
+      "catboost": 0.25
+    },
+    "formula": "p = clip(sigmoid(0.30*z_lgb + 0.45*z_mlp + 0.25*z_catboost + C_LOGIT), 0.30, 0.70)",
+    "c_logit": -0.0404,
+    "clip": [
+      0.3,
+      0.7
+    ],
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51
+    ]
+  },
+  "members": {
+    "lgb": {
+      "desc": "LGB F3 10시드 (Task 2 동결, GIHO extract 모델 byte-copy)",
+      "files": [
+        "f3_s42.txt",
+        "f3_s43.txt",
+        "f3_s44.txt",
+        "f3_s45.txt",
+        "f3_s46.txt",
+        "f3_s47.txt",
+        "f3_s48.txt",
+        "f3_s49.txt",
+        "f3_s50.txt",
+        "f3_s51.txt"
+      ],
+      "source": "/home/2022113165/workspace_LGAIMERS/team_member_materials/GIHO/submit979_extract/model"
+    },
+    "mlp": {
+      "desc": "MLP 10시드 (Task 2 동결, GIHO extract 모델 byte-copy)",
+      "files": [
+        "mlp_s42.pt",
+        "mlp_s43.pt",
+        "mlp_s44.pt",
+        "mlp_s45.pt",
+        "mlp_s46.pt",
+        "mlp_s47.pt",
+        "mlp_s48.pt",
+        "mlp_s49.pt",
+        "mlp_s50.pt",
+        "mlp_s51.pt",
+        "mlp_prep.pkl",
+        "mlp_meta.json"
+      ],
+      "source": "/home/2022113165/workspace_LGAIMERS/team_member_materials/GIHO/submit979_extract/model"
+    },
+    "catboost": {
+      "desc": "CatBoost full-data 10시드 (Task 8 재학습, 시즌 2019-2024, 피처 49/cats 5, depth 7, lr 0.05, 300 iter)",
+      "files": [
+        "catboost_s42.cbm",
+        "catboost_s43.cbm",
+        "catboost_s44.cbm",
+        "catboost_s45.cbm",
+        "catboost_s46.cbm",
+        "catboost_s47.cbm",
+        "catboost_s48.cbm",
+        "catboost_s49.cbm",
+        "catboost_s50.cbm",
+        "catboost_s51.cbm"
+      ],
+      "source": "repro_979/deploy_train_catboost_full.py"
+    }
+  },
+  "model_file_sha256": {
+    "catboost_s42.cbm": "0438cfde771259ce2691d0f7086ba7fd0e324adf16b76e03b594ef55f266dbf4",
+    "catboost_s43.cbm": "3949c70666265b5676efa5c6402311dd5f84769e5e3585c4da5c83d70a2fac61",
+    "catboost_s44.cbm": "f45a35b2d4fb4734641795ab51a76983b5754141ced7195928da1377a7e2e0ee",
+    "catboost_s45.cbm": "4664702aef36edc7ac88bb31e250654869d6cf2a577d69987060c796a69dc00b",
+    "catboost_s46.cbm": "a92079e0455057195b63e81ea83e340a2064bc5bd3fa583afa50c0c82f74731e",
+    "catboost_s47.cbm": "829e12e26615c02735b4ef809c0dabdf01f3c8df6eda2eab3c0dd7b61059f312",
+    "catboost_s48.cbm": "4e92d2ad4d3ede43945111f2a3535399572fb528976772735c7705ba79a6dcae",
+    "catboost_s49.cbm": "08225e2e5c540a5b1f7911ca6530be6d225f49cce6593186237d2f0e4433272e",
+    "catboost_s50.cbm": "e8f517bcd87e49a28da2d07d220fabbb89130b60677be2885a2c4bd88e0e5143",
+    "catboost_s51.cbm": "e54dcf1850271cdadea7062c765af52756dd312498b90390dcd3ed4d870632dd",
+    "f3_s42.txt": "0b5a63cacf39ae4c0f93fa34c54d4e1bc2ad5bc0175a71a143e39036efd5de7f",
+    "f3_s43.txt": "d4e8dcf4ad95b52ecb86a49cf02950cbf2050737d9db44713d992c67744b4722",
+    "f3_s44.txt": "676bb19e737caf8f0de1ed99bf7e9d22762485e04204600222e0bc2c6ba7f808",
+    "f3_s45.txt": "7e270e3332eaa236be16770b4cadf0e6ac0da84241516bb834ca919ca120ee20",
+    "f3_s46.txt": "1076d4f19818d1150918799e383d59e0262c3c4641773a15310f70d4d6533d98",
+    "f3_s47.txt": "a6775da634885b31e99db19e4fc4442012b0518e581f68e19e03af382681bffb",
+    "f3_s48.txt": "9813b4c7027af3987988b73c18bf5069a3d4dfa94f92682d5ea8480ea66d3322",
+    "f3_s49.txt": "067180e0dff0c703b9bc87fda3bb548cc256ca23d5827343584b94532f22520f",
+    "f3_s50.txt": "ddb75cff7e4e3fa75791fbd444c6c8edebce5ea7de5f3d755b24225c0d534de1",
+    "f3_s51.txt": "a5b27e653dbe9b6f733dcc10b098072eb8e30da3b36569b511fbe57f00ce46cd",
+    "mlp_meta.json": "4892f1b5ce43cd57aef7b9c13a98adf8cc15ec285177aae7acb5a634d355c5e8",
+    "mlp_prep.pkl": "ac7bc2887b26e905692cd650898fbe70c2f29f494af425929a905b3b980d4e71",
+    "mlp_s42.pt": "5a1bf9cd457f7cbaf0916b78bef199a2111ba02c93ab9c42ad6848a6f3dadbc5",
+    "mlp_s43.pt": "d6e493cb0433c19ed94cab462b014da0f8a35f7fe6dc833b6fc82069c413759d",
+    "mlp_s44.pt": "cd95ccd3b7e55837442451a607615c4509cc866a3c4da853f29d9026f515f545",
+    "mlp_s45.pt": "27ffccf65c0c6106b612dc58dcaf63e7990bd43522b4809f7567e3dc88a842f5",
+    "mlp_s46.pt": "9a5002fc84da55c51dc26478a77ee4bfe0184ded730e85c9658e20328ab8bc11",
+    "mlp_s47.pt": "025d55e33cfb3b957750056891f1ed16b92ba8444078fa3addd2301192084883",
+    "mlp_s48.pt": "1f1becab5aca63b86f934fd0f88b43a6df70381b8759b45228269ff3bac1ac3e",
+    "mlp_s49.pt": "f46f345d4ae0b5113f04d4b033675ca120b041a66d8679b23e89a74a090dbe86",
+    "mlp_s50.pt": "87c76700101b49860769cd12e25e368ca22a76e519f2d7a915d7a5d2970037b3",
+    "mlp_s51.pt": "018cb20d1ebb3783bab98f2f300cff27aafabeda5641498b8b3cbf25aff04f39",
+    "train_meta.json": "60ee08356525b55faa2db4aab64ad4fdf4c69fb23f42759b4f5e87f2ed928f6a"
+  },
+  "champion_rollback": {
+    "path": "/home/2022113165/workspace_LGAIMERS/team_member_materials/GIHO/submit979_extract",
+    "note": "챔피언 V4 패키지 (byte-frozen, 979.31 실측). catboost 미설치 시 즉시 롤백.",
+    "requirements": "lightgbm==4.7.0",
+    "file_sha256": {
+      "common.py": "fdf4b7f443650161c17f9eb63837cf117c9c8a5a726985ad5d2398109951353d",
+      "data/sample_submission.csv": "b2cf6ba6745c74c46db23e620d74705f9b327efb8c8a14dc0dd2afab0e898775",
+      "data/test.csv": "478d10b20c00443f6fe8270ab7348de49d14395526130f0b2d915da496821a19",
+      "mlp_model.py": "d4b3bf5fb06a92a0bd3e5850a4913860422237201fe486b67f4866fcc8735993",
+      "model/f3_s42.txt": "0b5a63cacf39ae4c0f93fa34c54d4e1bc2ad5bc0175a71a143e39036efd5de7f",
+      "model/f3_s43.txt": "d4e8dcf4ad95b52ecb86a49cf02950cbf2050737d9db44713d992c67744b4722",
+      "model/f3_s44.txt": "676bb19e737caf8f0de1ed99bf7e9d22762485e04204600222e0bc2c6ba7f808",
+      "model/f3_s45.txt": "7e270e3332eaa236be16770b4cadf0e6ac0da84241516bb834ca919ca120ee20",
+      "model/f3_s46.txt": "1076d4f19818d1150918799e383d59e0262c3c4641773a15310f70d4d6533d98",
+      "model/f3_s47.txt": "a6775da634885b31e99db19e4fc4442012b0518e581f68e19e03af382681bffb",
+      "model/f3_s48.txt": "9813b4c7027af3987988b73c18bf5069a3d4dfa94f92682d5ea8480ea66d3322",
+      "model/f3_s49.txt": "067180e0dff0c703b9bc87fda3bb548cc256ca23d5827343584b94532f22520f",
+      "model/f3_s50.txt": "ddb75cff7e4e3fa75791fbd444c6c8edebce5ea7de5f3d755b24225c0d534de1",
+      "model/f3_s51.txt": "a5b27e653dbe9b6f733dcc10b098072eb8e30da3b36569b511fbe57f00ce46cd",
+      "model/mlp_meta.json": "4892f1b5ce43cd57aef7b9c13a98adf8cc15ec285177aae7acb5a634d355c5e8",
+      "model/mlp_prep.pkl": "ac7bc2887b26e905692cd650898fbe70c2f29f494af425929a905b3b980d4e71",
+      "model/mlp_s42.pt": "5a1bf9cd457f7cbaf0916b78bef199a2111ba02c93ab9c42ad6848a6f3dadbc5",
+      "model/mlp_s43.pt": "d6e493cb0433c19ed94cab462b014da0f8a35f7fe6dc833b6fc82069c413759d",
+      "model/mlp_s44.pt": "cd95ccd3b7e55837442451a607615c4509cc866a3c4da853f29d9026f515f545",
+      "model/mlp_s45.pt": "27ffccf65c0c6106b612dc58dcaf63e7990bd43522b4809f7567e3dc88a842f5",
+      "model/mlp_s46.pt": "9a5002fc84da55c51dc26478a77ee4bfe0184ded730e85c9658e20328ab8bc11",
+      "model/mlp_s47.pt": "025d55e33cfb3b957750056891f1ed16b92ba8444078fa3addd2301192084883",
+      "model/mlp_s48.pt": "1f1becab5aca63b86f934fd0f88b43a6df70381b8759b45228269ff3bac1ac3e",
+      "model/mlp_s49.pt": "f46f345d4ae0b5113f04d4b033675ca120b041a66d8679b23e89a74a090dbe86",
+      "model/mlp_s50.pt": "87c76700101b49860769cd12e25e368ca22a76e519f2d7a915d7a5d2970037b3",
+      "model/mlp_s51.pt": "018cb20d1ebb3783bab98f2f300cff27aafabeda5641498b8b3cbf25aff04f39",
+      "model/train_meta.json": "60ee08356525b55faa2db4aab64ad4fdf4c69fb23f42759b4f5e87f2ed928f6a",
+      "output/submission.csv": "0c9b75443f6fc41077dc9c7e24d47194f3bb16b5e824645eccb45891bf6c09e6",
+      "requirements.txt": "3ce7c02c46cdb5aff06e933f3bfa8e22bcf8d5499969a106a282dc875acf94a9",
+      "script.py": "e02ae9df6325e38ecce748143abf69a09ee5a300123b2b78643f579e5060d76f"
+    }
+  },
+  "config_digest": "200d21dd49169564157b063d849bb15edcea5e02cc692f740906902472a0774a",
+  "config": {
+    "candidate": "lgb_mlp_cat",
+    "candidate_id": "7771a019594deedd",
+    "weights": {
+      "lgb": 0.3,
+      "mlp": 0.45,
+      "catboost": 0.25
+    },
+    "c_logit": -0.0404,
+    "clip": [
+      0.3,
+      0.7
+    ],
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "cat_features": [
+      "top_bottom",
+      "game_type",
+      "base_state",
+      "platoon",
+      "count_state"
+    ],
+    "catboost_iterations": 300,
+    "model_dir_rel": "model"
+  },
+  "recorded_at_utc": "2026-08-14T11:06:49.095747+00:00"
+}
