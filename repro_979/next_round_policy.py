@@ -25,7 +25,10 @@ Modes:
                                    task evidence allowlist; no forbidden artifact paths
                                    (데이터/, /model/, /cache/, *.zip, submit_sim) referenced; no
                                    excluded directory staged in git; no leaderboard/public-score
-                                   record without a user-reported source. Writes f4-scope.{json,md}.
+                                    record without a user-reported source. Writes f4-scope.{json,md}.
+
+All modes also accept the plan's flag style: `--check <policy.json>`, `--audit-compliance`,
+`--audit-scope` (the first argument is normalized to the subcommand form automatically).
 
 Exit codes: 0 = PASS, 1 = fatal input error, 2 = REJECT (policy/gate violation).
 """
@@ -597,9 +600,31 @@ def cmd_audit_scope(args: argparse.Namespace) -> int:
     return exit_code
 
 
+# 계획 표준 명령(플래그 스타일) ↔ subcommand 스타일 정규화 매핑.
+# --freeze / --qualify-and-deploy-frozen 은 이후 Task 9/10 에서 subcommand 로 등록 예정 —
+# 지금은 정규화만 하고 파서에 미등록 상태로 두어 미구현 호출이 argparse 'invalid choice'
+# (exit 2) 로 실패하게 한다 (미구현 subcommand 는 절대 PASS 가 될 수 없음).
+_FLAG_TO_SUB = {
+    "--check": "check",
+    "--audit-compliance": "audit-compliance",
+    "--audit-scope": "audit-scope",
+    "--freeze": "freeze",
+    "--qualify-and-deploy-frozen": "qualify-and-deploy-frozen",
+}
+
+
+def _normalize_argv(argv: list[str]) -> list[str]:
+    """첫 인자가 --flag 스타일이면 해당 subcommand 이름으로 치환 (양쪽 호출 방식 모두 지원)."""
+    a = list(argv)
+    if a and a[0] in _FLAG_TO_SUB:
+        a[0] = _FLAG_TO_SUB[a[0]]
+    return a
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="next_round_policy — Task 1 정책 freeze 검증 + F1/F4 감사 CLI",
+        description="next_round_policy — Task 1 정책 freeze 검증 + F1/F4 감사 CLI "
+                    "(--check/--audit-compliance/--audit-scope 플래그 및 subcommand 둘 다 지원)",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="mode", required=True)
 
@@ -624,7 +649,7 @@ def main(argv: list[str] | None = None) -> int:
     p_s.add_argument("--policy", default=str(DEFAULT_POLICY))
     p_s.set_defaults(func=cmd_audit_scope)
 
-    args = parser.parse_args(argv)
+    args = parser.parse_args(_normalize_argv(list(argv) if argv is not None else sys.argv[1:]))
     if args.mode == "check" and args.verification:
         vpath = Path(args.verification).expanduser().resolve()
         ver = load_json(vpath)

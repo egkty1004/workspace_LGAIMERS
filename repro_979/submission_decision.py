@@ -519,9 +519,13 @@ def main(argv: list[str] | None = None) -> int:
                         help="결정 증거 베이스 경로 (예: task-9-submission → .json/.md)")
     parser.add_argument("--register-qualified", action="store_true",
                         help="단축: --mode register (자격 다이제스트 등록)")
+    parser.add_argument("--check", action="store_true",
+                        help="단축: --mode check (기본 제출 의사결정 모드 — 명시 호출 지원)")
     args = parser.parse_args(argv)
     if args.register_qualified:
         args.mode = "register"
+    elif args.check:
+        args.mode = "check"
     if args.mode == "register":
         return cmd_register(args)
     return cmd_check(args)
