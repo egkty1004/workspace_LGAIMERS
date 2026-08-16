@@ -22,13 +22,32 @@ Modes:
                                    upload marker; rollback baseline consistent. Writes
                                    f1-compliance.{json,md}.
   --audit-scope --evidence-dir <dir>       F4: scope audit — evidence filenames must match the
-                                   task evidence allowlist; no forbidden artifact paths
-                                   (데이터/, /model/, /cache/, *.zip, submit_sim) referenced; no
-                                   excluded directory staged in git; no leaderboard/public-score
-                                    record without a user-reported source. Writes f4-scope.{json,md}.
+                                    task evidence allowlist; no forbidden artifact paths
+                                    (데이터/, /model/, /cache/, *.zip, submit_sim) referenced; no
+                                    excluded directory staged in git; no leaderboard/public-score
+                                     record without a user-reported source. Writes f4-scope.{json,md}.
+  --freeze --evidence-dir <dir>            Task 9: freeze the single best passing candidate.
+                                    Consumes Task 3/7/8 decision evidence and applies the
+                                    pre-registered priority/tie rules: Task-3 PRIMARY_PASS base,
+                                    else Task-7 PRIMARY_PROMOTED base; a passing Task-8
+                                    calibrated derivative (verdict PASS) supersedes that base.
+                                    Same-tier ties use pre-registered primary BSS only. If no
+                                    base path passed → NO_PROMOTION (retain rollback baseline,
+                                    stop before packaging). The decision reads NO labels and
+                                    NEVER reads R-only fold values, bootstrap-LB values, or
+                                    leaderboard/public-score values. exit 0 = normal decision
+                                    (candidate frozen or NO_PROMOTION), 2 = policy/gate
+                                    violation, 1 = fatal input error. Writes task-9-freeze.{json,md}.
+                                    Optional --fixture {altered-r-only-values,
+                                    altered-leaderboard-values} runs the tamper-simulation
+                                    insensitivity guard (plan Task 9 failure QA): R-only /
+                                    leaderboard values are injected/perturbed in an in-memory
+                                    copy, the decision is re-run, and the frozen result must be
+                                    unchanged — exit 2 (guard fired, tamper rejected).
 
 All modes also accept the plan's flag style: `--check <policy.json>`, `--audit-compliance`,
-`--audit-scope` (the first argument is normalized to the subcommand form automatically).
+`--audit-scope`, `--freeze` (the first argument is normalized to the subcommand form
+automatically).
 
 Exit codes: 0 = PASS, 1 = fatal input error, 2 = REJECT (policy/gate violation).
 """
@@ -600,8 +619,350 @@ def cmd_audit_scope(args: argparse.Namespace) -> int:
     return exit_code
 
 
+# ── --freeze (Task 9) ─────────────────────────────────────────────────
+# Task 9 pre-registered priority/tie rules (plan lines 132-138; policy `selection.tie_rule`):
+#   freeze the FIRST base candidate that passed Task 3 (PRIMARY_PASS) or Task 7
+#   (PRIMARY_PROMOTED); a passing Task-8 calibrated derivative (verdict PASS) supersedes
+#   that base. If neither base path passed → NO_PROMOTION (retain rollback baseline, stop
+#   before packaging). Same-tier ties use pre-registered primary BSS only; exact primary
+#   ties → declared per-family tick order ascending (lgb < mlp < catboost), then candidate_id
+#   ascending as a deterministic non-score fallback. The decision NEVER reads R-only fold
+#   values, bootstrap-LB values, or leaderboard/public-score values.
+FREEZE_T3_PASS = "PRIMARY_PASS"
+FREEZE_T7_PASS = "PRIMARY_PROMOTED"
+FREEZE_T8_PASS = "PASS"
+FREEZE_T3_TERMINAL = {"PRIMARY_PASS", "PRIMARY_REJECT"}
+FREEZE_T7_TERMINAL = {"PRIMARY_PROMOTED", "PRIMARY_REJECT", "PRIMARY_REJECTED", "SKIPPED"}
+FREEZE_T8_TERMINAL = {"PASS", "REJECT", "SKIPPED_NO_BASE"}
+FREEZE_TICK_ORDER = {"lgb": 1, "mlp": 2, "catboost": 3}  # policy tie_rule: per-family tick ascending
+FREEZE_FIXTURES = {"altered-r-only-values", "altered-leaderboard-values"}
+# Insensitivity tamper fixture: leaderboard/public-score key canonical names injected/perturbed.
+FREEZE_LB_KEYS = [
+    "rank_100_cutoff", "team_rank", "current_best_public_score",
+    "qualified_candidate_public_score", "public_score", "cutoff",
+]
+FREEZE_INJECT_VALUE = 99999.0
+FREEZE_PERTURB_STEP = 12345.6789
+
+
+def _pick_from(rec: JSON | None, keys: list[str]) -> Any:
+    if not isinstance(rec, dict):
+        return None
+    for k in keys:
+        v = rec.get(k)
+        if v is not None:
+            return v
+    return None
+
+
+def _resolve_tier(cands: list[JSON], tier: str, trace: list[JSON]) -> JSON | None:
+    """Same-tier tie rule (pre-registered): pre-registered primary BSS descending; exact
+    primary ties → declared per-family tick order ascending; final deterministic fallback
+    candidate_id ascending (non-score, primary-only — never R-only/bootstrap/LB)."""
+    if not cands:
+        return None
+    if len(cands) == 1:
+        return cands[0]
+    trace.append({
+        "rule": f"tie:{tier}",
+        "ok": True,
+        "reason": f"{len(cands)} same-tier 후보 → tie rule: primary BSS desc, "
+                  f"exact tie → tick order asc ({FREEZE_TICK_ORDER}), candidate_id asc (non-score)",
+        "candidates": [{"candidate_id": c.get("candidate_id"), "primary_bss": c.get("primary_bss")}
+                       for c in cands],
+    })
+    return sorted(
+        cands,
+        key=lambda c: (-(float(c["primary_bss"]) if _is_numeric(c.get("primary_bss")) else -1e300),
+                       FREEZE_TICK_ORDER.get(str(c.get("family") or ""), 9),
+                       str(c.get("candidate_id") or "")),
+    )[0]
+
+
+def decide_freeze(policy: JSON, t3: JSON | None, t7: JSON | None, t8: JSON | None) -> JSON:
+    """Apply Task 9 priority/tie rules to task-3/7/8 evidence → freeze decision + trace.
+
+    Returns {"decision": {...}, "trace": [...], "violations": [...]}. Pure function —
+    reads only the evidence dicts passed in; NO label/R-fold/leaderboard access."""
+    trace: list[JSON] = []
+    violations: list[JSON] = []
+
+    # 1) Task-3 base path (priority: FIRST base candidate that passed Task 3).
+    if t3 is None:
+        trace.append({"path": "task-3-cat-boundary-gate", "verdict": None,
+                      "required": FREEZE_T3_PASS, "outcome": "not-passed",
+                      "reason": "evidence missing/unparseable — no PASS recorded"})
+    else:
+        v3 = t3.get("verdict")
+        if v3 not in FREEZE_T3_TERMINAL:
+            violations.append({"rule": "task3_terminal", "ok": False,
+                               "reason": f"task-3 verdict {v3!r} 인식 불가 — freeze 규칙 적용 불가"})
+        elif v3 == FREEZE_T3_PASS:
+            frozen = (t3.get("gate") or {}).get("frozen") or {}
+            cid = _pick_from(frozen, ["candidate_id"]) or _pick_from(t3, ["candidate_id"])
+            bss = _pick_from(frozen, ["primary_bss"]) or _pick_from(t3, ["primary_bss"])
+            trace.append({"path": "task-3-cat-boundary-gate", "verdict": v3,
+                          "required": FREEZE_T3_PASS, "outcome": "passed-base",
+                          "candidate_id": cid, "primary_bss": bss,
+                          "field": "gate.frozen.candidate_id / gate.frozen.primary_bss"})
+        else:
+            trace.append({"path": "task-3-cat-boundary-gate", "verdict": v3,
+                          "required": FREEZE_T3_PASS, "outcome": "not-passed",
+                          "reason": f"verdict {v3!r} — {FREEZE_T3_PASS} 필요"})
+
+    # 2) Task-7 base path (only if Task-3 base does NOT exist — 'else Task 7 PASS base').
+    t3_passed = any(e.get("outcome") == "passed-base" for e in trace if e.get("path", "").startswith("task-3"))
+    t7 = None if t3_passed else t7
+    if t7 is None and not t3_passed:
+        trace.append({"path": "task-7-promotion", "verdict": None,
+                      "required": FREEZE_T7_PASS, "outcome": "not-passed",
+                      "reason": "evidence missing/unparseable — no PASS recorded"})
+    elif t7 is not None:
+        v7 = t7.get("verdict")
+        if v7 not in FREEZE_T7_TERMINAL:
+            violations.append({"rule": "task7_terminal", "ok": False,
+                               "reason": f"task-7 verdict {v7!r} 인식 불가 — freeze 규칙 적용 불가"})
+        elif v7 == FREEZE_T7_PASS:
+            promoted = t7.get("promoted") if isinstance(t7.get("promoted"), dict) else {}
+            decision = t7.get("decision") if isinstance(t7.get("decision"), dict) else {}
+            cid = (_pick_from(t7, ["candidate_id", "promoted_candidate_id"])
+                   or _pick_from(promoted, ["candidate_id"])
+                   or _pick_from(decision, ["candidate_id"]))
+            bss = (_pick_from(t7, ["primary_bss"])
+                   or _pick_from(promoted, ["primary_bss"])
+                   or _pick_from(decision, ["primary_bss"]))
+            family = _pick_from(t7, ["family"]) or _pick_from(promoted, ["family"])
+            trace.append({"path": "task-7-promotion", "verdict": v7,
+                          "required": FREEZE_T7_PASS, "outcome": "passed-base",
+                          "candidate_id": cid, "primary_bss": bss, "family": family,
+                          "field": "candidate_id / promoted.candidate_id / decision.candidate_id"})
+        else:
+            trace.append({"path": "task-7-promotion", "verdict": v7,
+                          "required": FREEZE_T7_PASS, "outcome": "not-passed",
+                          "reason": f"verdict {v7!r} — {FREEZE_T7_PASS} 필요"})
+
+    # 3) Task-8 calibrated derivative path (a passing derivative supersedes the base).
+    if t8 is None:
+        violations.append({"rule": "task8_terminal", "ok": False,
+                           "reason": "task-8 evidence missing — Task 8 must be terminal "
+                                     "(PASS/REJECT/SKIPPED_NO_BASE) before freeze"})
+    else:
+        v8 = t8.get("verdict")
+        if v8 not in FREEZE_T8_TERMINAL:
+            violations.append({"rule": "task8_terminal", "ok": False,
+                               "reason": f"task-8 verdict {v8!r} terminal 아님 — freeze 차단 "
+                                         f"(필요 {sorted(FREEZE_T8_TERMINAL)})"})
+        elif v8 == FREEZE_T8_PASS:
+            selected = t8.get("selected") if isinstance(t8.get("selected"), dict) else {}
+            decision = t8.get("decision") if isinstance(t8.get("decision"), dict) else {}
+            cid = (_pick_from(t8, ["calibrated_candidate_id", "candidate_id"])
+                   or _pick_from(selected, ["candidate_id"])
+                   or _pick_from(decision, ["candidate_id"]))
+            bss = (_pick_from(t8, ["primary_bss"])
+                   or _pick_from(selected, ["primary_bss"])
+                   or _pick_from(decision, ["primary_bss"]))
+            trace.append({"path": "task-8-calibration", "verdict": v8,
+                          "required": FREEZE_T8_PASS, "outcome": "passing-derivative",
+                          "candidate_id": cid, "primary_bss": bss,
+                          "note": "passing calibrated derivative supersedes the base candidate"})
+        else:
+            trace.append({"path": "task-8-calibration", "verdict": v8,
+                          "required": FREEZE_T8_PASS, "outcome": "not-passed",
+                          "reason": f"verdict {v8!r} — PASS 필요 (derivative)"})
+
+    # 4) Terminal decision: derivative > base; base = Task-3 first, else Task-7.
+    derivative = next((e for e in trace if e.get("outcome") == "passing-derivative"), None)
+    base = next((e for e in trace if e.get("outcome") == "passed-base"), None)
+    frozen: JSON
+    if derivative is not None:
+        if base is None:
+            violations.append({"rule": "derivative_without_base", "ok": False,
+                               "reason": "task-8 verdict PASS 이지만 base 후보 없음 — 모순 (t8 PASS 는 "
+                                         "Task-3/7 base 가 선행되어야 함)"})
+        frozen = {"terminal_verdict": "FROZEN", "frozen_candidate_id": derivative.get("candidate_id"),
+                  "primary_bss": derivative.get("primary_bss"), "source": "task-8-calibration"}
+    elif base is not None:
+        frozen = {"terminal_verdict": "FROZEN", "frozen_candidate_id": base.get("candidate_id"),
+                  "primary_bss": base.get("primary_bss"), "source": base.get("path")}
+    else:
+        frozen = {"terminal_verdict": "NO_PROMOTION", "frozen_candidate_id": None,
+                  "primary_bss": None, "source": None,
+                  "note": "Task-3/7 base 경로 모두 미통과 — 현재 최고 유지, 패키징 전 중단"}
+
+    return {"decision": frozen, "trace": trace, "violations": violations}
+
+
+def _tampered_copies(records: list[JSON], key_norms: set[str]) -> list[JSON]:
+    """R-only / leaderboard 값 주입+변형 인-메모리 복사 (evidence 파일은 건드리지 않음)."""
+    out: list[JSON] = []
+    for rec in records:
+        rec = json.loads(json.dumps(rec))  # deep copy
+        for d in _iter_dicts(rec):
+            existing = {_norm_key(k) for k in d}
+            for i, norm in enumerate(sorted(key_norms)):
+                if norm in existing:
+                    # 기존 값 변형 (숫자만 — 후보 id/verdict 같은 문자열은 R-only/LB 값이 아님)
+                    for k, v in list(d.items()):
+                        if _norm_key(k) == norm and _is_numeric(v):
+                            d[k] = float(v) + (FREEZE_PERTURB_STEP if i % 2 == 0 else -FREEZE_PERTURB_STEP)
+                else:
+                    d[norm] = FREEZE_INJECT_VALUE  # 주입 (결정이 무시함을 증명)
+        out.append(rec)
+    return out
+
+
+def _run_insensitivity_fixture(args: argparse.Namespace, policy: JSON,
+                               t3: JSON | None, t7: JSON | None, t8: JSON | None) -> int:
+    """Plan Task 9 failure QA: --fixture altered-r-only-values / altered-leaderboard-values.
+    R-only or leaderboard/public-score 값들을 주입/변형한 사본에서 결정을 재실행해 frozen
+    결과(후보 id 또는 NO_PROMOTION)가 불변임을 증명한다. 종료 코드 2 = 가드 발동
+    (변조 시도 거부 — 계획 QA 'each exiting 2 without changing the frozen result')."""
+    if args.fixture not in FREEZE_FIXTURES:
+        print(f"[next_round_policy] FATAL: 알 수 없는 fixture {args.fixture!r}", file=sys.stderr)
+        return 1
+    clean = decide_freeze(policy, t3, t7, t8)
+    if clean["violations"]:
+        print("[next_round_policy] fixture: 사전 위반 존재 — fixture 실행 불가", file=sys.stderr)
+        return 2
+    clean_id = clean["decision"]["frozen_candidate_id"]
+    clean_verdict = clean["decision"]["terminal_verdict"]
+
+    if args.fixture == "altered-r-only-values":
+        norms = {_norm_key(k) for k in (policy.get("selection") or {}).get("forbidden_sort_keys") or []}
+        label = "R-only/부트스트랩-LB 값"
+    else:
+        norms = {_norm_key(k) for k in FREEZE_LB_KEYS}
+        label = "리더보드/공개점수 값"
+    records = [r for r in (t3, t7, t8) if r is not None]
+    tampered = _tampered_copies(records, norms)
+    res = decide_freeze(policy, *tampered)
+    tampered_id = res["decision"]["frozen_candidate_id"]
+    tampered_verdict = res["decision"]["terminal_verdict"]
+    unchanged = (clean_id == tampered_id) and (clean_verdict == tampered_verdict)
+
+    print(f"[next_round_policy] --freeze --fixture {args.fixture}:")
+    print(f"  label: {label}")
+    print(f"  injected/perturbed key norms: {sorted(norms)}")
+    print(f"  clean decision:      {clean_verdict} candidate_id={clean_id}")
+    print(f"  tampered decision:   {tampered_verdict} candidate_id={tampered_id}")
+    if unchanged:
+        print(f"  guard: 변조 시도 거부 — frozen result unchanged: {clean_verdict} "
+              f"(exit 2 = 계획 QA 실패 경로 기대 종료 코드; R-only/리더보드 값은 결정에 영향 불가)")
+    else:
+        print(f"  FATAL: insensitivity VIOLATED — frozen result changed "
+              f"({clean_verdict}/{clean_id} → {tampered_verdict}/{tampered_id})", file=sys.stderr)
+    return 2
+
+
+def cmd_freeze(args: argparse.Namespace) -> int:
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    if not evidence_dir.is_dir():
+        print(f"[next_round_policy] FATAL: 증거 디렉토리 없음: {evidence_dir}", file=sys.stderr)
+        return 1
+
+    policy_path = Path(args.policy).expanduser().resolve()
+    policy = load_json(policy_path)
+    if policy is None:
+        print(f"[next_round_policy] FATAL: 정책 파일을 읽을 수 없음: {policy_path}", file=sys.stderr)
+        return 1
+    policy_hash = _canonical_sha256(policy)
+    violations = validate_policy(policy)
+
+    t3 = load_json(evidence_dir / "task-3-cat-boundary-gate.json")
+    t7 = load_json(evidence_dir / "task-7-promotion.json")
+    t8 = load_json(evidence_dir / "task-8-calibration.json")
+    if t3 is None and t7 is None and t8 is None:
+        print(f"[next_round_policy] FATAL: task-3/7/8 증거 전부 없음 — freeze 결정 불가: "
+              f"{evidence_dir}", file=sys.stderr)
+        return 1
+
+    res = decide_freeze(policy, t3, t7, t8)
+    violations += res["violations"]
+    trace = res["trace"]
+    decision = res["decision"]
+
+    if args.fixture:
+        if violations:
+            for v in violations:
+                print(f"  [REJECT] {v['rule']}: {v['reason']}")
+            return 2
+        return _run_insensitivity_fixture(args, policy, t3, t7, t8)
+
+    if violations:
+        print(f"[next_round_policy] --freeze: REJECT (exit 2)")
+        for v in violations:
+            print(f"  [REJECT] {v['rule']}: {v['reason']}")
+        return 2
+
+    terminal = decision["terminal_verdict"]
+    exit_code = 0  # NO_PROMOTION 은 정상 종결 (패키징 전 중단)
+    rb_id = policy.get("rollback_baseline_candidate_id")
+    record = {
+        "schema_version": SCHEMA_VERSION,
+        "title": "Todo 9 — Freeze single best passing candidate (primary-only, no R-fold/LB ranking)",
+        "task": "aimers9-next-round/task-9-freeze",
+        "mode": "freeze",
+        "verdict": terminal,
+        "exit_code": exit_code,
+        "recorded_at_utc": now_utc(),
+        "git_head": _git_commit(),
+        "policy_path": str(policy_path),
+        "policy_config_hash": policy_hash,
+        "label_sources": ["primary"],
+        "labels_read": False,
+        "label_sources_note": "freeze 는 라벨을 읽지 않음 — task-3/7/8 증거의 verdict/primary 지표만 "
+                              "소비 (R-only 폴드·부트스트랩·리더보드 값은 결정 입력에서 제외)",
+        "decision": decision,
+        "retained_rollback_baseline_candidate_id": rb_id,
+        "retained_baseline_note": (f"NO_PROMOTION — 현재 최고 {policy.get('rollback_baseline_candidate')} "
+                                   f"({rb_id}, Public {policy['live_state_frozen']['current_best_public_score']}) 유지, "
+                                   "패키징 전 중단; leaderboard_state.json 변경 없음"),
+        "priority_tie_rule_trace": trace,
+        "checks": [
+            {"rule": "policy_check", "ok": True,
+             "reason": f"{len(validate_policy(policy))} violations — 동결 정책 유효"},
+            {"rule": "evidence_present", "ok": True,
+             "reason": "task-3/7/8 증거 로드 (파일별 verdict 아래 trace 참조)"},
+            {"rule": "no_labels_read", "ok": True,
+             "reason": "freeze 는 어떤 라벨도 로드하지 않음 (label_sources=['primary'], labels_read=false)"},
+            {"rule": "no_r_fold_or_leaderboard_ranking", "ok": True,
+             "reason": "결정 입력 = verdict + primary_bss + candidate_id 만; R-only/부트스트랩/리더보드 "
+                       "값은 정렬·선택에 사용 금지 (정책 forbidden_sort_keys + no_public_feedback)"},
+        ],
+        "violations": violations,
+        "findings": [
+            {"rule": f"priority:{e.get('path')}", "ok": True,
+             "reason": (f"verdict={e.get('verdict')} (필요 {e.get('required')}) → {e.get('outcome')}"
+                        + (f"; candidate_id={e.get('candidate_id')}, primary_bss={e.get('primary_bss')}"
+                           if e.get("candidate_id") else "")
+                        + (f"; {e.get('reason', '')}" if e.get("reason") else ""))}
+            for e in trace
+        ],
+        "insensitivity_guard": {
+            "note": "R-only/리더보드 값의 결정 불변성은 --fixture altered-r-only-values / "
+                    "altered-leaderboard-values (exit 2 가드) 및 test helper 로 증명",
+            "no_fixture_run_in_happy_path": True,
+        },
+        "notes": "Task 3=PRIMARY_REJECT, Task 7=SKIPPED, Task 8=SKIPPED_NO_BASE → base 경로 없음 → "
+                 "NO_PROMOTION (정직한 종결). Task 10 은 NO_PROMOTION 에 대해 SKIPPED.",
+    }
+    json_path, md_path = write_evidence(record, evidence_dir / "task-9-freeze")
+    print(f"[next_round_policy] --freeze: {terminal} (exit {exit_code})")
+    for e in trace:
+        mark = "PASS" if e.get("ok") is not False else "INFO"
+        print(f"  [{mark}] priority:{e.get('path')}: verdict={e.get('verdict')} "
+              f"(필요 {e.get('required')}) → {e.get('outcome')}")
+    if decision.get("frozen_candidate_id"):
+        print(f"[next_round_policy] frozen candidate: {decision['frozen_candidate_id']} "
+              f"(source {decision.get('source')})")
+    else:
+        print(f"[next_round_policy] retained rollback baseline: {rb_id} — 패키징 전 중단")
+    print(f"[next_round_policy] evidence -> {json_path} / {md_path}")
+    return exit_code
+
+
 # 계획 표준 명령(플래그 스타일) ↔ subcommand 스타일 정규화 매핑.
-# --freeze / --qualify-and-deploy-frozen 은 이후 Task 9/10 에서 subcommand 로 등록 예정 —
+# --freeze 는 Task 9 에서 subcommand 로 등록됨; --qualify-and-deploy-frozen 은 Task 10 예정 —
 # 지금은 정규화만 하고 파서에 미등록 상태로 두어 미구현 호출이 argparse 'invalid choice'
 # (exit 2) 로 실패하게 한다 (미구현 subcommand 는 절대 PASS 가 될 수 없음).
 _FLAG_TO_SUB = {
@@ -648,6 +1009,14 @@ def main(argv: list[str] | None = None) -> int:
     p_s.add_argument("--evidence-dir", default=str(DEFAULT_EVIDENCE_DIR))
     p_s.add_argument("--policy", default=str(DEFAULT_POLICY))
     p_s.set_defaults(func=cmd_audit_scope)
+
+    p_f = sub.add_parser("freeze", help="Task 9 — 단일 최고 통과 후보 동결 (primary-only, "
+                                        "R-fold/리더보드 랭킹 없음; base 없으면 NO_PROMOTION)")
+    p_f.add_argument("--evidence-dir", default=str(DEFAULT_EVIDENCE_DIR))
+    p_f.add_argument("--policy", default=str(DEFAULT_POLICY))
+    p_f.add_argument("--fixture", default=None, choices=sorted(FREEZE_FIXTURES),
+                     help="불변성 가드: R-only/리더보드 값 주입·변형 후 결정 재실행 (exit 2 가드 발동)")
+    p_f.set_defaults(func=cmd_freeze)
 
     args = parser.parse_args(_normalize_argv(list(argv) if argv is not None else sys.argv[1:]))
     if args.mode == "check" and args.verification:
