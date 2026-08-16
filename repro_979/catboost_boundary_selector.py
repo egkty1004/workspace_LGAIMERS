@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
-"""catboost_boundary_selector.py — Todo 2: primary-only CatBoost boundary grid selector.
+"""catboost_boundary_selector.py — Todo 2/3: primary-only CatBoost boundary selector + gate.
 
-이 라운드(aimers9-score-improvement-next-round)의 Wave 1 두 번째 태스크:
+이 라운드(aimers9-score-improvement-next-round)의 Wave 1 두 번째/세 번째 태스크:
 기존 스윕(blend_weight_sweep.py)이 홀드아웃 부트스트랩 LB5% 로 근접 후보를 랭킹한
 선택 누수(selection leakage)를 교정하고, CatBoost 경계 영역(cat 0.35..0.55)을
-**primary 라벨로만** 평가하여 정확히 하나의 후보를 동결한다.
+**primary 라벨로만** 평가하여 정확히 하나의 후보를 동결한다 (Todo 2).
+
+Todo 3 (이 모듈에 통합): 동결 후보를 **활성 롤백 기준선** `5890a4c54f502c4e`
+(lgb 0.30 / mlp 0.35 / cat 0.35) 와 primary 폴드에서만 비교해 정확히 하나의
+판정을 낸다 — PRIMARY_PASS iff (ΔBSS > 3.0) AND (max|Δmean| <= 0.005), 그 외
+PRIMARY_REJECT. r2022/r2023/r2024 라벨은 절대 로드하지 않는다 (Task 10 전
+reject-only, 구조적 가드). 패키징/제출 없음.
 
 그리드 계약 (정책/계획에 명시 — 분모 40 tick):
   - Cat  : tick 14..22  (0.350..0.550, step 0.025)
@@ -39,13 +45,18 @@
 
 증거: .omo/evidence/aimers9-next-round/task-2-primary-selector.{json,log,md}
   (+ 사전 등록 config: task-2-primary-selector-config.json)
+  .omo/evidence/aimers9-next-round/task-3-cat-boundary-gate.{json,md}
+  (+ 사전 등록 config: task-3-cat-boundary-gate-config.json)
 
 모드:
-  --smoke          그리드 78행 + 선택 경로 검증 (증거 task-2-primary-selector-smoke.*)
-  --primary-only   전체 primary 선택 + 동결 (기본, 증거 task-2-primary-selector.*)
-  --fixture <이름> 실패 주입 (r-sort-key / attempted-r-fold-read → 모두 exit 2)
+  --smoke          그리드 78행 + 선택 경로 + 게이트 경로 검증 (증거 task-2/3 *-smoke.*)
+  --primary-only   전체 primary 선택 + 동결 + 게이트 판정 (기본, 증거 task-2/3)
+  --fixture <이름> 실패 주입:
+                   r-sort-key / attempted-r-fold-read → exit 2
+                   nonpositive-primary → ΔBSS≤0 강제 주입, PRIMARY_REJECT 경로 증명 후 exit 2
 
-퇴장 코드: 0 = PASS, 1 = 치명적 입력 오류, 2 = 정책/누수 가드 위반.
+퇴장 코드: 0 = PASS (게이트 판정 포함, PRIMARY_REJECT 도 정상), 1 = 치명적 입력 오류,
+          2 = 정책/누수 가드 위반 (또는 실패 주입 fixture 정상 증명).
 """
 from __future__ import annotations
 
@@ -109,6 +120,23 @@ MEMBER_FILES: dict[str, str] = {
     "catboost": "cache/qualification/catboost/primary.npy",
 }
 PRIMARY_ROWS = EXPECTED_ROWS[SELECTION_FOLD]  # 253507
+
+# ════════════════════════════════════════════════════════════════════
+# Todo 3 — reject-only temporal gate 상수 (동결 후보 vs 활성 롤백 기준선)
+# ════════════════════════════════════════════════════════════════════
+# 동결 후보 (Task 2 결과 — lgb 0.35 / mlp 0.30 / cat 0.35, primary_bss 795.2586)
+FROZEN_CANDIDATE_ID = "d15788255a7596bb"
+FROZEN_WEIGHTS_BY_MEMBER: dict[str, float] = {"lgb": 0.35, "mlp": 0.30, "catboost": 0.35}
+# 활성 롤백 기준선 — 정책 rollback_baseline_candidate_id (REPORT_blend_weight_sweep.md
+# grid B rank 1: lgb 0.30 / mlp 0.35 / cat 0.35). step-0.05 id 스킴이라 이 모듈의
+# _row_candidate_id(step 0.025) 로 재계산하지 않는다 — 리터럴 동결 ID.
+BASELINE_CANDIDATE_ID = "5890a4c54f502c4e"
+BASELINE_WEIGHTS_BY_MEMBER: dict[str, float] = {"lgb": 0.30, "mlp": 0.35, "catboost": 0.35}
+GATE_DELTA_BSS_MIN = 3.0      # ΔBSS > 3.0 — STRICT (초과만 PASS)
+GATE_MEAN_SHIFT_MAX = 0.005   # max|Δmean| <= 0.005 (probability means, clip+sigmoid 후)
+# fixture nonpositive-primary 주입 플래그 (메인 흐름에서만 True — 소문자 런타임 플래그)
+force_nonpositive_primary = False
+T3_SELECTOR_EVIDENCE = EVIDENCE_DIR / "task-2-primary-selector.json"  # 동결 교차 검증용
 
 # R-only / 부트스트랩 메트릭은 reject-only — 선택 정렬 키로 절대 사용 금지 (정책 forbidden).
 # 테스트(b)의 monkeypatch 대상 스텁: Task 10 이전에는 절대 채워지지 않는다.
@@ -323,6 +351,66 @@ def _freeze(ranked: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 # ════════════════════════════════════════════════════════════════════
+# Todo 3 — reject-only temporal gate (동결 후보 vs 활성 롤백 기준선, primary 전용)
+# ════════════════════════════════════════════════════════════════════
+def _gate_verdict(delta_bss: float, mean_shift: float,
+                  delta_min: float | None = None, shift_max: float | None = None) -> str:
+    """게이트 판정 규칙 (모듈 상수 기본 — monkeypatch 가능).
+
+    PRIMARY_PASS iff (delta_bss > GATE_DELTA_BSS_MIN) AND (mean_shift <= GATE_MEAN_SHIFT_MAX).
+    ΔBSS == 3.0 은 strict 초과 규칙에 따라 REJECT (경계는 PASS 가 아님)."""
+    delta_min = GATE_DELTA_BSS_MIN if delta_min is None else delta_min
+    shift_max = GATE_MEAN_SHIFT_MAX if shift_max is None else shift_max
+    if delta_bss > delta_min and mean_shift <= shift_max:
+        return "PRIMARY_PASS"
+    return "PRIMARY_REJECT"
+
+
+def _gate_primary(z_cand: np.ndarray[Any, np.dtype[np.float64]],
+                  z_base: np.ndarray[Any, np.dtype[np.float64]],
+                  y: np.ndarray[Any, np.dtype[np.float64]],
+                  frozen_id: str, frozen_weights: dict[str, float],
+                  baseline_id: str, baseline_weights: dict[str, float],
+                  force_nonpositive: bool = False) -> dict[str, Any]:
+    """primary 폴드에서 동결 후보 vs 기준선 비교 (배포 산식 동일).
+
+    ΔBSS = primary_bss(후보) − primary_bss(기준선).
+    mean shift = |mean(p_후보) − mean(p_기준선)| (clip+sigmoid 후 확률 평균, 단일 폴드).
+    force_nonpositive: fixture 주입 — ΔBSS 를 <= 0 으로 강제 (PRIMARY_REJECT 경로 증명)."""
+    p_cand = np.clip(common.sigmoid(z_cand + C_LOGIT), CLIP_LO, CLIP_HI)
+    p_base = np.clip(common.sigmoid(z_base + C_LOGIT), CLIP_LO, CLIP_HI)
+    bss_cand = float(common.score(p_cand, y))
+    bss_base = float(common.score(p_base, y))
+    delta = bss_cand - bss_base
+    forced = bool(force_nonpositive)
+    if forced:
+        delta = min(delta, 0.0)  # ΔBSS <= 0 강제 (경로 증명용)
+    mean_shift = float(np.abs(p_cand.mean() - p_base.mean()))
+    return {
+        "frozen": {
+            "candidate_id": frozen_id,
+            "weights_by_member": dict(frozen_weights),
+            "primary_bss": bss_cand,
+            "brier": float(((p_cand - y) ** 2).mean()),
+            "pred_mean": float(p_cand.mean()),
+        },
+        "baseline": {
+            "candidate_id": baseline_id,
+            "weights_by_member": dict(baseline_weights),
+            "primary_bss": bss_base,
+            "brier": float(((p_base - y) ** 2).mean()),
+            "pred_mean": float(p_base.mean()),
+        },
+        "delta_bss": delta,
+        "mean_shift": mean_shift,
+        "r": float(y.mean()),
+        "thresholds": {"delta_bss_min": GATE_DELTA_BSS_MIN, "mean_shift_max": GATE_MEAN_SHIFT_MAX},
+        "forced_nonpositive": forced,
+        "verdict": _gate_verdict(delta, mean_shift),
+    }
+
+
+# ════════════════════════════════════════════════════════════════════
 # 증거 작성
 # ════════════════════════════════════════════════════════════════════
 class _Tee:
@@ -401,20 +489,86 @@ def _write_md(record: dict[str, Any], path: Path) -> Path:
     return path
 
 
+def _write_gate_md(record: dict[str, Any], path: Path) -> Path:
+    g = record["gate"]
+    fz, bl = g["frozen"], g["baseline"]
+    lines = [
+        f"# {record['title']} — {record['verdict']} (exit {record['exit_code']})",
+        "",
+        f"- **recorded_at_utc**: {record['recorded_at_utc']}",
+        f"- **git_head**: {record['git_head']}",
+        f"- **config_hash**: `{record['config_hash']}`",
+        f"- **policy_config_hash**: `{record['policy_config_hash']}`",
+        f"- **label_sources**: {record['label_sources']} (labels_read={record['labels_read']})",
+        "",
+        "## Protocol",
+        "",
+        f"- **Frozen candidate (Task 2)**: `{fz['candidate_id']}` — "
+        f"lgb×{fz['weights_by_member']['lgb']:.3f} / mlp×{fz['weights_by_member']['mlp']:.3f} / "
+        f"catboost×{fz['weights_by_member']['catboost']:.3f} (primary_bss={fz['primary_bss']:.4f}).",
+        f"- **Baseline (active rollback)**: `{bl['candidate_id']}` — "
+        f"lgb×{bl['weights_by_member']['lgb']:.3f} / mlp×{bl['weights_by_member']['mlp']:.3f} / "
+        f"catboost×{bl['weights_by_member']['catboost']:.3f} (primary_bss={bl['primary_bss']:.4f}).",
+        f"- **Scoring (both)**: `common.score(clip(sigmoid(z+C_LOGIT),0.30,0.70), y)`, "
+        f"C_LOGIT={C_LOGIT}, primary fold only ({SELECTION_FOLD}, {PRIMARY_ROWS} rows).",
+        "- **ΔBSS** = primary_bss(frozen) − primary_bss(baseline). "
+        "**Mean shift** = max over the scored primary fold of "
+        "|mean(p_candidate) − mean(p_baseline)| (probability means after clip+sigmoid).",
+        f"- **Gate rule**: `PRIMARY_PASS` iff ΔBSS > {GATE_DELTA_BSS_MIN} "
+        f"AND mean shift <= {GATE_MEAN_SHIFT_MAX}; else `PRIMARY_REJECT`.",
+        "- **R-fold embargo**: r2022/r2023/r2024 labels are never read in this mode "
+        "(Task 10 R qualification) — `_read_label_fold`/`_assert_primary_only_labels` "
+        "structural guards; `--fixture attempted-r-fold-read` exits 2.",
+        "",
+        "## Gate metrics (primary fold)",
+        "",
+        f"- **frozen**: id `{fz['candidate_id']}` bss={fz['primary_bss']:.4f} "
+        f"brier={fz['brier']:.6f} pred_mean={fz['pred_mean']:.6f}",
+        f"- **baseline**: id `{bl['candidate_id']}` bss={bl['primary_bss']:.4f} "
+        f"brier={bl['brier']:.6f} pred_mean={bl['pred_mean']:.6f}",
+        f"- **ΔBSS**: {g['delta_bss']:+.4f} (need > {GATE_DELTA_BSS_MIN}: "
+        f"{bool(g['delta_bss'] > GATE_DELTA_BSS_MIN)})",
+        f"- **mean shift**: {g['mean_shift']:.6f} (need <= {GATE_MEAN_SHIFT_MAX}: "
+        f"{bool(g['mean_shift'] <= GATE_MEAN_SHIFT_MAX)})",
+        f"- **r** = {g['r']:.4f}",
+        f"- **forced_nonpositive**: {g['forced_nonpositive']} (fixture 주입 여부)",
+        "",
+        "## Checks",
+        "",
+    ]
+    for c in record.get("checks", []):
+        mark = "PASS" if c.get("ok") else ("FAIL" if c.get("ok") is False else "INFO")
+        lines.append(f"- **[{mark}]** {c.get('rule')}: {c.get('reason', '')}")
+    lines += ["", f"## Verdict: **{record['verdict']}**", ""]
+    if record.get("notion", {}).get("status"):
+        n = record["notion"]
+        lines += ["## Notion local-CV row", "",
+                  f"- status: `{n.get('status')}`",
+                  f"- cv_table_block: `{n.get('cv_table_block')}`",
+                  f"- row_receipt: `{json.dumps(n.get('row_receipt'), ensure_ascii=False)}`"]
+        lines.append("")
+    path.write_text("\n".join(lines), encoding="utf-8")
+    return path
+
+
 # ════════════════════════════════════════════════════════════════════
 # 메인
 # ════════════════════════════════════════════════════════════════════
 def main(argv: list[str] | None = None) -> int:
+    global force_nonpositive_primary
     parser = argparse.ArgumentParser(
-        description="Todo 2: primary-only CatBoost boundary grid selector (78 feasible rows, "
-                    "freeze exactly one candidate on primary BSS only)")
+        description="Todo 2/3: primary-only CatBoost boundary grid selector (78 feasible rows, "
+                    "freeze exactly one candidate on primary BSS only) + reject-only gate "
+                    "(frozen vs rollback baseline 5890a4c54f502c4e → PRIMARY_PASS/PRIMARY_REJECT)")
     parser.add_argument("--smoke", action="store_true",
-                        help="스모크: 그리드 78행 + primary 선택 + 1개 동결 경로 검증")
+                        help="스모크: 그리드 78행 + primary 선택 + 1개 동결 + 게이트 경로 검증")
     parser.add_argument("--primary-only", action="store_true",
-                        help="전체 primary 선택 실행 (기본 모드)")
-    parser.add_argument("--fixture", choices=["r-sort-key", "attempted-r-fold-read"], default=None,
-                        help="실패 QA: R-only 정렬 키 주입 또는 R-only 라벨 읽기 시도 → exit 2")
-    parser.add_argument("--evidence", default=None, help="증거 JSON 경로 (기본 task-2-primary-selector.json)")
+                        help="전체 primary 선택 실행 + 게이트 판정 (기본 모드)")
+    parser.add_argument("--fixture", choices=["r-sort-key", "attempted-r-fold-read",
+                                              "nonpositive-primary"], default=None,
+                        help="실패 QA: R-only 정렬 키 / R-only 라벨 읽기 시도 / ΔBSS≤0 강제 "
+                             "주입 (전부 exit 2)")
+    parser.add_argument("--evidence", default=None, help="Task 2 증거 JSON 경로 (기본 task-2-primary-selector.json)")
     parser.add_argument("--log", default=None, help="증거 로그 경로 (기본 task-2-primary-selector.log)")
     parser.add_argument("--md", default=None, help="증거 MD 경로 (기본 task-2-primary-selector.md)")
     args = parser.parse_args(argv)
@@ -422,21 +576,27 @@ def main(argv: list[str] | None = None) -> int:
     smoke = bool(args.smoke)
     if args.fixture:  # 실패 주입 실행은 메인 증거 로그를 절대 덮어쓰지 않는다
         base = f"task-2-primary-selector-fixture-{args.fixture}"
+        t3_base = f"task-3-cat-boundary-gate-fixture-{args.fixture}"
     else:
         base = "task-2-primary-selector-smoke" if smoke else "task-2-primary-selector"
+        t3_base = "task-3-cat-boundary-gate-smoke" if smoke else "task-3-cat-boundary-gate"
     evidence_path = (Path(args.evidence).expanduser().resolve() if args.evidence
                      else EVIDENCE_DIR / f"{base}.json")
     log_path = (Path(args.log).expanduser().resolve() if args.log
                 else EVIDENCE_DIR / f"{base}.log")
     md_path = (Path(args.md).expanduser().resolve() if args.md
                else EVIDENCE_DIR / f"{base}.md")
-    config_path = EVIDENCE_DIR / "task-2-primary-selector-config.json"
+    t3_evidence_path = EVIDENCE_DIR / f"{t3_base}.json"
+    t3_md_path = EVIDENCE_DIR / f"{t3_base}.md"
+    fixture_tag = f"-fixture-{args.fixture}" if args.fixture else ""
+    config_path = EVIDENCE_DIR / f"task-2-primary-selector-config{fixture_tag}.json"
+    gate_config_path = EVIDENCE_DIR / f"task-3-cat-boundary-gate-config{fixture_tag}.json"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     sys.stdout = _Tee(log_path)
 
     t0 = time.time()
-    print(f"[catboost_boundary_selector] Todo 2 — primary-only CatBoost boundary selection "
-          f"(smoke={smoke}, fixture={args.fixture})", flush=True)
+    print(f"[catboost_boundary_selector] Todo 2/3 — primary-only CatBoost boundary selection "
+          f"+ reject-only gate (smoke={smoke}, fixture={args.fixture})", flush=True)
 
     # ── 실패 주입: 데이터/라벨 로드 전에 차단 (exit 2) ──
     if args.fixture == "r-sort-key":
@@ -460,6 +620,11 @@ def main(argv: list[str] | None = None) -> int:
         print("[fixture attempted-r-fold-read] FAIL — LeakageError 가 발생하지 않았습니다",
               file=sys.stderr)
         return 1
+    if args.fixture == "nonpositive-primary":
+        # 실데이터로 게이트 REJECT 경로 증명: ΔBSS 를 <= 0 으로 강제 (메인 흐름 계속)
+        print("\n[fixture nonpositive-primary] ΔBSS<=0 강제 주입 — PRIMARY_REJECT 경로 "
+              "실데이터 검증 시작…", flush=True)
+        force_nonpositive_primary = True
 
     # ── 1) 정책 검증 (읽기 전용) ──
     try:
@@ -526,6 +691,53 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[pre-register] config hash={config_hash[:16]}… → {config_path} "
           f"(라벨 읽기 이전 기록)", flush=True)
 
+    # ── 3b) Todo 3 게이트 설정 사전 등록 — 라벨 결과를 읽기 **이전**에 기록 ──
+    gate_config = {
+        "schema_version": SCHEMA_VERSION,
+        "task": "aimers9-next-round/task-3-cat-boundary-gate-config",
+        "title": "Todo 3 — pre-registered reject-only temporal gate config",
+        "recorded_at_utc": _now_utc(),
+        "git_head": _git_commit(),
+        "selection_fold": SELECTION_FOLD,
+        "label_sources": [SELECTION_FOLD],
+        "labels_read": False,
+        "labels_read_note": ("Config written BEFORE any label result is read (pre-registration "
+                             "contract). Frozen id/weights from Task 2 evidence; baseline from "
+                             "frozen policy rollback_baseline_candidate_id."),
+        "frozen_candidate_id": FROZEN_CANDIDATE_ID,
+        "frozen_weights_by_member": FROZEN_WEIGHTS_BY_MEMBER,
+        "frozen_source": "task-2-primary-selector.json frozen (lgb 0.35 / mlp 0.30 / catboost 0.35)",
+        "baseline_candidate_id": BASELINE_CANDIDATE_ID,
+        "baseline_weights_by_member": BASELINE_WEIGHTS_BY_MEMBER,
+        "baseline_source": ("next_round_policy.json rollback_baseline_candidate_id; "
+                            "REPORT_blend_weight_sweep.md grid B rank 1 (lgb 0.30 / mlp 0.35 / "
+                            "catboost 0.35, step-0.05 id 스킴 — 재계산하지 않는 리터럴 ID)"),
+        "scoring": {
+            "formula": "common.score(clip(sigmoid(z_blend + C_LOGIT), 0.30, 0.70), y)",
+            "c_logit": C_LOGIT, "clip_lo": CLIP_LO, "clip_hi": CLIP_HI,
+        },
+        "gate": {
+            "rule": ("PRIMARY_PASS iff (primary_delta_bss > 3.0) AND "
+                     "(max_abs_primary_mean_shift <= 0.005); else PRIMARY_REJECT"),
+            "delta_bss_min": GATE_DELTA_BSS_MIN,
+            "mean_shift_max": GATE_MEAN_SHIFT_MAX,
+            "mean_shift_definition": ("max over the scored primary fold of "
+                                      "|mean(p_candidate) - mean(p_baseline)|, probability "
+                                      "means after clip+sigmoid"),
+            "scored_fold": SELECTION_FOLD,
+        },
+        "r_fold_embargo": ("r2022/r2023/r2024 labels never loaded in this mode (Task 10 R "
+                           "qualification) — _read_label_fold / _assert_primary_only_labels "
+                           "guards; --fixture attempted-r-fold-read exits 2"),
+    }
+    gate_config_hash = _canonical_sha256(gate_config)
+    gate_config["config_hash"] = gate_config_hash
+    gate_config_path.parent.mkdir(parents=True, exist_ok=True)
+    gate_config_path.write_text(json.dumps(gate_config, ensure_ascii=False, indent=2) + "\n",
+                                encoding="utf-8")
+    print(f"[pre-register] gate config hash={gate_config_hash[:16]}… → {gate_config_path} "
+          f"(라벨 읽기 이전 기록)", flush=True)
+
     # ── 4) 데이터 + 폴드 (마스크만, 라벨 아님) + row-ID disjointness ──
     train, _ = common.load_train()
     common.preprocess_for_submission(train)
@@ -582,6 +794,29 @@ def main(argv: list[str] | None = None) -> int:
               flush=True)
     print(f"[frozen] 1개 동결: {frozen['weights_by_member']} "
           f"primary_bss={frozen['primary_bss']:.4f} id={frozen['candidate_id']}", flush=True)
+
+    # ── 7b) Todo 3 게이트 — 동결 후보 vs 활성 롤백 기준선 (primary 라벨만) ──
+    # 계약: 게이트는 Task 2 동결 후보를 평가한다 — 그리드가 다른 후보를 뽑으면 하드 실패.
+    if frozen["candidate_id"] != FROZEN_CANDIDATE_ID:
+        raise PolicyViolation(
+            f"[POLICY] 동결 후보 {frozen['candidate_id']} != Task 2 동결 {FROZEN_CANDIDATE_ID} "
+            f"— 게이트는 Task 2 동결 후보만 평가 (exit 2)")
+    z_frozen = z_sel @ np.asarray(frozen["weights"], dtype=np.float64)
+    z_base = z_sel @ np.asarray([BASELINE_WEIGHTS_BY_MEMBER[m] for m in MEMBERS],
+                                dtype=np.float64)
+    gate = _gate_primary(z_frozen, z_base, y_primary, FROZEN_CANDIDATE_ID,
+                         FROZEN_WEIGHTS_BY_MEMBER, BASELINE_CANDIDATE_ID,
+                         BASELINE_WEIGHTS_BY_MEMBER,
+                         force_nonpositive=force_nonpositive_primary)
+    g_fz, g_bl = gate["frozen"], gate["baseline"]
+    print(f"\n[gate] frozen {g_fz['candidate_id']} bss={g_fz['primary_bss']:.4f} "
+          f"brier={g_fz['brier']:.6f} mean={g_fz['pred_mean']:.6f}", flush=True)
+    print(f"[gate] baseline {g_bl['candidate_id']} bss={g_bl['primary_bss']:.4f} "
+          f"brier={g_bl['brier']:.6f} mean={g_bl['pred_mean']:.6f}", flush=True)
+    print(f"[gate] ΔBSS={gate['delta_bss']:+.4f} (need > {GATE_DELTA_BSS_MIN}) | "
+          f"mean_shift={gate['mean_shift']:.6f} (need <= {GATE_MEAN_SHIFT_MAX}) | "
+          f"r={gate['r']:.4f} | forced={gate['forced_nonpositive']}", flush=True)
+    print(f"[gate] verdict: {gate['verdict']}", flush=True)
 
     # ── 8) 증거 작성 ──
     checks = [
@@ -657,7 +892,104 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[catboost_boundary_selector] 증거 MD   → {md_path}", flush=True)
     print(f"[catboost_boundary_selector] 총 {time.time() - t0:.0f}s", flush=True)
 
+    # ── 9) Task 3 게이트 증거 작성 ──
+    t2_frozen_check: dict[str, Any] = {"ok": False, "reason": ""}
+    if T3_SELECTOR_EVIDENCE.is_file():
+        t2_rec = json.loads(T3_SELECTOR_EVIDENCE.read_text(encoding="utf-8"))
+        t2_fz = t2_rec.get("frozen", {})
+        id_ok = t2_fz.get("candidate_id") == FROZEN_CANDIDATE_ID
+        bss_ok = abs(float(t2_fz.get("primary_bss", -1.0)) - gate["frozen"]["primary_bss"]) < 1e-6
+        t2_frozen_check = {
+            "ok": bool(id_ok and bss_ok),
+            "reason": (f"task-2-primary-selector.json frozen id={t2_fz.get('candidate_id')} "
+                       f"bss={t2_fz.get('primary_bss'):.6f} vs 재계산 "
+                       f"id={gate['frozen']['candidate_id']} "
+                       f"bss={gate['frozen']['primary_bss']:.6f} — id_match={id_ok}, "
+                       f"bss_match={bss_ok}"),
+        }
+    else:
+        t2_frozen_check = {"ok": False,
+                           "reason": f"Task 2 증거 없음: {T3_SELECTOR_EVIDENCE} — 교차 검증 불가"}
+    gate_checks = [
+        {"rule": "policy_check", "ok": not policy_violations,
+         "reason": f"{len(policy_violations)} violations — label_source=primary (동결 정책)"},
+        {"rule": "provenance", "ok": all(r["digest_match"] and r["rows_match"] for r in manifest),
+         "reason": f"{len(manifest)}/3 primary OOF 다이제스트 일치 (task-2-control / "
+                   f"task-5-models-catboost)"},
+        {"rule": "primary_only_labels", "ok": set(labels) == {SELECTION_FOLD},
+         "reason": f"labels = {sorted(labels)} — R-only 라벨 미로드"},
+        {"rule": "r_fold_embargo", "ok": set(labels) == {SELECTION_FOLD},
+         "reason": ("r2022/r2023/r2024 라벨 미로드 — 구조 가드(_read_label_fold/"
+                    "_assert_primary_only_labels) + --fixture attempted-r-fold-read exit 2")},
+        {"rule": "frozen_matches_task2", "ok": t2_frozen_check["ok"],
+         "reason": t2_frozen_check["reason"]},
+        {"rule": "gate_verdict_rule",
+         "ok": gate["verdict"] in ("PRIMARY_PASS", "PRIMARY_REJECT"),
+         "reason": (f"ΔBSS {gate['delta_bss']:+.4f} > {GATE_DELTA_BSS_MIN}? "
+                    f"{bool(gate['delta_bss'] > GATE_DELTA_BSS_MIN)} | mean_shift "
+                    f"{gate['mean_shift']:.6f} <= {GATE_MEAN_SHIFT_MAX}? "
+                    f"{bool(gate['mean_shift'] <= GATE_MEAN_SHIFT_MAX)} → {gate['verdict']}")},
+    ]
+    notion_placeholder = {
+        "status": "prepared_pending_notion",
+        "cv_table_block": "3b55ed6b-28d5-8135-9341-fa1109df78af",
+        "note": ("Task 3 는 실라벨 스코어 CV 결과 — AGENTS.md 따라 📊 로컬 CV 테이블에 행 추가 "
+                 "(Notion MCP 가용 시; 부재 시 pending_user)"),
+    }
+    gate_record = {
+        "schema_version": SCHEMA_VERSION,
+        "title": "Todo 3 — CatBoost boundary gate (frozen vs active rollback baseline)",
+        "task": "aimers9-next-round/task-3-cat-boundary-gate",
+        "mode": ("smoke" if smoke else
+                 ("fixture-nonpositive-primary" if args.fixture == "nonpositive-primary"
+                  else "primary-only")),
+        "verdict": gate["verdict"],
+        "exit_code": 2 if args.fixture == "nonpositive-primary" else 0,
+        "recorded_at_utc": _now_utc(),
+        "git_head": _git_commit(),
+        "config_hash": gate_config_hash,
+        "config_pre_registered": {
+            "file": str(gate_config_path), "sha256": _sha256(gate_config_path),
+            "written_before_labels_read": True,
+            "labels_read_at_registration": False,
+        },
+        "policy_path": str(POLICY_PATH),
+        "policy_config_hash": policy_hash,
+        "label_sources": [SELECTION_FOLD],
+        "labels_read": True,
+        "selection_fold": SELECTION_FOLD,
+        "scoring": {
+            "formula": "common.score(clip(sigmoid(z_blend + C_LOGIT), 0.30, 0.70), y)",
+            "c_logit": C_LOGIT, "clip_lo": CLIP_LO, "clip_hi": CLIP_HI,
+        },
+        "gate": gate,
+        "r_fold_embargo": {
+            "loaded_folds": sorted(labels),
+            "guards": ["_read_label_fold", "_assert_primary_only_labels",
+                       "fixture attempted-r-fold-read → exit 2"],
+            "note": "Task 10 전 R-only 폴드는 reject-only — 이 모드에서 절대 로드 안 함",
+        },
+        "checks": gate_checks,
+        "violations": [],
+        "notion": notion_placeholder,
+        "environment": _environment(),
+        "total_time_s": time.time() - t0,
+    }
+    t3_evidence_path.parent.mkdir(parents=True, exist_ok=True)
+    t3_evidence_path.write_text(json.dumps(gate_record, ensure_ascii=False, indent=2) + "\n",
+                                encoding="utf-8")
+    _write_gate_md(gate_record, t3_md_path)
+    print(f"\n[catboost_boundary_selector] 게이트 증거 JSON → {t3_evidence_path}", flush=True)
+    print(f"[catboost_boundary_selector] 게이트 증거 MD   → {t3_md_path}", flush=True)
+
     # ── 판정 ──
+    if args.fixture == "nonpositive-primary":
+        if gate["verdict"] == "PRIMARY_REJECT":
+            print(f"[fixture nonpositive-primary] PASS — 강제 ΔBSS<=0 ({gate['delta_bss']:+.4f}) "
+                  f"주입에서 PRIMARY_REJECT 경로 실데이터 증명 (exit 2)", flush=True)
+            return 2
+        print("[fixture nonpositive-primary] FAIL — PRIMARY_REJECT 가 아님", file=sys.stderr)
+        return 1
     ok = (
         len(rows) == EXPECTED_GRID_ROWS
         and frozen["n_frozen"] == 1
@@ -670,6 +1002,11 @@ def main(argv: list[str] | None = None) -> int:
           f"({EXPECTED_GRID_ROWS} 필요) | 동결 {frozen['n_frozen']}개 (1 필요) | "
           f"라벨 {sorted(labels)} (primary 만 필요) | 출처 {len(manifest)}/3 | "
           f"정책 위반 {len(policy_violations)}", flush=True)
+    print(f"[gate] {gate['verdict']} — ΔBSS {gate['delta_bss']:+.4f} (>{GATE_DELTA_BSS_MIN}: "
+          f"{bool(gate['delta_bss'] > GATE_DELTA_BSS_MIN)}) | mean_shift "
+          f"{gate['mean_shift']:.6f} (<={GATE_MEAN_SHIFT_MAX}: "
+          f"{bool(gate['mean_shift'] <= GATE_MEAN_SHIFT_MAX)}) | frozen "
+          f"{gate['frozen']['candidate_id']} vs baseline {gate['baseline']['candidate_id']}", flush=True)
     return 0 if ok else 1
 
 

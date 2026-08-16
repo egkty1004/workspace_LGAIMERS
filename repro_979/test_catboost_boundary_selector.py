@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
-"""test_catboost_boundary_selector.py — Todo 2 tests-after (agent-executable, pytest 무의존).
+"""test_catboost_boundary_selector.py — Todo 2/3 tests-after (agent-executable, pytest 무의존).
 
 계획 QA 시나리오 (task-2):
   (a) smoke grid emits feasibility and one frozen candidate
   (b) monkeypatch a higher R-only metric for a lower-primary row → selected ID does NOT change
   (c) inject an R-field sort key → hard failure (exit 2)
 
+계획 QA 시나리오 (task-3):
+  (d) gate verdict boundary: ΔBSS == 3.0 is STRICT (REJECT), mean shift == 0.005 is <= (PASS)
+      — monkeypatched thresholds prove the rule reads patched values
+  (e) --fixture nonpositive-primary exits 2 AND its evidence proves PRIMARY_REJECT
+  (f) --fixture attempted-r-fold-read exits 2 (R-fold embargo)
+
 실행: python3 repro_979/test_catboost_boundary_selector.py  (exit 0 = 전부 PASS)
 
-모든 테스트는 선택 로직의 순수 함수(그리드/랭킹/가드)를 사용 — 실데이터 로드 없이
-빠르게 실행되고, (c)는 subprocess 로 CLI fixture 를 검증한다.
+모든 테스트는 선택/게이트 로직의 순수 함수(그리드/랭킹/가드/판정)를 사용 — 실데이터
+로드 없이 빠르게 실행되고, (c)/(e)/(f)는 subprocess 로 CLI fixture 를 검증한다.
 """
 from __future__ import annotations
 
@@ -131,6 +137,70 @@ def test_c_fixtures_exit_2() -> None:
         proc = subprocess.run([sys.executable, CLI, "--fixture", fx],
                               cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=300)
         assert proc.returncode == 2, f"--fixture {fx}: exit {proc.returncode} (필요 2)\n{proc.stdout}"
+
+
+# ── (d) Todo 3 게이트 판정 경계: ΔBSS > 3.0 STRICT / mean shift <= 0.005 ──
+def test_d_gate_verdict_boundary() -> None:
+    # 실제 동결 임계값 (GATE_DELTA_BSS_MIN=3.0, GATE_MEAN_SHIFT_MAX=0.005) 경계
+    assert sel._gate_verdict(3.0, 0.0) == "PRIMARY_REJECT", "ΔBSS == 3.0 은 strict 초과 규칙 → REJECT"
+    assert sel._gate_verdict(3.0 + 1e-9, 0.005) == "PRIMARY_PASS", "ΔBSS > 3.0 & shift == 0.005 → PASS"
+    assert sel._gate_verdict(3.0 + 1e-9, 0.005 + 1e-9) == "PRIMARY_REJECT", "shift > 0.005 → REJECT"
+    assert sel._gate_verdict(2.999, 0.0) == "PRIMARY_REJECT", "ΔBSS < 3.0 → REJECT"
+    assert sel._gate_verdict(-5.0, 0.0) == "PRIMARY_REJECT", "ΔBSS <= 0 → REJECT"
+    # monkeypatch: 판정 함수가 패치된 임계값을 읽는지 (모듈 상수 결합 증명)
+    old_min, old_max = sel.GATE_DELTA_BSS_MIN, sel.GATE_MEAN_SHIFT_MAX
+    sel.GATE_DELTA_BSS_MIN, sel.GATE_MEAN_SHIFT_MAX = 5.0, 0.01
+    try:
+        assert sel._gate_verdict(4.0, 0.0) == "PRIMARY_REJECT", "패치된 min=5.0 미달 → REJECT"
+        assert sel._gate_verdict(5.0 + 1e-9, 0.01) == "PRIMARY_PASS", "패치된 경계 초과 → PASS"
+        assert sel._gate_verdict(5.0 + 1e-9, 0.010001) == "PRIMARY_REJECT", "패치된 shift 초과 → REJECT"
+    finally:
+        sel.GATE_DELTA_BSS_MIN, sel.GATE_MEAN_SHIFT_MAX = old_min, old_max
+
+
+def test_d_gate_primary_force_nonpositive() -> None:
+    # 합성 데이터에서 _gate_primary 의 forced 주입 경로: ΔBSS <= 0 → PRIMARY_REJECT 보장
+    rng = np.random.default_rng(20260816)
+    n = 8000
+    s = rng.standard_normal(n)
+    y = (s > 0.0).astype(np.float64)
+    z1 = s + 0.3 * rng.standard_normal(n)
+    z2 = s + 0.6 * rng.standard_normal(n)
+    g = sel._gate_primary(z1, z2, y, "frozen_id", {"lgb": 0.5, "mlp": 0.5, "catboost": 0.0},
+                          "base_id", {"lgb": 0.5, "mlp": 0.5, "catboost": 0.0},
+                          force_nonpositive=True)
+    assert g["delta_bss"] <= 0.0, f"강제 ΔBSS 가 0 이하가 아님: {g['delta_bss']}"
+    assert g["verdict"] == "PRIMARY_REJECT", "ΔBSS <= 0 은 반드시 PRIMARY_REJECT"
+    assert g["forced_nonpositive"] is True
+    assert g["thresholds"] == {"delta_bss_min": 3.0, "mean_shift_max": 0.005}
+    assert g["mean_shift"] >= 0.0
+    assert abs(g["r"] - y.mean()) < 1e-12
+
+
+# ── (e) --fixture nonpositive-primary: exit 2 + 증거가 PRIMARY_REJECT 를 증명 ──
+def test_e_fixture_nonpositive_primary() -> None:
+    proc = subprocess.run([sys.executable, CLI, "--fixture", "nonpositive-primary"],
+                          cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=300)
+    assert proc.returncode == 2, (
+        f"--fixture nonpositive-primary: exit {proc.returncode} (필요 2)\n{proc.stdout[-2000:]}")
+    fx_ev = PROJECT_ROOT / ".omo" / "evidence" / "aimers9-next-round" \
+        / "task-3-cat-boundary-gate-fixture-nonpositive-primary.json"
+    assert fx_ev.is_file(), f"fixture 증거 부재: {fx_ev}"
+    rec = json.loads(fx_ev.read_text(encoding="utf-8"))
+    assert rec["verdict"] == "PRIMARY_REJECT", f"fixture verdict={rec['verdict']} (필요 PRIMARY_REJECT)"
+    assert rec["gate"]["delta_bss"] <= 0.0, f"fixture ΔBSS={rec['gate']['delta_bss']} (필요 <= 0)"
+    assert rec["gate"]["forced_nonpositive"] is True
+    assert rec["label_sources"] == ["primary"], "R-only 라벨 미로드 여야 함"
+    assert rec["r_fold_embargo"]["loaded_folds"] == ["primary"]
+
+
+# ── (f) --fixture attempted-r-fold-read: R 폴드 엠바고 exit 2 ──
+def test_f_fixture_rfold_embargo() -> None:
+    proc = subprocess.run([sys.executable, CLI, "--fixture", "attempted-r-fold-read"],
+                          cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=300)
+    assert proc.returncode == 2, (
+        f"--fixture attempted-r-fold-read: exit {proc.returncode} (필요 2)\n{proc.stdout}")
+    assert "차단" in proc.stdout or "blocked" in proc.stdout.lower() or "LEAKAGE" in proc.stdout
 
 
 # ── 정책 불변성 교차 검증 (이 태스크가 정책을 건드리지 않았음을 증명) ──
