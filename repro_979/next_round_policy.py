@@ -38,16 +38,37 @@ Modes:
                                     leaderboard/public-score values. exit 0 = normal decision
                                     (candidate frozen or NO_PROMOTION), 2 = policy/gate
                                     violation, 1 = fatal input error. Writes task-9-freeze.{json,md}.
-                                    Optional --fixture {altered-r-only-values,
+                                     Optional --fixture {altered-r-only-values,
                                     altered-leaderboard-values} runs the tamper-simulation
                                     insensitivity guard (plan Task 9 failure QA): R-only /
                                     leaderboard values are injected/perturbed in an in-memory
                                     copy, the decision is re-run, and the frozen result must be
                                     unchanged — exit 2 (guard fired, tamper rejected).
+  --qualify-and-deploy-frozen --freeze-evidence <path>
+                                        Task 10: the SOLE candidate dispatcher. Reads the
+                                    Task 9 freeze evidence and either (a) SKIPPED — verdict
+                                    NO_PROMOTION → write task-10-deploy.{json,md} with
+                                    verdict SKIPPED, exit 0, and ZERO label/model/data/package
+                                    access (config pre-registered first, then stop); or
+                                    (b) future-proof candidate branch (verdict FROZEN, never
+                                    executes this round) — route by candidate family
+                                    (catboost-boundary → re-hash existing bytes/formula only;
+                                    deepfm/mlp-preprocess/calibrated → candidate-specific
+                                    replay/final-fit on official 2019-2024 rows only, 2025/test
+                                    rows solely for row-local inference QA) with structural
+                                    guards: finite logits, preserved row order, clipping,
+                                    candidate-specific manifest, 540s safety limit, peak
+                                    RAM/GPU recorded; no manifest → guard REJECT (exit 2).
+                                    Optional --fixture {failed-r2022, nonfinite-logit,
+                                    shuffled-input, catboost-source-hash-mismatch,
+                                    deepfm-epoch-mismatch, mlp-preprocessor-hash-mismatch,
+                                    calibration-offset-cap-violation} triggers each guard with
+                                    a tampered input — every fixture writes fixture-tagged
+                                    evidence and exits 2 (plan Task 10 failure QA).
 
 All modes also accept the plan's flag style: `--check <policy.json>`, `--audit-compliance`,
-`--audit-scope`, `--freeze` (the first argument is normalized to the subcommand form
-automatically).
+`--audit-scope`, `--freeze`, `--qualify-and-deploy-frozen` (the first argument is normalized
+to the subcommand form automatically).
 
 Exit codes: 0 = PASS, 1 = fatal input error, 2 = REJECT (policy/gate violation).
 """
@@ -56,6 +77,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import re
 import subprocess
 import sys
@@ -645,6 +667,51 @@ FREEZE_INJECT_VALUE = 99999.0
 FREEZE_PERTURB_STEP = 12345.6789
 
 
+class PolicyViolation(RuntimeError):
+    """Task 10 deploy/qualification 구조 가드 위반 — exit 2 (정책/동결 계약 위반)."""
+
+
+# ── --qualify-and-deploy-frozen (Task 10) ─────────────────────────────
+# Task 10 = the SOLE candidate dispatcher. Task 9 = NO_PROMOTION 이므로 이번 라운드의
+# 실행 경로는 SKIPPED 뿐 — 후보 분기(family 라우팅 + 가드)는 미래 라운드용으로 구조만
+# 구현하고, 7 개 failure-QA fixture 가 각 가드를 직접 트리거해 exit 2 를 증명한다.
+# One-shot qualification (후보 동결 시에만 실행): r2022/r2023 폴드 각각 ΔBSS>1,
+# fold-specific paired-bootstrap LB5>0, mean shift<=0.005; r2024 는 진단 전용
+# (branch-inert). 어떤 폴드든 실패 → NO_PROMOTION — 다른 후보 패밀리 재개 없음.
+DEPLOY_FIXTURES = {
+    "failed-r2022",
+    "nonfinite-logit",
+    "shuffled-input",
+    "catboost-source-hash-mismatch",
+    "deepfm-epoch-mismatch",
+    "mlp-preprocessor-hash-mismatch",
+    "calibration-offset-cap-violation",
+}
+# 후보 family 라우팅: 동결 증거의 decision.source → family → 배포 전략.
+DEPLOY_ROUTE_BY_SOURCE = {
+    "task-3-cat-boundary-gate": "catboost-boundary",
+    "task-7-promotion": "deepfm",
+    "task-8-calibration": "calibrated",
+}
+DEPLOY_ROUTE_BY_FAMILY = {
+    "catboost-boundary": "rehash-only",  # 기존 모델 바이트/포뮬라 재해시만 — 재학습 금지
+    "deepfm": "replay",
+    "mlp-preprocess": "replay",
+    "calibrated": "replay",
+}
+DEPLOY_QUALIFY_FOLDS = ("r2022", "r2023")          # one-shot post-freeze qualification
+DEPLOY_R2024_ROLE = "diagnostic-only-branch-inert"  # r2024 는 진단 폴드 (branch-inert)
+DEPLOY_QUALIFY_GATES = {
+    "delta_bss_min": 1.0,
+    "paired_bootstrap_lb5_min": 0.0,
+    "mean_shift_max": 0.005,
+}
+DEPLOY_C_LOGIT = -0.0404
+DEPLOY_CLIP_LO, DEPLOY_CLIP_HI = 0.30, 0.70
+DEPLOY_SAFETY_LIMIT_S = 540.0
+DEPLOY_FINAL_FIT_ROWS = "official 2019-2024 rows only; 2025/test rows allowed solely for row-local inference QA"
+
+
 def _pick_from(rec: JSON | None, keys: list[str]) -> Any:
     if not isinstance(rec, dict):
         return None
@@ -961,10 +1028,400 @@ def cmd_freeze(args: argparse.Namespace) -> int:
     return exit_code
 
 
+# ── --qualify-and-deploy-frozen (Task 10) ─────────────────────────────
+# 구조 가드 (동결 계약 — 실패 주입 fixture 가 직접 트리거, exit 2).
+def _guard_r2022_qualification(fold_failure: bool = False) -> None:
+    """One-shot qualification stop rule: r2022 (또는 r2023) 폴드가 실패하면 NO_PROMOTION
+    으로 즉시 중단하고 다른 후보 패밀리를 절대 재개하지 않는다 (no fallback)."""
+    if fold_failure:
+        raise PolicyViolation(
+            "r2022 fold qualification 실패 → NO_PROMOTION stop; one-shot 규칙: "
+            "다른 후보 패밀리를 절대 재개하지 않음 (exit 2)")
+
+
+def _guard_finite_logits(logits: Any) -> None:
+    """로짓이 전부 유한해야 한다 — NaN/inf 는 PolicyViolation (exit 2)."""
+    for i, v in enumerate(logits):
+        if not math.isfinite(float(v)):
+            raise PolicyViolation(f"non-finite logit 감지: index={i} value={v!r} (exit 2)")
+
+
+def _guard_row_order(predicted_ids: Any, expected_ids: Any) -> None:
+    """추론 출력 행 순서가 입력과 동일해야 한다 (row order preservation)."""
+    if list(predicted_ids) != list(expected_ids):
+        raise PolicyViolation(
+            f"row order 미보존: predicted {len(list(predicted_ids))} ids ≠ expected "
+            f"{len(list(expected_ids))} ids (exit 2)")
+
+
+def _guard_catboost_source_hash(model_bytes: Any, manifest_hash: str) -> None:
+    """CatBoost boundary 는 기존 모델 바이트/포뮬라 재해시만 허용 (재학습 금지).
+    재해시한 바이트의 sha256 이 매니페스트에 고정된 해시와 일치해야 한다."""
+    actual = _sha256_bytes(bytes(model_bytes or b""))
+    if actual != str(manifest_hash or ""):
+        raise PolicyViolation(
+            f"catboost source re-hash 불일치: actual {actual[:16]}… != manifest "
+            f"{str(manifest_hash or '')[:16]}… (재학습 없이 재해시만 허용, exit 2)")
+
+
+def _guard_deepfm_epochs(replay_epochs: Any, manifest_epochs: Any) -> None:
+    """DeepFM replay 는 promote manifest 에 고정된 에포크 수와 정확히 일치해야 한다."""
+    if int(replay_epochs) != int(manifest_epochs):
+        raise PolicyViolation(
+            f"deepfm replay epoch {replay_epochs} != pinned manifest epoch "
+            f"{manifest_epochs} (exit 2)")
+
+
+def _guard_mlp_preprocessor_hash(prep_hash: Any, manifest_hash: Any) -> None:
+    """MLP-preprocess replay 는 프리프로세서 해시가 매니페스트와 일치해야 한다."""
+    if str(prep_hash or "") != str(manifest_hash or ""):
+        raise PolicyViolation(
+            f"mlp preprocessor hash 불일치: {str(prep_hash or '')[:16]}… != manifest "
+            f"{str(manifest_hash or '')[:16]}… (exit 2)")
+
+
+def _guard_calibration_offset_cap(delta: Any) -> None:
+    """캘리브레이션 오프셋 |delta| 는 ±0.05 캡을 절대 위반하지 않는다."""
+    if abs(float(delta)) > 0.05:
+        raise PolicyViolation(
+            f"calibration offset |{delta}| > 0.05 캡 위반 (exit 2)")
+
+
+def _guard_safety_limit(elapsed_s: Any) -> None:
+    """콜드 오프라인 배포 프로세스의 540 초 안전 한도."""
+    if float(elapsed_s) > DEPLOY_SAFETY_LIMIT_S:
+        raise PolicyViolation(
+            f"safety limit 초과: {elapsed_s}s > {DEPLOY_SAFETY_LIMIT_S}s (exit 2)")
+
+
+def _apply_clip(values: Any, lo: float = DEPLOY_CLIP_LO,
+                hi: float = DEPLOY_CLIP_HI) -> list[float]:
+    """배포 스코어링 포뮬라의 클리핑 — clip(sigmoid(z_base+C_LOGIT), .30, .70)."""
+    return [min(max(float(v), lo), hi) for v in values]
+
+
+def _candidate_family(freeze_ev: JSON) -> str:
+    """동결 증거 → 후보 family (decision.source 우선, family 필드 폴백)."""
+    decision = freeze_ev.get("decision") or {}
+    source = decision.get("source") or freeze_ev.get("source") or ""
+    return DEPLOY_ROUTE_BY_SOURCE.get(str(source)) or str(freeze_ev.get("family") or "unknown")
+
+
+# Task 10 사전 등록 config (라벨 접근 이전에 기록 — SKIPPED/후보 분기 공통).
+# F1 provenance 요구: 모든 증거 JSON 은 최상위 config_hash 와 policy_config_hash 를 가져야 한다.
+def _deploy_config_record(policy: JSON) -> JSON:
+    body = {
+        "schema_version": SCHEMA_VERSION,
+        "task": "aimers9-next-round/task-10-deploy-config",
+        "title": "Todo 10 — pre-registered one-shot qualification & deploy config",
+        "recorded_at_utc": now_utc(),
+        "git_head": _git_commit(),
+        "mode": "qualify-and-deploy-frozen",
+        "label_sources": [],
+        "labels_read": False,
+        "labels_read_note": "Config written BEFORE any label access (pre-registration "
+                            "contract). SKIPPED branch (Task 9 NO_PROMOTION) reads no "
+                            "labels, no data, and no packages at all.",
+        "frozen_controls": {
+            "c_logit": DEPLOY_C_LOGIT,
+            "clip_lo": DEPLOY_CLIP_LO,
+            "clip_hi": DEPLOY_CLIP_HI,
+            "rollback_baseline_candidate_id": ROLLBACK_BASELINE_CANDIDATE_ID,
+        },
+        "qualification_gates": {
+            "folds": list(DEPLOY_QUALIFY_FOLDS),
+            "r2024": DEPLOY_R2024_ROLE,
+            "per_fold_require": dict(DEPLOY_QUALIFY_GATES),
+            "failure_policy": ("any fold failure -> NO_PROMOTION stop; never resume "
+                               "another candidate family (one-shot, no fallback)"),
+        },
+        "deploy_rules": {
+            "catboost_boundary": "re-hash existing model bytes/formula only - never "
+                                 "retrain; emit formula/manifest artifacts",
+            "deepfm": "candidate-specific replay; replay epoch count must equal the "
+                      "pinned manifest epochs",
+            "mlp_preprocess": "candidate-specific replay; preprocessor hash must equal "
+                              "the pinned manifest hash",
+            "calibrated": "candidate-specific replay; |offset delta| cap 0.05 enforced",
+            "final_fit_rows": DEPLOY_FINAL_FIT_ROWS,
+            "require": ["finite logits", "preserved row order",
+                        f"clipping {DEPLOY_CLIP_LO}/{DEPLOY_CLIP_HI}",
+                        "candidate-specific manifest",
+                        f"{DEPLOY_SAFETY_LIMIT_S}s safety limit",
+                        "peak RAM/GPU recorded"],
+        },
+    }
+    record = dict(body)
+    record["config_hash"] = _canonical_sha256(body)
+    record["policy_config_hash"] = _canonical_sha256(policy)
+    return record
+
+
+def _run_deploy_fixture(args: argparse.Namespace, policy: JSON, freeze_ev: JSON) -> int:
+    """Plan Task 10 failure QA: 7 개 구조 가드를 변조 입력으로 트리거 — 전부 exit 2.
+    각 fixture 는 자기 전용 증거(task-10-deploy-fixture-<name>.json)를 쓰고 주 증거를
+    절대 덮어쓰지 않는다."""
+    name = args.fixture
+    if name not in DEPLOY_FIXTURES:
+        print(f"[next_round_policy] FATAL: 알 수 없는 fixture {name!r}", file=sys.stderr)
+        return 1
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    policy_path = Path(args.policy).expanduser().resolve()
+    policy_hash = _canonical_sha256(policy)
+    config = _deploy_config_record(policy)
+    config_hash = config["config_hash"]
+    config_path = evidence_dir / f"task-10-deploy-config-fixture-{name}.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n",
+                           encoding="utf-8")
+    config_file_sha = _sha256_bytes(config_path.read_bytes())
+
+    try:
+        if name == "failed-r2022":
+            print("[fixture failed-r2022] r2022 폴드 실패 주입 — one-shot stop 가드…")
+            _guard_r2022_qualification(fold_failure=True)
+        elif name == "nonfinite-logit":
+            print("[fixture nonfinite-logit] NaN 로짓 주입 — 유한성 가드…")
+            _guard_finite_logits([0.5, float("nan"), 0.7])
+        elif name == "shuffled-input":
+            print("[fixture shuffled-input] 행 순서 뒤섞기 주입 — row order 가드…")
+            _guard_row_order([3, 1, 2], [1, 2, 3])
+        elif name == "catboost-source-hash-mismatch":
+            print("[fixture catboost-source-hash-mismatch] 변조 모델 바이트 주입 — 재해시 가드…")
+            _guard_catboost_source_hash(b"tampered model bytes", "a" * 64)
+        elif name == "deepfm-epoch-mismatch":
+            print("[fixture deepfm-epoch-mismatch] replay 에포크 불일치 주입…")
+            _guard_deepfm_epochs(7, 5)
+        elif name == "mlp-preprocessor-hash-mismatch":
+            print("[fixture mlp-preprocessor-hash-mismatch] 프리프로세서 해시 불일치 주입…")
+            _guard_mlp_preprocessor_hash("b" * 64, "a" * 64)
+        elif name == "calibration-offset-cap-violation":
+            print("[fixture calibration-offset-cap-violation] |delta|>0.05 주입…")
+            _guard_calibration_offset_cap(0.07)
+    except PolicyViolation as exc:
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "title": f"Todo 10 fixture — {name}",
+            "task": "aimers9-next-round/task-10-deploy",
+            "mode": "qualify-and-deploy-frozen-fixture",
+            "verdict": "REJECT",
+            "exit_code": 2,
+            "recorded_at_utc": now_utc(),
+            "git_head": _git_commit(),
+            "policy_path": str(policy_path),
+            "policy_config_hash": policy_hash,
+            "config_hash": config_hash,
+            "config_pre_registered": {
+                "file": str(config_path), "sha256": config_file_sha,
+                "written_before_labels_read": True,
+            },
+            "freeze_evidence": str(Path(args.freeze_evidence).expanduser().resolve()),
+            "label_sources": [],
+            "labels_read": False,
+            "label_sources_note": "fixture: no real label read",
+            "fixture": name,
+            "reason": str(exc),
+            "violations": [],
+        }
+        json_path, md_path = write_evidence(record, evidence_dir / f"task-10-deploy-fixture-{name}")
+        print(f"[next_round_policy] --qualify-and-deploy-frozen --fixture {name}: "
+              f"exit 2 — {exc}")
+        print(f"[next_round_policy] evidence -> {json_path} / {md_path}")
+        return 2
+    print(f"[next_round_policy] FATAL: fixture {name} 가드가 발동하지 않음 — 가드 버그",
+          file=sys.stderr)
+    return 1
+
+
+def _deploy_frozen_candidate(policy: JSON, freeze_ev: JSON, evidence_dir: Path,
+                             policy_hash: str, config_path: Path, config_hash: str,
+                             config_file_sha: str, freeze_path: Path,
+                             policy_path: Path) -> int:
+    """미래 대비 후보 분기 — 이번 라운드에서는 절대 실행되지 않는다 (Task 9 = NO_PROMOTION).
+
+    family 라우팅: catboost-boundary → 기존 모델 바이트/포뮬라 재해시만 (재학습 금지);
+    deepfm/mlp-preprocess/calibrated → 후보별 replay/final-fit (공식 2019-2024 행만,
+    2025/test 행은 row-local 추론 QA 전용). 공통 가드: 유한 로짓, 행 순서 보존, 클리핑,
+    후보별 manifest, 540 초 안전 한도, peak RAM/GPU 기록. 이번 라운드에는 후보 manifest
+    가 존재할 수 없으므로 구조 가드가 REJECT(exit 2)로 발동한다."""
+    decision = freeze_ev.get("decision") or {}
+    cid = decision.get("frozen_candidate_id")
+    family = _candidate_family(freeze_ev)
+    route = DEPLOY_ROUTE_BY_FAMILY.get(family, "replay")
+    manifest_path = (evidence_dir / f"task-10-deploy-manifest-{cid}.json") if cid else None
+    try:
+        if not cid:
+            raise PolicyViolation("frozen_candidate_id 누락 — 후보 라우팅 불가 (exit 2)")
+        manifest = load_json(manifest_path) if manifest_path else None
+        if manifest is None:
+            raise PolicyViolation(
+                f"후보 {cid} candidate-specific manifest 없음 ({manifest_path.name if manifest_path else '?'}) "
+                f"— 이번 라운드(Task 9 NO_PROMOTION)엔 후보가 없어 배포 분기 미실행 (exit 2)")
+        if family == "catboost-boundary":
+            _guard_catboost_source_hash(manifest.get("model_bytes_sha256") or b"",
+                                        manifest.get("source_hash") or "")
+        elif family == "deepfm":
+            _guard_deepfm_epochs(manifest.get("replay_epochs"), manifest.get("pinned_epochs"))
+        elif family == "mlp-preprocess":
+            _guard_mlp_preprocessor_hash(manifest.get("preprocessor_hash"),
+                                         manifest.get("pinned_preprocessor_hash"))
+        elif family == "calibrated":
+            _guard_calibration_offset_cap(manifest.get("max_abs_delta"))
+        _guard_finite_logits(manifest.get("logits") or [])
+        _guard_row_order(manifest.get("row_ids") or [], manifest.get("expected_row_ids") or [])
+        _guard_safety_limit(manifest.get("elapsed_s") or 0.0)
+        raise PolicyViolation(
+            "candidate deploy 경로는 이번 라운드에서 실행되지 않음 (Task 9 NO_PROMOTION) — "
+            "DEPLOYED 기록 불가 (exit 2)")
+    except PolicyViolation as exc:
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "title": "Todo 10 — one-shot qualification & frozen candidate deploy (rejected)",
+            "task": "aimers9-next-round/task-10-deploy",
+            "mode": "qualify-and-deploy-frozen",
+            "verdict": "REJECT",
+            "exit_code": 2,
+            "recorded_at_utc": now_utc(),
+            "git_head": _git_commit(),
+            "policy_path": str(policy_path),
+            "policy_config_hash": policy_hash,
+            "config_hash": config_hash,
+            "config_pre_registered": {
+                "file": str(config_path), "sha256": config_file_sha,
+                "written_before_labels_read": True,
+            },
+            "freeze_evidence": str(freeze_path),
+            "label_sources": [],
+            "labels_read": False,
+            "label_sources_note": "candidate branch: label access occurs only after all "
+                                  "structural guards pass — none passed this round",
+            "candidate_route": {"candidate_id": cid, "family": family, "route": route},
+            "reason": str(exc),
+            "violations": [],
+        }
+        json_path, md_path = write_evidence(record, evidence_dir / "task-10-deploy")
+        print(f"[next_round_policy] --qualify-and-deploy-frozen: REJECT (exit 2) — "
+              f"candidate branch: family={family} route={route} cid={cid}")
+        print(f"[next_round_policy]   {exc}")
+        print(f"[next_round_policy] evidence -> {json_path} / {md_path}")
+        return 2
+
+
+def cmd_qualify_and_deploy_frozen(args: argparse.Namespace) -> int:
+    """Task 10 디스패처. Task 9 동결 증거를 읽고 SKIPPED(NO_PROMOTION) 또는 후보 분기로
+    분기한다. SKIPPED 경로는 config 사전 등록 외 어떤 라벨/모델/데이터/패키지도 접근하지
+    않는다."""
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    if not evidence_dir.is_dir():
+        print(f"[next_round_policy] FATAL: 증거 디렉토리 없음: {evidence_dir}", file=sys.stderr)
+        return 1
+
+    policy_path = Path(args.policy).expanduser().resolve()
+    policy = load_json(policy_path)
+    if policy is None:
+        print(f"[next_round_policy] FATAL: 정책 파일을 읽을 수 없음: {policy_path}", file=sys.stderr)
+        return 1
+    policy_hash = _canonical_sha256(policy)
+    violations = validate_policy(policy)
+    if violations:
+        print(f"[next_round_policy] --qualify-and-deploy-frozen: REJECT (exit 2)")
+        for v in violations:
+            print(f"  [REJECT] {v['rule']}: {v['reason']}")
+        return 2
+
+    freeze_path = Path(args.freeze_evidence).expanduser().resolve()
+    freeze_ev = load_json(freeze_path)
+    if freeze_ev is None:
+        print(f"[next_round_policy] FATAL: Task 9 freeze 증거를 읽을 수 없음: {freeze_path}",
+              file=sys.stderr)
+        return 1
+
+    if args.fixture:
+        return _run_deploy_fixture(args, policy, freeze_ev)
+
+    # ── 사전 등록 config: 어떤 라벨/모델 접근 이전에 기록 (SKIPPED 분기는 라벨 무접촉) ──
+    config = _deploy_config_record(policy)
+    config_hash = config["config_hash"]
+    config_path = evidence_dir / "task-10-deploy-config.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n",
+                           encoding="utf-8")
+    config_file_sha = _sha256_bytes(config_path.read_bytes())
+
+    verdict = freeze_ev.get("verdict")
+    decision = freeze_ev.get("decision") or {}
+    cid = decision.get("frozen_candidate_id")
+    if verdict == "FROZEN" or cid:
+        return _deploy_frozen_candidate(policy, freeze_ev, evidence_dir, policy_hash,
+                                        config_path, config_hash, config_file_sha,
+                                        freeze_path, policy_path)
+    if verdict != "NO_PROMOTION":
+        print(f"[next_round_policy] FATAL: 인식 불가 freeze verdict {verdict!r} — "
+              f"NO_PROMOTION 또는 FROZEN 필요", file=sys.stderr)
+        return 1
+
+    # ── SKIPPED 경로: Task 9 NO_PROMOTION → zero label/model/data access, exit 0 ──
+    rb_id = policy.get("rollback_baseline_candidate_id")
+    record = {
+        "schema_version": SCHEMA_VERSION,
+        "title": "Todo 10 — one-shot historical stress qualification & frozen deploy (skipped)",
+        "task": "aimers9-next-round/task-10-deploy",
+        "mode": "qualify-and-deploy-frozen",
+        "verdict": "SKIPPED",
+        "exit_code": 0,
+        "recorded_at_utc": now_utc(),
+        "git_head": _git_commit(),
+        "policy_path": str(policy_path),
+        "policy_config_hash": policy_hash,
+        "config_hash": config_hash,
+        "config_pre_registered": {
+            "file": str(config_path), "sha256": config_file_sha,
+            "written_before_labels_read": True,
+        },
+        "freeze_evidence": str(freeze_path),
+        "label_sources": [],
+        "labels_read": False,
+        "label_sources_note": "Task 10 SKIPPED — Task 9 NO_PROMOTION; 어떤 라벨·모델·데이터·패키지도 "
+                              "접근하지 않음 (구조적 가드)",
+        "reason": (f"Task 9 verdict=NO_PROMOTION (frozen_candidate_id=null) — retained "
+                   f"rollback baseline {rb_id}; one-shot r2022/r2023 qualification "
+                   f"미실행, replay/final-fit 미실행, 패키징 미실행"),
+        "retained_rollback_baseline_candidate_id": rb_id,
+        "qualification_run": {"executed": False,
+                              "note": "one-shot r2022/r2023 qualification 은 후보 동결 시에만 실행"},
+        "checks": [
+            {"rule": "policy_check", "ok": True,
+             "reason": f"{len(validate_policy(policy))} violations — 동결 정책 유효"},
+            {"rule": "freeze_evidence_present", "ok": True,
+             "reason": f"Task 9 freeze 증거 로드: {freeze_path.name} (verdict={verdict})"},
+            {"rule": "no_promotion_detected", "ok": True,
+             "reason": "verdict=NO_PROMOTION — SKIPPED 경로 실행"},
+            {"rule": "zero_label_model_data_access", "ok": True,
+             "reason": "SKIPPED branch: 어떤 라벨·모델·패키지도 접근하지 않음 (구조적 가드, exit 0)"},
+        ],
+        "violations": [],
+        "findings": [
+            {"rule": "config_pre_registered", "ok": True,
+             "reason": f"sha256 {config_file_sha[:16]}… written_before_labels_read=true"},
+            {"rule": "rollback_baseline", "ok": True,
+             "reason": f"retained {rb_id} — 변경 없음"},
+            {"rule": "qualification_skipped", "ok": True,
+             "reason": "r2022/r2023/r2024 qualification 미실행 (후보 없음) — Task 11 package "
+                       "도 SKIPPED 여야 함"},
+        ],
+        "notes": ("Task 9 = NO_PROMOTION → Task 10 = SKIPPED (정직한 종결). "
+                  "Notion 로컬 CV row 없음 (plan: label-free SKIPPED outcomes 제외)."),
+    }
+    json_path, md_path = write_evidence(record, evidence_dir / "task-10-deploy")
+    print(f"[next_round_policy] --qualify-and-deploy-frozen: SKIPPED (exit 0)")
+    print(f"[next_round_policy] retained rollback baseline: {rb_id} — no qualification, "
+          f"no replay, no package")
+    print(f"[next_round_policy] evidence -> {json_path} / {md_path}")
+    return 0
+
+
 # 계획 표준 명령(플래그 스타일) ↔ subcommand 스타일 정규화 매핑.
-# --freeze 는 Task 9 에서 subcommand 로 등록됨; --qualify-and-deploy-frozen 은 Task 10 예정 —
-# 지금은 정규화만 하고 파서에 미등록 상태로 두어 미구현 호출이 argparse 'invalid choice'
-# (exit 2) 로 실패하게 한다 (미구현 subcommand 는 절대 PASS 가 될 수 없음).
+# --freeze 는 Task 9, --qualify-and-deploy-frozen 은 Task 10 에서 subcommand 로 등록됨.
 _FLAG_TO_SUB = {
     "--check": "check",
     "--audit-compliance": "audit-compliance",
@@ -1017,6 +1474,18 @@ def main(argv: list[str] | None = None) -> int:
     p_f.add_argument("--fixture", default=None, choices=sorted(FREEZE_FIXTURES),
                      help="불변성 가드: R-only/리더보드 값 주입·변형 후 결정 재실행 (exit 2 가드 발동)")
     p_f.set_defaults(func=cmd_freeze)
+
+    p_q = sub.add_parser("qualify-and-deploy-frozen",
+                         help="Task 10 — sole candidate dispatcher: one-shot r2022/r2023 "
+                              "qualification & frozen candidate deploy (Task 9 "
+                              "NO_PROMOTION → SKIPPED, exit 0, zero label/model access)")
+    p_q.add_argument("--freeze-evidence", default=str(DEFAULT_EVIDENCE_DIR / "task-9-freeze.json"),
+                     help="Task 9 freeze 증거 JSON 경로 (기본 task-9-freeze.json)")
+    p_q.add_argument("--evidence-dir", default=str(DEFAULT_EVIDENCE_DIR))
+    p_q.add_argument("--policy", default=str(DEFAULT_POLICY))
+    p_q.add_argument("--fixture", default=None, choices=sorted(DEPLOY_FIXTURES),
+                     help="실패 QA fixture (전부 exit 2): 구조 가드 변조 트리거")
+    p_q.set_defaults(func=cmd_qualify_and_deploy_frozen)
 
     args = parser.parse_args(_normalize_argv(list(argv) if argv is not None else sys.argv[1:]))
     if args.mode == "check" and args.verification:

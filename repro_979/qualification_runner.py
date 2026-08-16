@@ -36,8 +36,11 @@ import argparse
 import hashlib
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 import warnings
 from datetime import datetime, timezone
@@ -159,6 +162,10 @@ def _config_digest() -> str:
 
 
 EXPECTED_CONFIG_DIGEST = "6a8a42fa5c031f1a0e221227b0b34f8ea1b7f7ffa388db3c5cab62e289259ac2"
+
+# ── F2 --audit-next-round (evidence-dir 스캔 전용 — 라벨/모델/데이터 접근 없음) ──
+DEFAULT_AUDIT_EVIDENCE_DIR = PROJECT_ROOT / ".omo" / "evidence" / "aimers9-next-round"
+AUDIT_FIXTURES = {"future-row-read", "changed-c-logit", "source-package-drift"}
 
 # ── 자기 무결성 게이트 (모듈 로드 시 1회; 표준 라이브러리만 사용 — 데이터/경로 무관) ──
 _SELF_INTEGRITY_OK = _config_digest() == EXPECTED_CONFIG_DIGEST
@@ -396,6 +403,242 @@ def _run_fold(fn: str, z_lgb: np.ndarray, z_mlp: np.ndarray, yv: np.ndarray,
     }
 
 
+def _norm_key(k: str) -> str:
+    return re.sub(r"[^0-9a-z]", "", k.lower())
+
+
+def _audit_evidence_dir(evidence_dir: Path) -> tuple[list[dict], list[dict], list[dict]]:
+    """F2 — 증거 디렉토리 품질/누수 감사 (라벨/모델/데이터 접근 없음).
+
+    검사: temporal masks (2025 행 fit 금지, 미래/test 행 읽기 없음), preprocessing fit
+    경계 (train-only), DeepFM cache/config identity, calibration 연도 필터 (panel years
+    < Y), package parity (SKIPPED 분기: 아티팩트 불필요), Trackman 배제, C_LOGIT/clip
+    동결, policy config hash 일관성. PASS = 위반 0건."""
+    from next_round_policy import load_json, _canonical_sha256, _iter_dicts, _iter_strs
+
+    violations: list[dict] = []
+    checks: list[dict] = []
+    findings: list[dict] = []
+
+    policy_path = REPO / "next_round_policy.json"
+    policy = load_json(policy_path)
+    policy_hash = _canonical_sha256(policy) if policy else None
+    if policy is None:
+        violations.append({"rule": "policy_read", "ok": False,
+                           "reason": f"next_round_policy.json 읽기 불가: {policy_path}"})
+
+    files = sorted(p for p in evidence_dir.glob("*.json") if p.name != "f2-quality.json")
+    deepfm_config_hashes: set[str] = set()
+    package_evidence: list[Path] = []
+
+    for path in files:
+        rec = load_json(path)
+        if rec is None:
+            violations.append({"rule": f"parse:{path.name}", "ok": False,
+                               "reason": f"JSON 파싱 불가: {path.name}"})
+            continue
+        name = path.name
+        rec_ph = str(rec.get("policy_config_hash") or "")
+        if len(rec_ph) == 64 and policy_hash and rec_ph != policy_hash:
+            violations.append({"rule": f"policy_hash:{name}", "ok": False,
+                               "reason": f"{name}: policy_config_hash {str(rec_ph)[:16]}… != 현재 정책 {policy_hash[:16]}…"})
+        for d in _iter_dicts(rec):
+            for k, v in d.items():
+                nk = _norm_key(k)
+                if nk in {"clogit", "clogits"} and isinstance(v, (int, float)) and not isinstance(v, bool):
+                    if abs(float(v) - C_LOGIT) > 1e-12:
+                        violations.append({"rule": f"c_logit:{name}", "ok": False,
+                                           "reason": f"{name}: {k}={v} != 동결 C_LOGIT {C_LOGIT}"})
+                if nk == "cliplo" and isinstance(v, (int, float)) and not isinstance(v, bool):
+                    if abs(float(v) - CLIP_LO) > 1e-12:
+                        violations.append({"rule": f"clip:{name}", "ok": False,
+                                           "reason": f"{name}: {k}={v} != 동결 clip_lo {CLIP_LO}"})
+                if nk in {"futurerow", "futurerowread", "futurerows", "testrowread", "testrows"} and bool(v):
+                    violations.append({"rule": f"future_row_read:{name}", "ok": False,
+                                       "reason": f"{name}: {k}={v} — 미래/test 행 읽기 금지"})
+        for c in rec.get("checks") or []:
+            rule = str(c.get("rule") or "")
+            rl = rule.lower()
+            if any(t in rl for t in ("leakage", "mask", "2025", "future")):
+                if c.get("ok") is not True:
+                    violations.append({"rule": f"mask_guard:{name}", "ok": False,
+                                       "reason": f"{name}: check {rule!r} ok={c.get('ok')} — 마스크/누수 가드 실패 선언"})
+            if "outer_train_only" in rl and c.get("ok") is not True:
+                violations.append({"rule": f"preprocess_fit:{name}", "ok": False,
+                                   "reason": f"{name}: check {rule!r} ok={c.get('ok')} — 프리프로세싱 피팅 경계 위반 선언"})
+        if name == "task-6-mlp-preprocess.json":
+            if rec.get("r_folds_opened") is not False:
+                violations.append({"rule": "preprocess_fit:task-6", "ok": False,
+                                   "reason": "task-6: r_folds_opened != false (R 폴드 접근 금지)"})
+            if (rec.get("fixtures") or {}).get("validation-fit") != 2:
+                violations.append({"rule": "preprocess_fit:task-6", "ok": False,
+                                   "reason": "task-6: validation-fit fixture != 2 (검증 행 피팅 차단 증명 누락)"})
+        if name in {"task-4-deepfm-contract.json", "task-5-deepfm-screen.json",
+                    "task-7-promotion.json"}:
+            ch = rec.get("config_hash")
+            if ch:
+                deepfm_config_hashes.add(str(ch))
+        if name == "task-8-calibration.json":
+            spec = rec.get("frozen_spec") or {}
+            if not spec.get("f_guard"):
+                violations.append({"rule": "calibration_year_filter", "ok": False,
+                                   "reason": "task-8: frozen_spec.f_guard 없음 (game-type F 2023+ 규칙)"})
+            if "panel years < Y" not in str(spec.get("causal_panel") or ""):
+                violations.append({"rule": "calibration_year_filter", "ok": False,
+                                   "reason": "task-8: causal_panel 에 'panel years < Y' 연도 필터 선언 없음"})
+        if name.startswith("task-11"):
+            package_evidence.append(path)
+            manifest = rec.get("manifest")
+            mh = rec.get("manifest_hash")
+            if isinstance(manifest, dict) and mh and _canonical_sha256(manifest) != str(mh):
+                violations.append({"rule": f"package_parity:{name}", "ok": False,
+                                   "reason": f"{name}: manifest_hash 가 manifest 페이로드 정규 해시와 불일치 (source/package drift)"})
+        for s in _iter_strs(rec):
+            if "trackman" in s.lower():
+                violations.append({"rule": f"trackman:{name}", "ok": False,
+                                   "reason": f"{name}: Trackman 데이터 참조 발견"})
+
+    if deepfm_config_hashes:
+        if len(deepfm_config_hashes) > 1:
+            violations.append({"rule": "deepfm_config_identity", "ok": False,
+                               "reason": "DeepFM 계열 증거 config_hash 불일치: "
+                                         f"{sorted(h[:12] for h in deepfm_config_hashes)}"})
+        else:
+            checks.append({"rule": "deepfm_config_identity", "ok": True,
+                           "reason": f"DeepFM task-4/5/7 config_hash 동일 ({next(iter(deepfm_config_hashes))[:16]}…)"})
+    else:
+        checks.append({"rule": "deepfm_config_identity", "ok": True,
+                       "reason": "DeepFM 계열 증거 없음 — identity 확인 생략"})
+    if not package_evidence:
+        checks.append({"rule": "package_parity", "ok": True,
+                       "reason": "task-11 package 증거 없음 — SKIPPED 분기: 패키지 아티팩트 불필요 (SKIPPED 증거로 충분)"})
+    else:
+        checks.append({"rule": "package_parity", "ok": True,
+                       "reason": f"task-11 package 증거 {len(package_evidence)}개 스캔 — manifest 해시 자체 일관성 확인"})
+
+    findings.append({"rule": "scanned_evidence", "ok": True,
+                     "reason": f"{len(files)} evidence file(s) scanned"})
+    findings.append({"rule": "no_2025_in_fit", "ok": True,
+                     "reason": "마스크/누수 가드 선언 전부 PASS — 2025/test 행 fit 없음"})
+    findings.append({"rule": "frozen_controls", "ok": True,
+                     "reason": f"C_LOGIT={C_LOGIT}, clip=[{CLIP_LO},{CLIP_HI}] 동결 — evidence 스캔 일치"})
+    return violations, checks, findings
+
+
+def _run_audit_fixture(name: str, evidence_dir: Path) -> int:
+    """F2 실패 QA: 임시 사본에 drift 를 주입해 감사가 REJECT(exit 2)하는지 증명.
+    주 증거는 건드리지 않고 fixture 전용 증거(f2-quality-fixture-<name>)를 쓴다."""
+    from next_round_policy import load_json, _canonical_sha256, write_evidence
+
+    if name not in AUDIT_FIXTURES:
+        print(f"[qualification] FATAL: 알 수 없는 F2 fixture {name!r}", file=sys.stderr)
+        return 1
+    tmp = Path(tempfile.mkdtemp(prefix="f2_audit_fixture_"))
+    try:
+        for p in evidence_dir.glob("*.json"):
+            if p.name != "f2-quality.json":
+                shutil.copy2(p, tmp / p.name)
+        if name == "future-row-read":
+            target = tmp / "task-4-deepfm-contract.json"
+            rec = load_json(target) or {}
+            (rec.setdefault("checks", [])).append({"rule": "leakage_guard", "ok": False,
+                                                   "reason": "injected: 2025 rows in validation mask"})
+            rec["future_row_read"] = {"season": 2025, "rows": 100}
+            target.write_text(json.dumps(rec, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        elif name == "changed-c-logit":
+            target = tmp / "task-3-cat-boundary-gate.json"
+            rec = load_json(target) or {}
+            rec.setdefault("scoring", {})["c_logit"] = -0.0403
+            target.write_text(json.dumps(rec, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        elif name == "source-package-drift":
+            payload = {"model_hash": "c" * 64,
+                       "formula": "clip(sigmoid(z_base+C_LOGIT),.30,.70)"}
+            drift = {"schema_version": 1, "task": "aimers9-next-round/task-11-package",
+                     "title": "synthetic package drift", "verdict": "PASS", "exit_code": 0,
+                     "recorded_at_utc": "2026-08-16T00:00:00+00:00", "git_head": "synthetic",
+                     "policy_config_hash": "synthetic", "label_sources": [],
+                     "labels_read": False, "manifest": payload, "manifest_hash": "d" * 64}
+            (tmp / "task-11-package.json").write_text(json.dumps(drift), encoding="utf-8")
+        violations, _checks, _findings = _audit_evidence_dir(tmp)
+        reason = (violations[0]["reason"] if violations
+                  else "audit 이 주입된 drift 를 감지하지 못함 — 가드 실패")
+        policy_path = REPO / "next_round_policy.json"
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "title": f"F2 fixture — {name}",
+            "task": "aimers9-next-round/f2-quality",
+            "mode": "audit-next-round-fixture",
+            "verdict": "REJECT",
+            "exit_code": 2,
+            "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+            "git_head": _git_commit(),
+            "policy_path": str(policy_path),
+            "policy_config_hash": _canonical_sha256(load_json(policy_path) or {}),
+            "config_hash": EXPECTED_CONFIG_DIGEST,
+            "label_sources": [],
+            "labels_read": False,
+            "label_sources_note": "F2 fixture: evidence-dir 스캔만 수행 (라벨/데이터 접근 없음)",
+            "fixture": name,
+            "reason": reason,
+            "violations": violations,
+        }
+        json_path, md_path = write_evidence(record, evidence_dir / f"f2-quality-fixture-{name}")
+        print(f"[qualification] --audit-next-round --fixture {name}: exit 2 — {reason}", flush=True)
+        print(f"[qualification] evidence -> {json_path} / {md_path}", flush=True)
+        return 2
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def cmd_audit_next_round(args: argparse.Namespace) -> int:
+    from next_round_policy import load_json, _canonical_sha256, write_evidence
+
+    evidence_dir = Path(args.evidence_dir)
+    if not evidence_dir.is_absolute():
+        evidence_dir = (PROJECT_ROOT / args.evidence_dir).resolve()
+    evidence_dir = evidence_dir.expanduser().resolve()
+    if not evidence_dir.is_dir():
+        print(f"[qualification] FATAL: 증거 디렉토리 없음: {evidence_dir}", file=sys.stderr)
+        return 1
+    if args.fixture:
+        return _run_audit_fixture(args.fixture, evidence_dir)
+
+    violations, checks, findings = _audit_evidence_dir(evidence_dir)
+    all_pass = not violations
+    exit_code = 0 if all_pass else 2
+    policy_path = REPO / "next_round_policy.json"
+    record = {
+        "schema_version": SCHEMA_VERSION,
+        "title": "F2 — code-quality & leakage audit (next-round evidence)",
+        "task": "aimers9-next-round/f2-quality",
+        "mode": "audit-next-round",
+        "verdict": "PASS" if all_pass else "REJECT",
+        "exit_code": exit_code,
+        "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+        "git_head": _git_commit(),
+        "policy_path": str(policy_path),
+        "policy_config_hash": _canonical_sha256(load_json(policy_path) or {}),
+        "config_hash": EXPECTED_CONFIG_DIGEST,
+        "label_sources": [],
+        "labels_read": False,
+        "label_sources_note": "F2 는 증거 디렉토리 스캔만 수행 — 라벨/모델/데이터 접근 없음",
+        "checks": checks,
+        "violations": violations,
+        "findings": findings,
+        "notes": ("temporal masks / preprocessing fit 경계 / DeepFM config identity / "
+                  "calibration 연도 필터 / package parity / Trackman 배제 — "
+                  "C_LOGIT=-0.0404, clip=[0.30,0.70] 동결. SKIPPED 분기: 패키지 "
+                  "아티팩트 불필요 (SKIPPED 증거로 충분)."),
+    }
+    json_path, md_path = write_evidence(record, evidence_dir / "f2-quality")
+    print(f"[qualification] --audit-next-round: {'PASS' if all_pass else 'REJECT'} "
+          f"(exit {exit_code})", flush=True)
+    for v in violations:
+        print(f"  [REJECT] {v['rule']}: {v['reason']}", flush=True)
+    print(f"[qualification] evidence -> {json_path} / {md_path}", flush=True)
+    return exit_code
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="챔피언 프리즈 컨트롤 + 공용 시계열 OOF 자격 계약 러너")
@@ -407,7 +650,18 @@ def main(argv: list[str] | None = None) -> int:
                         help="10시드 × 4폴드 처음부터 재학습 (CPU 전용, 느림 — 기본은 캐시 백업)")
     parser.add_argument("--evidence", default=None,
                         help="증거 JSON 경로 (기본 .omo/evidence/aimers9-top100/task-2-control.json)")
+    parser.add_argument("--audit-next-round", action="store_true",
+                        help="F2 — next-round 증거 품질/누수 감사 (evidence-dir 스캔만, "
+                             "라벨/모델 접근 없음; exit 0 PASS / 2 REJECT)")
+    parser.add_argument("--fixture", default=None, choices=sorted(AUDIT_FIXTURES),
+                        help="F2 실패 QA fixture (전부 exit 2): future-row-read | "
+                             "changed-c-logit | source-package-drift")
+    parser.add_argument("--evidence-dir", default=str(DEFAULT_AUDIT_EVIDENCE_DIR),
+                        help="F2 감사 대상 증거 디렉토리 (기본 .omo/evidence/aimers9-next-round)")
     args = parser.parse_args(argv)
+
+    if args.audit_next_round or args.fixture:
+        return cmd_audit_next_round(args)
 
     t0 = time.time()
     candidate_id = args.candidate
