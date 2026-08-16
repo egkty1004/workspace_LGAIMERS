@@ -911,7 +911,9 @@ def _cmd_promote(args: argparse.Namespace, variant: str) -> int:
     t0 = time.time()
     config_hash = _config_hash(variant)
     _check_policy()
-    config_path = EVIDENCE_DIR / f"task-6-mlp-preprocess-config-{variant}.json"
+    # promote 는 --full 과 별도 설정 사전 등록 (동일 경로 재사용 시 --full 증거의
+    # config_pre_registered.sha256 이 깨지므로 절대 공유하지 않는다)
+    config_path = EVIDENCE_DIR / f"task-6-mlp-preprocess-config-{variant}-promote.json"
     _pre_register(_config_dict(variant), config_hash, config_path)
     evidence_path = EVIDENCE_DIR / f"task-7-promotion-mlp-{variant}.json"
 
