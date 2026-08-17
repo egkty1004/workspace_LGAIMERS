@@ -63,6 +63,34 @@ DEFAULT_TASK8_EVIDENCE = PROJECT_ROOT / ".omo" / "evidence" / "aimers9-top100" /
 DEFAULT_STATE = REPO / "leaderboard_state.json"
 DEFAULT_EVIDENCE_BASE = PROJECT_ROOT / ".omo" / "evidence" / "aimers9-top100" / "task-9-submission"
 
+# ── Task 12 (aimers9-next-round) 추가 상수 ─────────────────────────────
+NEXT_ROUND_MARKER = "aimers9-next-round"          # qualified_package.round 마커 (이번 라운드 등록 증명)
+NEXT_ROUND_C_LOGIT = -0.0404                       # 동결 배포 스코어링 (정책과 동일 — 변경 금지)
+NEXT_ROUND_CLIP_LO, NEXT_ROUND_CLIP_HI = 0.30, 0.70
+NEXT_ROUND_ROLLBACK_BASELINE = "5890a4c54f502c4e"
+STALE_STATE_TTL_MINUTES = 30                       # 사용자 live 관측 ≤30분 (plan Task 12)
+DEFAULT_NEXT_ROUND_EVIDENCE_DIR = PROJECT_ROOT / ".omo" / "evidence" / "aimers9-next-round"
+DEFAULT_TASK11_EVIDENCE = DEFAULT_NEXT_ROUND_EVIDENCE_DIR / "task-11-package.json"
+NEXT_ROUND_FIXTURES = {"stale-cutoff", "consumed-slot", "altered-package",
+                       "unauthorized-state-mutation"}
+
+# next_round_policy 에서 재사용 (재구현 금지 — plan/AGENTS 지침). 로컬에 동일 이름이 존재하는
+# load_json/_canonical_sha256/_git_commit/write_evidence 는 로컬 정의를 그대로 사용하고,
+# next-round 제네릭 증거 기록기(write_evidence)만 별칭으로 가져온다 (top100 기록기와 분리).
+from next_round_policy import (  # noqa: E402
+    DEFAULT_POLICY,
+    EVIDENCE_NAME_RE,
+    FORBIDDEN_PATH_TOKENS,
+    PolicyViolation,
+    _sha256_bytes,
+    now_utc,
+    scan_forbidden_usage,
+    scan_provenance_fields,
+    scan_upload_markers,
+    validate_policy,
+    write_evidence as write_next_round_evidence,
+)
+
 
 def _git_commit() -> str:
     try:
@@ -503,9 +531,588 @@ def cmd_register(args: argparse.Namespace) -> int:
     return 0
 
 
+# ── Task 12 (aimers9-next-round) — 등록 readiness ──────────────────────
+# 이번 라운드 실행 경로: Task 11 verdict=SKIPPED → SKIPPED_NO_PACKAGE (exit 0).
+# 후보 결속 등록 분기(미래 라운드, Task 11 이 DEPLOYED 후보 지명)는 구조만 구현 —
+# synthetic-tested only. ALLOW/BLOCK 은 readiness 만: 업로드·제출 횟수·Notion 기록 없음.
+def _task12_config_record(policy: JSON) -> JSON:
+    """사전 등록 config: 어떤 상태/라벨 접근 이전에 기록 (pre-registration contract)."""
+    body = {
+        "schema_version": SCHEMA_VERSION,
+        "task": "aimers9-next-round/task-12-decision-config",
+        "title": "Todo 12 — submission decision & registration readiness config (pre-registered)",
+        "recorded_at_utc": now_utc(),
+        "git_head": _git_commit(),
+        "mode": "register-qualified",
+        "label_sources": [],
+        "labels_read": False,
+        "labels_read_note": "Config written BEFORE any state/label access (pre-registration "
+                            "contract).",
+        "frozen_controls": {
+            "c_logit": NEXT_ROUND_C_LOGIT,
+            "clip": [NEXT_ROUND_CLIP_LO, NEXT_ROUND_CLIP_HI],
+            "rollback_baseline_candidate_id": NEXT_ROUND_ROLLBACK_BASELINE,
+        },
+        "registration_rules": {
+            "readiness_only": "ALLOW/BLOCK 은 readiness 만 — 업로드·제출 횟수·Notion/"
+                              "리더보드 기록 금지",
+            "no_upload": "자동 업로드 금지 — 실제 업로드/점수는 사용자 이벤트 후 별도 follow-up",
+            "no_submission_count": "submissions_by_date 갱신 금지 (사용자 실제 제출 이벤트만)",
+            "no_state_write_without_user_event": "상태 쓰기는 사용자 이벤트 이후에만 허용",
+            "stale_state_ttl_minutes": STALE_STATE_TTL_MINUTES,
+        },
+        "binding_rules": {
+            "candidate_id": "--candidate-id == manifest.candidate_id == Task 11 deployed "
+                            "candidate_id",
+            "package_path": "--package-path == manifest.package_path",
+            "manifest_hash": "manifest payload canonical sha256 == manifest.manifest_hash",
+            "model_hash": "on-disk model files sha256 == manifest.model_file_sha256",
+        },
+    }
+    record = dict(body)
+    record["config_hash"] = _canonical_sha256(body)
+    record["policy_config_hash"] = _canonical_sha256(policy)
+    return record
+
+
+def _write_task12_config(evidence_dir: Path, policy: JSON,
+                         fname: str) -> tuple[Path, str, str]:
+    config = _task12_config_record(policy)
+    config_hash = config["config_hash"]
+    path = evidence_dir / fname
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return path, config_hash, _sha256_bytes(path.read_bytes())
+
+
+def _task11_deployed_candidate(task11: JSON) -> str | None:
+    """Task 11 증거에서 지명된 deployed/frozen 후보 id (없으면 None)."""
+    if not isinstance(task11, dict):
+        return None
+    for key in ("deployed_candidate_id", "frozen_candidate_id", "candidate_id"):
+        v = task11.get(key)
+        if isinstance(v, str) and v:
+            return v
+    pkg = task11.get("package")
+    if isinstance(pkg, dict):
+        for key in ("deployed_candidate_id", "candidate_id", "id"):
+            v = pkg.get(key)
+            if isinstance(v, str) and v:
+                return v
+    return None
+
+
+def _assert_cutoff_fresh(state: JSON) -> None:
+    """컷오프 신선도 게이트 (evaluate_gates (c) 와 동일 규칙) — stale/unknown 이면 PolicyViolation."""
+    if state.get("rank_100_cutoff") is None:
+        raise PolicyViolation("cutoff_unknown — rank_100_cutoff 없음 (BLOCK)")
+    captured = state.get("date_captured")
+    captured_dt = parse_iso(captured)
+    if captured_dt is None:
+        raise PolicyViolation("cutoff_no_date — date_captured 없음/파싱 불가 (BLOCK)")
+    if (datetime.now(timezone.utc) - captured_dt) > timedelta(hours=CUTOFF_TTL_HOURS):
+        raise PolicyViolation(f"cutoff_stale — date_captured={captured} 가 TTL "
+                              f"{CUTOFF_TTL_HOURS}h 초과 (BLOCK)")
+
+
+def _assert_daily_slot(state: JSON) -> None:
+    """일일 제출 슬롯 게이트 (evaluate_gates (d) 와 동일 규칙) — 소진이면 PolicyViolation."""
+    today, tz_name = local_today()
+    submitted_today = int((state.get("submissions_by_date") or {}).get(today, 0) or 0)
+    if submitted_today >= DAILY_SUBMISSION_LIMIT:
+        raise PolicyViolation(f"daily_slot_exhausted — {today}({tz_name}) 제출 "
+                              f"{submitted_today}회 — 하루 {DAILY_SUBMISSION_LIMIT}회 제한 "
+                              f"초과/도달 (BLOCK)")
+
+
+def _guard_state_mutation(user_event: bool) -> None:
+    """상태 쓰기는 사용자 이벤트(실제 업로드/점수 보고) 이후에만 허용 — readiness-only 가드."""
+    if not user_event:
+        raise PolicyViolation("unauthorized state mutation — 사용자 이벤트 없이 상태 쓰기 "
+                              "시도 (readiness-only: 업로드·제출 횟수·리더보드 기록은 사용자 "
+                              "이벤트 후 별도 follow-up) (exit 2)")
+
+
+def _guard_manifest_hash(actual_hash: Any, expected_hash: Any) -> None:
+    """manifest 페이로드 정규 sha256 이 manifest 에 고정된 manifest_hash 와 일치해야 한다."""
+    if str(actual_hash or "") != str(expected_hash or ""):
+        raise PolicyViolation(f"manifest hash binding 불일치: actual "
+                              f"{str(actual_hash or '')[:16]}… != manifest "
+                              f"{str(expected_hash or '')[:16]}… (exit 2)")
+
+
+def _guard_task12_binding(candidate_id: Any, manifest: JSON | None, package_path: Any) -> None:
+    """등록 결속: candidate ID / package path / manifest hash / model hashes 모두 일치 필요."""
+    if not isinstance(manifest, dict):
+        raise PolicyViolation(f"manifest 없음 — 등록 결속 불가 (candidate {candidate_id}) "
+                              f"(exit 2)")
+    if str(candidate_id or "") != str(manifest.get("candidate_id") or ""):
+        raise PolicyViolation(f"candidate binding 불일치: --candidate-id {candidate_id!r} != "
+                              f"manifest {manifest.get('candidate_id')!r} (exit 2)")
+    expected = (Path(str(manifest.get("package_path"))).resolve()
+                if manifest.get("package_path") else None)
+    actual = Path(str(package_path)).resolve()
+    if expected is not None and expected != actual:
+        raise PolicyViolation(f"package path binding 불일치: --package-path {actual} != "
+                              f"manifest package_path {expected} (exit 2)")
+    if manifest.get("manifest_hash"):
+        payload = {k: v for k, v in manifest.items() if k != "manifest_hash"}
+        _guard_manifest_hash(_canonical_sha256(payload), manifest["manifest_hash"])
+    model_hashes = manifest.get("model_file_sha256") or {}
+    for rel in sorted(model_hashes):
+        path = Path(str(package_path)) / rel
+        if not path.is_file():
+            raise PolicyViolation(f"model 파일 없음: {rel} (exit 2)")
+        actual_hash = _sha256_file(path)
+        if actual_hash != model_hashes[rel]:
+            raise PolicyViolation(f"model hash binding 불일치: {rel} actual "
+                                  f"{actual_hash[:16]}… != manifest "
+                                  f"{str(model_hashes[rel])[:16]}… (exit 2)")
+
+
+def _task12_qualification_digest(candidate_id: Any, manifest: JSON, package_path: Path) -> str:
+    payload = {
+        "candidate_id": str(candidate_id),
+        "package_path": str(package_path),
+        "manifest_candidate_id": manifest.get("candidate_id"),
+        "manifest_hash": manifest.get("manifest_hash"),
+        "model_file_sha256": manifest.get("model_file_sha256") or {},
+    }
+    return _canonical_sha256(payload)
+
+
+def _write_skipped_no_package(task11: JSON, task11_path: Path, state_path: Path,
+                              policy: JSON, policy_path: Path, policy_hash: str,
+                              evidence_dir: Path, config_path: Path, config_hash: str,
+                              config_file_sha: str, state_sha_before: str | None) -> int:
+    """SKIPPED_NO_PACKAGE 기록 (이번 라운드 실행 경로) — 상태 파일 절대 건드리지 않음."""
+    rb = policy.get("rollback_baseline_candidate_id") or NEXT_ROUND_ROLLBACK_BASELINE
+    state_sha_after = _sha256_file(state_path) if state_path.is_file() else None
+    state_untouched = (state_sha_before == state_sha_after)
+    record = {
+        "schema_version": SCHEMA_VERSION,
+        "title": "Todo 12 — submission decision & registration readiness (skipped — no package)",
+        "task": "aimers9-next-round/task-12-decision",
+        "mode": "register-qualified",
+        "verdict": "SKIPPED_NO_PACKAGE",
+        "exit_code": 0,
+        "recorded_at_utc": now_utc(),
+        "git_head": _git_commit(),
+        "policy_path": str(policy_path),
+        "policy_config_hash": policy_hash,
+        "config_hash": config_hash,
+        "config_pre_registered": {
+            "file": str(config_path), "sha256": config_file_sha,
+            "written_before_labels_read": True,
+        },
+        "task11_evidence": str(task11_path),
+        "label_sources": [],
+        "labels_read": False,
+        "label_sources_note": "Task 12 SKIPPED_NO_PACKAGE — 어떤 상태/라벨/모델/패키지도 "
+                              "읽지 않음 (구조적 가드; 상태 파일은 sha256 파일 해시만 확인)",
+        "reason": ("Task 11 verdict=SKIPPED → no qualified package; retained rollback baseline "
+                   f"{rb}; 등록 미실행 (readiness-only: register-qualified 는 qualified package "
+                   "를 소비하는 게이트)"),
+        "state_mutation": {
+            "mutated": False,
+            "note": (f"leaderboard_state.json untouched (sha256 before == after: "
+                     f"{str(state_sha_before)[:16]}… == {str(state_sha_after)[:16]}…)"),
+            "sha256_before": state_sha_before,
+            "sha256_after": state_sha_after,
+        },
+        "checks": [
+            {"rule": "policy_check", "ok": True,
+             "reason": f"{len(validate_policy(policy))} violations — 동결 정책 유효"},
+            {"rule": "task11_evidence_present", "ok": True,
+             "reason": f"Task 11 증거 로드: {task11_path.name} "
+                       f"(verdict={task11.get('verdict')})"},
+            {"rule": "no_qualified_package", "ok": True,
+             "reason": "Task 11 SKIPPED → qualified package 없음 — 등록 미실행"},
+            {"rule": "no_state_mutation", "ok": True,
+             "reason": "state 파일 미변경 (sha256 before == after)"},
+        ],
+        "violations": [],
+        "findings": [
+            {"rule": "config_pre_registered", "ok": True,
+             "reason": f"sha256 {config_file_sha[:16]}… written_before_labels_read=true"},
+            {"rule": "rollback_baseline", "ok": True,
+             "reason": f"retained {rb} — 변경 없음"},
+            {"rule": "readiness_only", "ok": True,
+             "reason": "ALLOW/BLOCK 은 readiness 만 — 업로드·제출 횟수·Notion 기록 없음"},
+        ],
+        "notes": "Task 11 = SKIPPED → Task 12 = SKIPPED_NO_PACKAGE (등록 대상 패키지 부재, "
+                 "정직한 종결). Notion 로컬 CV/리더보드 row 없음 (plan: label-free SKIPPED "
+                 "outcomes 제외).",
+    }
+    json_path, md_path = write_next_round_evidence(record, evidence_dir / "task-12-decision")
+    print(f"[submission_decision] SKIPPED_NO_PACKAGE (exit 0)")
+    print(f"[submission_decision] retained rollback baseline: {rb} — 등록 미실행, "
+          f"상태 미변경 (sha256 before == after: {state_untouched})")
+    print(f"[submission_decision] evidence -> {json_path} / {md_path}")
+    return 0
+
+
+def _register_bound_candidate(args: argparse.Namespace, task11: JSON, cid: str,
+                              task11_path: Path, state_path: Path, state_sha_before: str | None,
+                              policy: JSON, policy_path: Path, policy_hash: str,
+                              evidence_dir: Path, config_path: Path, config_hash: str,
+                              config_file_sha: str) -> int:
+    """미래 라운드: Task 11 이 DEPLOYED 후보 지명 → 결속 가드 통과 후에만 상태 등록.
+    이번 라운드엔 실행되지 않음 (Task 11 SKIPPED) — synthetic-tested only."""
+    package_path = Path(args.package_path).expanduser().resolve()
+    manifest_path = (Path(args.manifest_path).expanduser().resolve()
+                     if args.manifest_path else None)
+    manifest = load_json(manifest_path) if manifest_path else None
+    try:
+        if manifest is None:
+            raise PolicyViolation(f"manifest 없음/파싱 불가: {manifest_path} (exit 2)")
+        if args.candidate_id is not None and str(args.candidate_id) != str(cid):
+            raise PolicyViolation(f"candidate binding 불일치: --candidate-id "
+                                  f"{args.candidate_id!r} != Task 11 deployed {cid!r} (exit 2)")
+        _guard_task12_binding(cid, manifest, package_path)
+        provenance = load_provenance(package_path)
+        if provenance is None:
+            raise PolicyViolation(f"provenance.json 없음: {package_path / 'provenance.json'} "
+                                  f"(exit 2)")
+        task8_ev = load_json(Path(args.task8_evidence).expanduser().resolve())
+        if task8_ev is None or task8_ev.get("result") != "PASS":
+            raise PolicyViolation("task-8 증거 result != PASS — 등록 거부 (exit 2)")
+        digest = compute_qualification_digest(provenance, task8_ev)
+        binding_digest = _task12_qualification_digest(cid, manifest, package_path)
+        state, state_exists = load_state(state_path)
+        if not state_exists:
+            raise PolicyViolation(f"상태 파일 없음: {state_path} (exit 2)")
+        state["qualified_package"] = {
+            "candidate_id": cid,
+            "candidate": manifest.get("candidate") or provenance.get("candidate"),
+            "package_dir": str(package_path),
+            "qualification_digest": digest,
+            "binding_digest": binding_digest,
+            "qualification_date": str(task11.get("recorded_at_utc", ""))[:10],
+            "package_validated": True,
+            "round": NEXT_ROUND_MARKER,
+        }
+        save_state(state, state_path)
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "title": "Todo 12 — submission decision & registration readiness (registered)",
+            "task": "aimers9-next-round/task-12-decision",
+            "mode": "register-qualified",
+            "verdict": "REGISTERED",
+            "exit_code": 0,
+            "recorded_at_utc": now_utc(),
+            "git_head": _git_commit(),
+            "policy_path": str(policy_path),
+            "policy_config_hash": policy_hash,
+            "config_hash": config_hash,
+            "config_pre_registered": {
+                "file": str(config_path), "sha256": config_file_sha,
+                "written_before_labels_read": True,
+            },
+            "task11_evidence": str(task11_path),
+            "candidate": {"candidate_id": cid,
+                          "candidate": manifest.get("candidate") or provenance.get("candidate"),
+                          "package_dir": str(package_path)},
+            "qualification_digest": digest,
+            "binding_digest": binding_digest,
+            "label_sources": [],
+            "labels_read": False,
+            "state_mutation": {
+                "mutated": True,
+                "note": f"qualified_package 등록 (round={NEXT_ROUND_MARKER}) — readiness-only, "
+                        "업로드·제출 횟수·리더보드 기록 없음",
+                "sha256_before": state_sha_before,
+                "sha256_after": _sha256_file(state_path),
+            },
+            "checks": [
+                {"rule": "policy_check", "ok": True, "reason": "동결 정책 유효"},
+                {"rule": "task11_evidence_present", "ok": True,
+                 "reason": f"Task 11 증거 로드: {task11_path.name} (verdict="
+                           f"{task11.get('verdict')}, deployed {cid})"},
+                {"rule": "binding_guards", "ok": True,
+                 "reason": "candidate ID / package path / manifest hash / model hashes 결속 통과"},
+                {"rule": "state_write_after_binding", "ok": True,
+                 "reason": "결속 가드 통과 후에만 상태 등록 (readiness-only)"},
+            ],
+            "violations": [],
+        }
+        json_path, md_path = write_next_round_evidence(record, evidence_dir / "task-12-decision")
+        print(f"[submission_decision] REGISTERED {record['candidate']['candidate']} ({cid}) "
+              f"— 다이제스트 {digest}")
+        print(f"[submission_decision] 상태 갱신: {state_path} / evidence -> {json_path} / "
+              f"{md_path}")
+        return 0
+    except PolicyViolation as exc:
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "title": "Todo 12 — submission decision & registration readiness (rejected)",
+            "task": "aimers9-next-round/task-12-decision",
+            "mode": "register-qualified",
+            "verdict": "REJECT",
+            "exit_code": 2,
+            "recorded_at_utc": now_utc(),
+            "git_head": _git_commit(),
+            "policy_path": str(policy_path),
+            "policy_config_hash": policy_hash,
+            "config_hash": config_hash,
+            "config_pre_registered": {
+                "file": str(config_path), "sha256": config_file_sha,
+                "written_before_labels_read": True,
+            },
+            "task11_evidence": str(task11_path),
+            "label_sources": [],
+            "labels_read": False,
+            "label_sources_note": "candidate branch: 상태/라벨 접근은 결속 가드 통과 후에만 "
+                                  "허용 — 통과한 가드 없음",
+            "candidate_route": {"candidate_id": cid,
+                                "package_path": str(package_path),
+                                "manifest": manifest_path.name if manifest_path else None},
+            "reason": str(exc),
+            "checks": [],
+            "violations": [],
+            "state_mutation": {"mutated": False,
+                               "note": "결속 가드 실패 — 상태 파일 미변경",
+                               "sha256_before": state_sha_before,
+                               "sha256_after": _sha256_file(state_path) if state_path.is_file()
+                               else None},
+        }
+        json_path, md_path = write_next_round_evidence(record, evidence_dir / "task-12-decision")
+        print(f"[submission_decision] REJECT (exit 2) — candidate branch: candidate_id={cid}")
+        print(f"[submission_decision]   {exc}")
+        print(f"[submission_decision] evidence -> {json_path} / {md_path}")
+        return 2
+
+
+def cmd_register_next_round(args: argparse.Namespace) -> int:
+    """Task 12 등록(readiness-only): Task 11 증거를 소비해 SKIPPED_NO_PACKAGE(이번 라운드)
+    또는 후보 결속 등록(미래 라운드)으로 분기. 자동 업로드/제출 횟수/Notion 기록 없음."""
+    state_path = Path(args.state).expanduser().resolve()
+    evidence_path = Path(args.evidence_path).expanduser().resolve()
+    evidence_dir = evidence_path.parent
+    state_sha_before = _sha256_file(state_path) if state_path.is_file() else None
+
+    policy_path = Path(args.policy).expanduser().resolve()
+    policy = load_json(policy_path)
+    if policy is None:
+        print(f"[submission_decision] FATAL: 정책 파일을 읽을 수 없음: {policy_path}",
+              file=sys.stderr)
+        return 1
+    policy_hash = _canonical_sha256(policy)
+    violations = validate_policy(policy)
+    if violations:
+        print("[submission_decision] REJECT (exit 2) — 정책 위반")
+        for v in violations:
+            print(f"  [REJECT] {v['rule']}: {v['reason']}")
+        return 2
+
+    task11 = load_json(evidence_path)
+    if task11 is None:
+        print(f"[submission_decision] FATAL: Task 11 증거를 읽을 수 없음: {evidence_path}",
+              file=sys.stderr)
+        return 1
+
+    config_path, config_hash, config_file_sha = _write_task12_config(
+        evidence_dir, policy, "task-12-decision-config.json")
+
+    cid = _task11_deployed_candidate(task11)
+    if task11.get("verdict") == "SKIPPED" or cid is None:
+        return _write_skipped_no_package(task11, evidence_path, state_path, policy, policy_path,
+                                         policy_hash, evidence_dir, config_path, config_hash,
+                                         config_file_sha, state_sha_before)
+    return _register_bound_candidate(args, task11, cid, evidence_path, state_path,
+                                     state_sha_before, policy, policy_path, policy_hash,
+                                     evidence_dir, config_path, config_hash, config_file_sha)
+
+
+def cmd_check_next_round(args: argparse.Namespace) -> int:
+    """Task 12 check (next round): 이번 라운드 등록(round 마커)된 qualified package 가 없으면
+    SKIPPED_NO_QUALIFIED_CANDIDATE exit 0 (never ALLOW). 상태 파일 없음 → BLOCK exit 1."""
+    state_path = Path(args.state).expanduser().resolve()
+    evidence_path = Path(args.evidence_path).expanduser().resolve()
+    evidence_dir = evidence_path.parent
+    state, state_exists = load_state(state_path)
+    if not state_exists:
+        print("[submission_decision] 상태 파일 없음 → BLOCK (exit 1)", file=sys.stderr)
+        return 1
+
+    policy_path = Path(args.policy).expanduser().resolve()
+    policy = load_json(policy_path)
+    if policy is None:
+        print(f"[submission_decision] FATAL: 정책 파일을 읽을 수 없음: {policy_path}",
+              file=sys.stderr)
+        return 1
+    policy_hash = _canonical_sha256(policy)
+
+    qp = state.get("qualified_package")
+    if qp is None or qp.get("round") != NEXT_ROUND_MARKER:
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "title": "Todo 12 — submission decision check (no qualified candidate)",
+            "task": "aimers9-next-round/task-12-decision",
+            "mode": "check",
+            "verdict": "SKIPPED_NO_QUALIFIED_CANDIDATE",
+            "exit_code": 0,
+            "recorded_at_utc": now_utc(),
+            "git_head": _git_commit(),
+            "policy_path": str(policy_path),
+            "policy_config_hash": policy_hash,
+            "task11_evidence": str(evidence_path),
+            "label_sources": [],
+            "labels_read": False,
+            "reason": ("이번 라운드 등록된 qualified package 없음 (Task 11 SKIPPED → 등록 대상 "
+                       "부재; rollback baseline 유지) — readiness-only: ALLOW 불가, 업로드·"
+                       "제출 기록 없음"),
+            "checks": [
+                {"rule": "qualified_package_registered", "ok": False,
+                 "reason": "state.qualified_package 없음 또는 round 마커 "
+                           f"({NEXT_ROUND_MARKER}) 부재"},
+                {"rule": "no_allow", "ok": True,
+                 "reason": "never ALLOW — 등록된 qualified package 없이는 readiness 게이트 "
+                           "미평가"},
+            ],
+            "violations": [],
+            "notes": "후속: 후보 등록(register-qualified) 후 재실행하면 게이트 평가 진입.",
+        }
+        json_path, md_path = write_next_round_evidence(
+            record, evidence_dir / "task-12-decision-check")
+        print(f"[submission_decision] SKIPPED_NO_QUALIFIED_CANDIDATE (exit 0)")
+        print(f"[submission_decision] evidence -> {json_path} / {md_path}")
+        return 0
+
+    package_dir = Path(args.package_path or args.package_dir).expanduser().resolve()
+    provenance = load_provenance(package_dir)
+    task8, _task8_exists = load_package_validator(Path(args.task8_evidence).expanduser().resolve())
+    gates, metrics = evaluate_gates(provenance, task8, state, package_dir)
+    digest_computed = compute_qualification_digest(provenance, task8 or {}) if provenance else None
+    all_pass = all(g["ok"] for g in gates)
+    decision = "ALLOW" if all_pass else "BLOCK"
+    exit_code = 0 if all_pass else 1
+    record = {
+        "schema_version": SCHEMA_VERSION,
+        "title": "Todo 12 — submission decision check (next round)",
+        "task": "aimers9-next-round/task-12-decision",
+        "mode": "check",
+        "verdict": decision,
+        "exit_code": exit_code,
+        "recorded_at_utc": now_utc(),
+        "git_head": _git_commit(),
+        "policy_path": str(policy_path),
+        "policy_config_hash": policy_hash,
+        "label_sources": [],
+        "labels_read": False,
+        "candidate": {
+            "candidate_id": (provenance or qp).get("candidate_id"),
+            "candidate": (provenance or qp).get("candidate"),
+            "package_dir": str(package_dir),
+        },
+        "qualification_digest": digest_computed,
+        "qualification_digest_registered": qp.get("qualification_digest"),
+        "leaderboard": metrics,
+        "leaderboard_source": "user-reported DACON leaderboard",
+        "checks": [{"rule": g["gate"], "ok": g["ok"],
+                    "reason": f"{g['reason']} — {g['detail']}"} for g in gates],
+        "block_reasons": [g["reason"] for g in gates if not g["ok"]],
+        "violations": [],
+        "readiness_only": "ALLOW/BLOCK 은 readiness 만 — 업로드·제출 횟수·Notion 기록 없음",
+    }
+    json_path, md_path = write_next_round_evidence(
+        record, evidence_dir / "task-12-decision-check")
+    print(f"[submission_decision] {decision} (exit {exit_code}) — candidate "
+          f"{(provenance or qp).get('candidate')}")
+    print(f"[submission_decision] 컷오프={metrics['rank_100_cutoff']} "
+          f"캡처={metrics['date_captured']} 마진={metrics['target_margin']} "
+          f"오늘 제출={metrics['submissions_today']}/{DAILY_SUBMISSION_LIMIT}")
+    for g in gates:
+        mark = "PASS" if g["ok"] else "BLOCK"
+        print(f"  [{mark}] {g['gate']} ({g['reason']}): {g['detail']}")
+    print(f"[submission_decision] evidence -> {json_path} / {md_path}")
+    return exit_code
+
+
+def cmd_fixture(args: argparse.Namespace) -> int:
+    """failure-QA fixtures (계획 QA: 전부 exit 2, fixture 전용 증거 — 주 증거 미변경).
+    상태는 in-memory 복사(json.load → dict 변조)만 수행 — 실제 파일 절대 저장 안 함."""
+    fixture = args.fixture
+    evidence_path = Path(args.evidence_path).expanduser().resolve()
+    evidence_dir = evidence_path.parent
+    state_path = Path(args.state).expanduser().resolve()
+    state, state_exists = load_state(state_path)
+    if not state_exists:
+        print(f"[submission_decision] FATAL: 상태 파일 없음 — fixture {fixture} 실행 불가: "
+              f"{state_path}", file=sys.stderr)
+        return 1
+    policy_path = Path(args.policy).expanduser().resolve()
+    policy = load_json(policy_path)
+    if policy is None:
+        print(f"[submission_decision] FATAL: 정책 파일을 읽을 수 없음: {policy_path}",
+              file=sys.stderr)
+        return 1
+    policy_hash = _canonical_sha256(policy)
+    state_sha_before = _sha256_file(state_path)
+
+    config_path, config_hash, config_file_sha = _write_task12_config(
+        evidence_dir, policy, f"task-12-decision-config-fixture-{fixture}.json")
+
+    try:
+        if fixture == "stale-cutoff":
+            state["date_captured"] = "2020-01-01T00:00:00+00:00"
+            _assert_cutoff_fresh(state)
+        elif fixture == "consumed-slot":
+            today, _tz = local_today()
+            state.setdefault("submissions_by_date", {})[today] = DAILY_SUBMISSION_LIMIT
+            _assert_daily_slot(state)
+        elif fixture == "altered-package":
+            manifest = {"candidate_id": "tampered0deadbeef",
+                        "package_path": str(REPO / "submit_next_round_tampered"),
+                        "manifest_hash": "0" * 64, "model_file_sha256": {}}
+            _guard_task12_binding(NEXT_ROUND_ROLLBACK_BASELINE, manifest,
+                                  str(REPO / "submit_next_round_tampered"))
+        elif fixture == "unauthorized-state-mutation":
+            _guard_state_mutation(user_event=False)
+    except PolicyViolation as exc:
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "title": f"Todo 12 fixture — {fixture}",
+            "task": "aimers9-next-round/task-12-decision",
+            "mode": "register-qualified-fixture",
+            "verdict": "REJECT",
+            "exit_code": 2,
+            "recorded_at_utc": now_utc(),
+            "git_head": _git_commit(),
+            "policy_path": str(policy_path),
+            "policy_config_hash": policy_hash,
+            "config_hash": config_hash,
+            "config_pre_registered": {
+                "file": str(config_path), "sha256": config_file_sha,
+                "written_before_labels_read": True,
+            },
+            "task11_evidence": str(evidence_path),
+            "label_sources": [],
+            "labels_read": False,
+            "label_sources_note": "fixture: no real label/state read — in-memory copy only",
+            "fixture": fixture,
+            "reason": str(exc),
+            "state_untouched": {
+                "sha256_before": state_sha_before,
+                "sha256_after": _sha256_file(state_path),
+                "note": "실제 상태 파일 미변경 (in-memory 변조만 수행)",
+            },
+            "violations": [],
+        }
+        json_path, md_path = write_next_round_evidence(
+            record, evidence_dir / f"task-12-decision-fixture-{fixture}")
+        print(f"[submission_decision] --fixture {fixture}: exit 2 — {exc}")
+        print(f"[submission_decision] evidence -> {json_path} / {md_path}")
+        return 2
+    print(f"[submission_decision] FATAL: fixture {fixture} 가드가 발동하지 않음 — 가드 버그",
+          file=sys.stderr)
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Todo 9 제출 의사결정 — live 리더보드 컷오프 + 하루 5회 정책 게이트",
+        description="Todo 9 제출 의사결정 — live 리더보드 컷오프 + 하루 5회 정책 게이트 "
+                    "(Task 12 next-round 확장: 등록 readiness / SKIPPED_NO_PACKAGE)",
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--mode", choices=("check", "register"), default="check",
                         help="check(기본, 5개 게이트 평가) | register(자격 다이제스트 등록)")
@@ -521,11 +1128,38 @@ def main(argv: list[str] | None = None) -> int:
                         help="단축: --mode register (자격 다이제스트 등록)")
     parser.add_argument("--check", action="store_true",
                         help="단축: --mode check (기본 제출 의사결정 모드 — 명시 호출 지원)")
+    # ── Task 12 (aimers9-next-round) 인자 ──
+    parser.add_argument("--candidate-id", default=None,
+                        help="(next round) 등록 후보 id (Task 9 freeze candidate)")
+    parser.add_argument("--package-path", default=None,
+                        help="(next round) Task 11 패키지 dir")
+    parser.add_argument("--manifest-path", default=None,
+                        help="(next round) Task 11 manifest.json 경로")
+    parser.add_argument("--evidence-path", default=str(DEFAULT_TASK11_EVIDENCE),
+                        help="Task 11 증거 JSON (기본 task-11-package.json) — next-round 분기 입력")
+    parser.add_argument("--fixture", default=None, choices=sorted(NEXT_ROUND_FIXTURES),
+                        help="failure QA fixture (전부 exit 2): 등록/게이트 가드 변조 트리거")
+    parser.add_argument("--policy", default=str(DEFAULT_POLICY),
+                        help="동결 정책 JSON (기본 repro_979/next_round_policy.json)")
     args = parser.parse_args(argv)
     if args.register_qualified:
         args.mode = "register"
     elif args.check:
         args.mode = "check"
+    if args.fixture:
+        return cmd_fixture(args)
+    # next-round 분기: 새 인자(candidate/package/manifest)가 명시되었거나, task-11 증거(기본
+    # 결정 입력)가 --evidence-path 로 명시된 경우. 그 외엔 기존 top100 로직 (하위호환).
+    next_round = (
+        args.candidate_id is not None
+        or args.package_path is not None
+        or args.manifest_path is not None
+        or args.evidence_path != str(DEFAULT_TASK11_EVIDENCE)
+    )
+    if next_round:
+        if args.mode == "register":
+            return cmd_register_next_round(args)
+        return cmd_check_next_round(args)
     if args.mode == "register":
         return cmd_register(args)
     return cmd_check(args)
