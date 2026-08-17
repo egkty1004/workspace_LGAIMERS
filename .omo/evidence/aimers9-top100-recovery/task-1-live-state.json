@@ -93,15 +93,20 @@
     "status": "available",
     "verified_from_notion": true,
     "table": "aimers9 실험 기록 - 리더보드 제출 기록 (block 2a000a06-d653-4989-8c92-112993d69962)",
-    "appended_row_block_id": "3bf5ed6b-28d5-8105-bd4b-da500e622e00",
-    "row": {
-      "submission_date": "UNKNOWN (사용자 보고 2026-08-17)",
-      "file_model": "UNKNOWN - provenance 미확정 당시 (2026-08-18: submit_v93_6leg_r0477로 복구됨)",
-      "public": "1001.74449",
-      "private": "(미공개)"
-    },
-    "verified_at_utc": "2026-08-18T00:00:00+00:00",
-    "note": "Notion 리더보드 제출 기록 테이블에서 행 3bf5ed6b-... 직접 확인 (2026-08-18). Task 1이 append한 1001.74449 행 존재함. provenance는 이후 v93 share 패키지로 복구됨 (baseline_verdict RECONCILED)."
+    "rows": [
+      {
+        "block": "3bf5ed6b-28d5-8105-bd4b-da500e622e00",
+        "note": "Task 1이 append한 원본 행 (2026-08-17, UNKNOWN provenance 당시)",
+        "public": "1001.74449"
+      },
+      {
+        "block": "3bf5ed6b-28d5-81a9-abaf-fdab1caef1f8",
+        "note": "2026-08-18 provenance 복구 후 추가한 정확한 행 (submit_v93_6leg_r0477)",
+        "public": "1001.74449"
+      }
+    ],
+    "updated_at_utc": "2026-08-18T00:00:00+00:00",
+    "note": "Notion 리더보드 제출 기록 테이블에서 직접 확인. v93 6-leg provenance 복구 반영하여 정확한 행 추가 완료."
   },
   "checks": [
     {
