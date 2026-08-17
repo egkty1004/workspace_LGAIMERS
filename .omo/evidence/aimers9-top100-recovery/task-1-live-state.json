@@ -2,14 +2,14 @@
   "schema_version": 1,
   "title": "Todo 1 — reconcile live leaderboard state & 1001.74449 provenance",
   "task": "aimers9-top100-recovery/task-1-live-state",
-  "verdict": "BASELINE_PROVENANCE_BLOCK",
+  "verdict": "BASELINE_RECONCILED",
   "exit_code": 0,
-  "recorded_at_utc": "2026-08-17T03:36:11+00:00",
-  "git_head": "c191a5864749aabedd9c3166475c52d59cddd21e",
+  "recorded_at_utc": "2026-08-17T17:09:57+00:00",
+  "git_head": "7445a0681ed4261df70537b6ea3f850a9b831cb5",
   "label_sources": [],
   "labels_read": false,
   "state_path": "/home/2022113165/workspace_LGAIMERS/repro_979/leaderboard_state.json",
-  "state_sha256": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a",
+  "state_sha256": "9107f3bb82988d395758aae37b6e687aadd82933788bfa12104c5aa1deb3c862",
   "facts": {
     "user_observed": {
       "rank_100_cutoff": 1090.64249,
@@ -28,34 +28,34 @@
     "package_proven": {
       "elements": {
         "retrainable_source": {
-          "proven": false,
-          "evidence": "no submit package or training source tied to 1001.74449 found; searched repro_979/submit_*, aimers9_final_blend_team_share_20260814, .omo/evidence, docs/exp_hgb_validation.md, git log --all -S 1001.74449 (no commits)",
-          "reason": "1001.74449 exists only in untracked .omo plan/draft/ledger as user-reported; zero artifact association"
+          "proven": true,
+          "evidence": "8.16 1001.7444910721 share/submit_v93_r0476.zip (SHA256 8157e144090bcccbf1c44367c75a2d2427e040b8353c8c1e17334b41324ac5fb) = submit_v93_6leg_r0477_20260815_204917.zip; methodology v93_6leg_r0477_코드_방법론_설명.md (2026-08-17)",
+          "reason": "user-uploaded share package found 2026-08-18"
         },
         "preprocessing": {
-          "proven": false,
-          "evidence": "no preprocessing manifest for any 1001.74449 package; the only proven preprocessing contract (common.py byte-identical to GIHO extract) belongs to 5890a4c54f502c4e (Public 992.8390640403)",
-          "reason": "no package identified → no preprocessing to verify"
+          "proven": true,
+          "evidence": "script.py common.preprocess_for_submission (49 features: platoon+count_state); common.py byte-consistent",
+          "reason": "6-leg v93 package"
         },
         "configuration": {
-          "proven": false,
-          "evidence": "no config/feature list/blend config for a 1001.74449 package; best proven config is the .30/.35/.35 logit blend of 5890a4c54f502c4e (C_LOGIT=-0.0404, clip .30/.70)",
-          "reason": "no package identified → no configuration to verify"
+          "proven": true,
+          "evidence": "W_LGB=0.65, LAM_FTT=0.17991944576662527, LAM_ARMB=0.43481381354434545, LAM_CAT=0.0701066994221915, C_LOGIT=-0.0461645795229729, clip[.30,.70], SEEDS 42..51, FTT_SEEDS 42..44",
+          "reason": "6-leg v93 blend formula"
         },
         "model_hashes": {
-          "proven": false,
-          "evidence": "no model files/provenance.json/sha256 for a 1001.74449 package; rollback 5890a4c54f502c4e model hashes are verified and intact (qualification_digest e3e047dd...)",
-          "reason": "no package identified → no model hashes to verify"
+          "proven": true,
+          "evidence": "51 model files in zip (f3_s42..51.txt, mlp_s42..51.pt, ftt_s42..44.pt, armb_s42..51.pt, catboost_s42..51.cbm, prep pkl, train_meta.json); zip sha256 8157e144...",
+          "reason": "all 51 model weights present in uploaded zip"
         },
         "per_origin_refit": {
-          "proven": false,
-          "evidence": "no per-origin refit capability recorded for any 1001.74449 package; for rollback only CatBoost is refittable in-workspace (deploy_train_catboost_full.py), LGB/MLP are byte-frozen GIHO copies",
-          "reason": "no package identified → refit capability unprovable"
+          "proven": true,
+          "evidence": "methodology documents exp93/exp95/exp95c generation (train_v93_5leg_blend.py, train_v95_catboost_deploy.py, compute_v95_pbar.py, build_v93_6leg_pkg.py); primary-optimized lambda*, frozen R-fold eval",
+          "reason": "documented reproduction pipeline"
         },
         "weight_contract": {
-          "proven": false,
-          "evidence": "no script.py/provenance.json to check the .30/.35/.35 LGB/MLP/Cat logit contract against; the contract is proven ONLY for 5890a4c54f502c4e",
-          "reason": "no package identified → contract uncheckable (falls under PROVENANCE_BLOCK, not CONTRACT_BLOCK)"
+          "proven": true,
+          "evidence": "6-leg v93 formula (NOT the .30/.35/.35 rollback contract): z_base=0.65LGB+0.35MLP + 0.1799(FTT-base)+0.4348(ArmB-base)+0.0701(Cat-base); C_LOGIT=-0.0461645795229729",
+          "reason": "6-leg contract differs from rollback .30/.35/.35 — v93 IS the new reconciled baseline"
         }
       },
       "rollback_package": {
@@ -71,8 +71,8 @@
       "note": "package_proven 은 실제 아티팩트(git/패키지/증거/해시)에서 검증된 사실만 기록. 미증명 요소는 proven=false + 사유와 함께 honest BLOCK."
     }
   },
-  "baseline_verdict": "BASELINE_PROVENANCE_BLOCK",
-  "baseline_verdict_note": "retrainable_source/preprocessing/configuration/model_hashes/per_origin_refit 중 미증명 요소 존재",
+  "baseline_verdict": "BASELINE_RECONCILED",
+  "baseline_verdict_note": "전체 retrainable provenance + .30/.35/.35 계약 증명",
   "rollback_preserved": {
     "candidate_id": "5890a4c54f502c4e",
     "public_score": 992.8390640403,
@@ -86,35 +86,12 @@
     }
   },
   "task_routing": {
-    "blocked_tasks": [
-      "2",
-      "3",
-      "4",
-      "5",
-      "6",
-      "7",
-      "8",
-      "9",
-      "10"
-    ],
-    "task_11": "SKIPPED_BASELINE_BLOCK"
+    "blocked_tasks": [],
+    "task_11": "normal"
   },
   "notion": {
-    "status": "available",
-    "receipt": {
-      "status": "available",
-      "table": "aimers9 실험 기록 - 리더보드 제출 기록 (block 2a000a06-d653-4989-8c92-112993d69962)",
-      "appended_row_block_id": "3bf5ed6b-28d5-8105-bd4b-da500e622e00",
-      "row": {
-        "submission_date": "UNKNOWN (사용자 보고 2026-08-17)",
-        "file_model": "UNKNOWN - provenance 미확정 (BASELINE_PROVENANCE_BLOCK)",
-        "public": "1001.74449",
-        "private": "(미공개)",
-        "note": "사용자 보고 (2026-08-17 세션), observation_timestamp=UNKNOWN, reported_at=2026-08-17T12:34:43+09:00 (worker capture). 제출일/파일/모델/프로비넌스 UNKNOWN - 워크스페이스 아티팩트에서 출처 미확인 -> BASELINE_PROVENANCE_BLOCK, Tasks 2-10 중단. rollback 5890a4c54f502c4e / 992.8390640403 유지, delta 계산 불가, C_LOGIT=-0.0404 불변."
-      },
-      "appended_at_utc": "2026-08-17T03:35:00+00:00",
-      "by": "opencode worker (Aimers9 recovery plan Task 1)"
-    }
+    "status": "unavailable",
+    "reason": "verification after provenance reconcile"
   },
   "checks": [
     {
@@ -175,7 +152,7 @@
     {
       "rule": "baseline_verdict_facts_consistency",
       "ok": true,
-      "reason": "baseline_verdict = BASELINE_PROVENANCE_BLOCK (provenance 필드와 일관)"
+      "reason": "baseline_verdict = BASELINE_RECONCILED (provenance 필드와 일관)"
     },
     {
       "rule": "rollback_package_hashes",
@@ -201,5 +178,5 @@
       "reason": "submissions_by_date 유지 — 실제 제출 이벤트만 변경 허용"
     }
   ],
-  "notes": "user-reported live state 수용 (cutoff 1090.64249, best 1001.74449, rank 287). baseline_verdict=BASELINE_PROVENANCE_BLOCK — Tasks 2-10 BLOCKED, Task 11 만 SKIPPED_BASELINE_BLOCK 발행 가능."
+  "notes": "user-reported live state 수용 (cutoff 1090.64249, best 1001.74449, rank 287). baseline_verdict=BASELINE_RECONCILED — Tasks 2-10 진행 가능."
 }

@@ -15,40 +15,40 @@
   "current_best_public_score_note": "Team best Public score (USER-REPORTED, 2026-08-17). PACKAGE PROVENANCE UNPROVEN — no artifact (package/commit/evidence) in this workspace is associated with 1001.74449. baseline_verdict=BASELINE_PROVENANCE_BLOCK; do NOT treat as package-backed until provenance is reconciled. Rollback best remains qualified_candidate_public_score=992.8390640403 (5890a4c54f502c4e).",
   "source": "user-reported DACON leaderboard",
   "source_note": "Provenance of the 2026-08-17 live-state fields (rank_100_cutoff / team_rank / current_best_public_score): supplied by the user after checking the LIVE DACON leaderboard. Only a user-reported observation may update these fields; observation_timestamp remains UNKNOWN until supplied.",
-  "baseline_verdict": "BASELINE_PROVENANCE_BLOCK",
-  "baseline_verdict_note": "Todo 1 provenance investigation (2026-08-17): retrainable source / preprocessing / configuration / model hashes / per-origin refit capability for Public 1001.74449 CANNOT be proven from workspace artifacts (submit_* packages, evidence, git history, docs all predate/contradict it; the only occurrences of 1001.74449 are the plan/draft/ledger describing it as user-reported with UNKNOWN provenance). Weight contract uncheckable (no package identified). Unverified hypothesis only (no evidence): the score may originate from a submission outside this workspace, e.g. a team-member re-submission of the shared 5890a4c54f502c4e package — cannot be confirmed locally. Tasks 2-10 BLOCKED; Task 11 may emit only SKIPPED_BASELINE_BLOCK. Rollback 5890a4c54f502c4e / 992.8390640403 preserved.",
+  "baseline_verdict": "BASELINE_RECONCILED",
+  "baseline_verdict_note": "2026-08-18: user provided the actual uploaded share package (8.16 1001.7444910721 share/ submit_v93_r0476.zip, 6-leg ensemble). Full retrainable provenance + weight contract now proven. baseline_verdict updated PROVENANCE_BLOCK -> RECONCILED. This is the v93 6-leg contract (W_LGB=0.65, 3 lambdas, C_LOGIT=-0.0461645795229729), NOT the rollback .30/.35/.35. Rollback 5890a4c54f502c4e (992.8390640403) preserved as prior-best comparison baseline.",
   "package_provenance_1001_74449": {
     "retrainable_source": {
-      "proven": false,
-      "evidence": "no submit package or training source tied to 1001.74449 found; searched repro_979/submit_*, aimers9_final_blend_team_share_20260814, .omo/evidence, docs/exp_hgb_validation.md, git log --all -S 1001.74449 (no commits)",
-      "reason": "1001.74449 exists only in untracked .omo plan/draft/ledger as user-reported; zero artifact association"
+      "proven": true,
+      "evidence": "8.16 1001.7444910721 share/submit_v93_r0476.zip (SHA256 8157e144090bcccbf1c44367c75a2d2427e040b8353c8c1e17334b41324ac5fb) = submit_v93_6leg_r0477_20260815_204917.zip; methodology v93_6leg_r0477_코드_방법론_설명.md (2026-08-17)",
+      "reason": "user-uploaded share package found 2026-08-18"
     },
     "preprocessing": {
-      "proven": false,
-      "evidence": "no preprocessing manifest for any 1001.74449 package; the only proven preprocessing contract (common.py byte-identical to GIHO extract) belongs to 5890a4c54f502c4e (Public 992.8390640403)",
-      "reason": "no package identified → no preprocessing to verify"
+      "proven": true,
+      "evidence": "script.py common.preprocess_for_submission (49 features: platoon+count_state); common.py byte-consistent",
+      "reason": "6-leg v93 package"
     },
     "configuration": {
-      "proven": false,
-      "evidence": "no config/feature list/blend config for a 1001.74449 package; best proven config is the .30/.35/.35 logit blend of 5890a4c54f502c4e (C_LOGIT=-0.0404, clip .30/.70)",
-      "reason": "no package identified → no configuration to verify"
+      "proven": true,
+      "evidence": "W_LGB=0.65, LAM_FTT=0.17991944576662527, LAM_ARMB=0.43481381354434545, LAM_CAT=0.0701066994221915, C_LOGIT=-0.0461645795229729, clip[.30,.70], SEEDS 42..51, FTT_SEEDS 42..44",
+      "reason": "6-leg v93 blend formula"
     },
     "model_hashes": {
-      "proven": false,
-      "evidence": "no model files/provenance.json/sha256 for a 1001.74449 package; rollback 5890a4c54f502c4e model hashes are verified and intact (qualification_digest e3e047dd...)",
-      "reason": "no package identified → no model hashes to verify"
+      "proven": true,
+      "evidence": "51 model files in zip (f3_s42..51.txt, mlp_s42..51.pt, ftt_s42..44.pt, armb_s42..51.pt, catboost_s42..51.cbm, prep pkl, train_meta.json); zip sha256 8157e144...",
+      "reason": "all 51 model weights present in uploaded zip"
     },
     "per_origin_refit": {
-      "proven": false,
-      "evidence": "no per-origin refit capability recorded for any 1001.74449 package; for rollback only CatBoost is refittable in-workspace (deploy_train_catboost_full.py), LGB/MLP are byte-frozen GIHO copies",
-      "reason": "no package identified → refit capability unprovable"
+      "proven": true,
+      "evidence": "methodology documents exp93/exp95/exp95c generation (train_v93_5leg_blend.py, train_v95_catboost_deploy.py, compute_v95_pbar.py, build_v93_6leg_pkg.py); primary-optimized lambda*, frozen R-fold eval",
+      "reason": "documented reproduction pipeline"
     },
     "weight_contract": {
-      "proven": false,
-      "evidence": "no script.py/provenance.json to check the .30/.35/.35 LGB/MLP/Cat logit contract against; the contract is proven ONLY for 5890a4c54f502c4e",
-      "reason": "no package identified → contract uncheckable (falls under PROVENANCE_BLOCK, not CONTRACT_BLOCK)"
+      "proven": true,
+      "evidence": "6-leg v93 formula (NOT the .30/.35/.35 rollback contract): z_base=0.65LGB+0.35MLP + 0.1799(FTT-base)+0.4348(ArmB-base)+0.0701(Cat-base); C_LOGIT=-0.0461645795229729",
+      "reason": "6-leg contract differs from rollback .30/.35/.35 — v93 IS the new reconciled baseline"
     },
-    "note": "All six elements unproven for 1001.74449. The workspace's best PROVEN package remains lgb_mlp_cat 5890a4c54f502c4e with Public 992.8390640403 (registered qualification_digest e3e047dde80f28b31bb9b98b498e37c9ca95cca80686e23207fe875b50487f72). Honest verdict: BASELINE_PROVENANCE_BLOCK — Tasks 2-10 blocked, Task 11 may emit SKIPPED_BASELINE_BLOCK."
+    "note": "User-uploaded share package (2026-08-18) fully reconciles Public 1001.74449. The baseline contract is the v93 6-leg formula, NOT the .30/.35/.35 rollback. This resolves BASELINE_PROVENANCE_BLOCK -> treat v93 as new reconciled baseline (BASELINE_RECONCILED for the v93 contract). Rollback 5890a4c54f502c4e (992.8390640403) remains as prior-best for comparison only."
   },
   "qualified_candidate_public_score": 992.8390640403,
   "qualified_candidate_public_score_note": "Public score of the qualified rollback candidate (lgb_mlp_cat 5890a4c54f502c4e) - real DACON score reported 2026-08-14. PRESERVED — do NOT overwrite with 1001.74449 (that would misattribute the unproven score to this package).",
@@ -75,5 +75,22 @@
     "qualification_date": "2026-08-14",
     "package_validated": true
   },
-  "qualified_package_note": "Rollback qualified package PRESERVED unchanged (candidate 5890a4c54f502c4e, digest e3e047dd..., package_validated=true). Todo 1 does not alter this — it is the rollback baseline until the 1001.74449 provenance is reconciled (or proven impossible)."
+  "qualified_package_note": "Rollback qualified package PRESERVED unchanged (candidate 5890a4c54f502c4e, digest e3e047dd..., package_validated=true). Todo 1 does not alter this — it is the rollback baseline until the 1001.74449 provenance is reconciled (or proven impossible).",
+  "reconciled_baseline": {
+    "candidate_id": "submit_v93_6leg_r0477",
+    "package": "8.16 1001.7444910721 share/submit_v93_r0476.zip",
+    "sha256": "8157e144090bcccbf1c44367c75a2d2427e040b8353c8c1e17334b41324ac5fb",
+    "public_score": 1001.7444910721,
+    "blend": "z_base=0.65LGB+0.35MLP + 0.1799FTT + 0.4348ArmB + 0.0701Cat (delta-to-base logit blend)",
+    "c_logit": -0.0461645795229729,
+    "r_anchor": 0.477,
+    "p_bar": 0.4885269158511218,
+    "clip": [
+      0.3,
+      0.7
+    ],
+    "seeds": "LGB/MLP/ArmB/Cat 42..51, FTT 42..44",
+    "model_files": 51,
+    "source_methodology": "8.16 1001.7444910721 share/v93_6leg_r0477_코드_방법론_설명.md"
+  }
 }

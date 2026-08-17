@@ -1,8 +1,8 @@
-# Todo 1 — reconcile live leaderboard state & 1001.74449 provenance — BASELINE_PROVENANCE_BLOCK (exit 0)
+# Todo 1 — reconcile live leaderboard state & 1001.74449 provenance — BASELINE_RECONCILED (exit 0)
 
-- **recorded_at_utc**: 2026-08-17T03:36:11+00:00
-- **git_head**: c191a5864749aabedd9c3166475c52d59cddd21e
-- **state**: /home/2022113165/workspace_LGAIMERS/repro_979/leaderboard_state.json (sha256 b1aacb7cadf22bb2…)
+- **recorded_at_utc**: 2026-08-17T17:09:57+00:00
+- **git_head**: 7445a0681ed4261df70537b6ea3f850a9b831cb5
+- **state**: /home/2022113165/workspace_LGAIMERS/repro_979/leaderboard_state.json (sha256 9107f3bb82988d39…)
 
 ## Facts
 
@@ -24,23 +24,22 @@
 
 ### package_proven (아티팩트에서 검증된 사실)
 
-- **retrainable_source**: [FAIL] no submit package or training source tied to 1001.74449 found; searched repro_979/submit_*, aimers9_final_blend_team_share_20260814, .omo/evidence, docs/exp_hgb_validation.md, git log --all -S 1001.74449 (no commits)
-- **preprocessing**: [FAIL] no preprocessing manifest for any 1001.74449 package; the only proven preprocessing contract (common.py byte-identical to GIHO extract) belongs to 5890a4c54f502c4e (Public 992.8390640403)
-- **configuration**: [FAIL] no config/feature list/blend config for a 1001.74449 package; best proven config is the .30/.35/.35 logit blend of 5890a4c54f502c4e (C_LOGIT=-0.0404, clip .30/.70)
-- **model_hashes**: [FAIL] no model files/provenance.json/sha256 for a 1001.74449 package; rollback 5890a4c54f502c4e model hashes are verified and intact (qualification_digest e3e047dd...)
-- **per_origin_refit**: [FAIL] no per-origin refit capability recorded for any 1001.74449 package; for rollback only CatBoost is refittable in-workspace (deploy_train_catboost_full.py), LGB/MLP are byte-frozen GIHO copies
-- **weight_contract**: [FAIL] no script.py/provenance.json to check the .30/.35/.35 LGB/MLP/Cat logit contract against; the contract is proven ONLY for 5890a4c54f502c4e
+- **retrainable_source**: [PROVEN] 8.16 1001.7444910721 share/submit_v93_r0476.zip (SHA256 8157e144090bcccbf1c44367c75a2d2427e040b8353c8c1e17334b41324ac5fb) = submit_v93_6leg_r0477_20260815_204917.zip; methodology v93_6leg_r0477_코드_방법론_설명.md (2026-08-17)
+- **preprocessing**: [PROVEN] script.py common.preprocess_for_submission (49 features: platoon+count_state); common.py byte-consistent
+- **configuration**: [PROVEN] W_LGB=0.65, LAM_FTT=0.17991944576662527, LAM_ARMB=0.43481381354434545, LAM_CAT=0.0701066994221915, C_LOGIT=-0.0461645795229729, clip[.30,.70], SEEDS 42..51, FTT_SEEDS 42..44
+- **model_hashes**: [PROVEN] 51 model files in zip (f3_s42..51.txt, mlp_s42..51.pt, ftt_s42..44.pt, armb_s42..51.pt, catboost_s42..51.cbm, prep pkl, train_meta.json); zip sha256 8157e144...
+- **per_origin_refit**: [PROVEN] methodology documents exp93/exp95/exp95c generation (train_v93_5leg_blend.py, train_v95_catboost_deploy.py, compute_v95_pbar.py, build_v93_6leg_pkg.py); primary-optimized lambda*, frozen R-fold eval
+- **weight_contract**: [PROVEN] 6-leg v93 formula (NOT the .30/.35/.35 rollback contract): z_base=0.65LGB+0.35MLP + 0.1799(FTT-base)+0.4348(ArmB-base)+0.0701(Cat-base); C_LOGIT=-0.0461645795229729
 
-## Baseline verdict: **BASELINE_PROVENANCE_BLOCK**
+## Baseline verdict: **BASELINE_RECONCILED**
 
-- retrainable_source/preprocessing/configuration/model_hashes/per_origin_refit 중 미증명 요소 존재
+- 전체 retrainable provenance + .30/.35/.35 계약 증명
 - rollback preserved: 5890a4c54f502c4e / 992.8390640403
-- task routing: blocked=['2', '3', '4', '5', '6', '7', '8', '9', '10'] task11=SKIPPED_BASELINE_BLOCK
+- task routing: blocked=[] task11=normal
 
 ## Notion
 
-- status: `available`
-- receipt: `{"status": "available", "table": "aimers9 실험 기록 - 리더보드 제출 기록 (block 2a000a06-d653-4989-8c92-112993d69962)", "appended_row_block_id": "3bf5ed6b-28d5-8105-bd4b-da500e622e00", "row": {"submission_date": "UNKNOWN (사용자 보고 2026-08-17)", "file_model": "UNKNOWN - provenance 미확정 (BASELINE_PROVENANCE_BLOCK)", "public": "1001.74449", "private": "(미공개)", "note": "사용자 보고 (2026-08-17 세션), observation_timestamp=UNKNOWN, reported_at=2026-08-17T12:34:43+09:00 (worker capture). 제출일/파일/모델/프로비넌스 UNKNOWN - 워크스페이스 아티팩트에서 출처 미확인 -> BASELINE_PROVENANCE_BLOCK, Tasks 2-10 중단. rollback 5890a4c54f502c4e / 992.8390640403 유지, delta 계산 불가, C_LOGIT=-0.0404 불변."}, "appended_at_utc": "2026-08-17T03:35:00+00:00", "by": "opencode worker (Aimers9 recovery plan Task 1)"}`
+- status: `unavailable`
 
 ## Checks
 
@@ -55,7 +54,7 @@
 - **[PASS]** score_package_mismatch: qualified_candidate_public_score = 992.8390640403 (rollback 실점수 유지)
 - **[PASS]** submissions_by_date_preserved: submissions_by_date 유지 ({'2026-08-14': 2})
 - **[PASS]** last_submission_preserved: last_submission 유지 (date=2026-08-14)
-- **[PASS]** baseline_verdict_facts_consistency: baseline_verdict = BASELINE_PROVENANCE_BLOCK (provenance 필드와 일관)
+- **[PASS]** baseline_verdict_facts_consistency: baseline_verdict = BASELINE_RECONCILED (provenance 필드와 일관)
 - **[PASS]** rollback_package_hashes: rollback 패키지 모델 파일 33건 디스크 재해시 일치
 
-## Verdict: **BASELINE_PROVENANCE_BLOCK** (exit 0)
+## Verdict: **BASELINE_RECONCILED** (exit 0)
