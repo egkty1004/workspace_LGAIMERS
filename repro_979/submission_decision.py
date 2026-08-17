@@ -1148,15 +1148,19 @@ def main(argv: list[str] | None = None) -> int:
         args.mode = "check"
     if args.fixture:
         return cmd_fixture(args)
-    # next-round 분기: 새 인자(candidate/package/manifest)가 명시되었거나, task-11 증거(기본
-    # 결정 입력)가 --evidence-path 로 명시된 경우. 그 외엔 기존 top100 로직 (하위호환).
-    next_round = (
-        args.candidate_id is not None
-        or args.package_path is not None
-        or args.manifest_path is not None
-        or args.evidence_path != str(DEFAULT_TASK11_EVIDENCE)
-    )
-    if next_round:
+    # 분기 규칙:
+    #  - 명시적 next-round 인자(candidate/package/manifest/evidence-path 비기본) → next-round.
+    #  - 명시적 legacy 인자(package-dir/task8-evidence/evidence-base 비기본) → top100 (하위호환).
+    #  - 순수 기본값(인자 없음, 예: plan QA 의 그대로 `--check`) → next-round
+    #    (이번 라운드의 기본 결정 경로; top100 라운드는 종료됨 — legacy 경로는 명시적
+    #    legacy 인자로만 도달 가능).
+    new_args = (args.candidate_id is not None or args.package_path is not None
+                or args.manifest_path is not None
+                or args.evidence_path != str(DEFAULT_TASK11_EVIDENCE))
+    legacy_args = (args.package_dir != str(DEFAULT_PACKAGE_DIR)
+                   or args.task8_evidence != str(DEFAULT_TASK8_EVIDENCE)
+                   or args.evidence_base != str(DEFAULT_EVIDENCE_BASE))
+    if new_args or not legacy_args:
         if args.mode == "register":
             return cmd_register_next_round(args)
         return cmd_check_next_round(args)

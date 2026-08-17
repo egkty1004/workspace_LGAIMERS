@@ -81,6 +81,14 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def head_sha(path: Path) -> str:
+    rel = str(path.relative_to(ROOT))
+    proc = subprocess.run(["git", "show", f"HEAD:{rel}"], capture_output=True,
+                          cwd=str(ROOT))
+    assert proc.returncode == 0, f"git show HEAD:{rel} 실패"
+    return hashlib.sha256(proc.stdout).hexdigest()
+
+
 def scan_clean(rec: dict, path: Path, forbidden: set[str]) -> list[str]:
     problems: list[str] = []
     problems += nrp.scan_provenance_fields(rec, path)
@@ -142,6 +150,30 @@ def test_skipped_register() -> None:
     finally:
         check("a.real_state_untouched", sha256_file(STATE) == state_before,
               "sha256 identical before/after")
+
+
+# ── (b0) plain `--check` (pure defaults) routes to next-round ─────────
+def test_plain_check_defaults() -> None:
+    print("[test] (b0) plain `--check` (all defaults) → next-round "
+          "SKIPPED_NO_QUALIFIED_CANDIDATE exit 0, top100 evidence untouched")
+    state_before = sha256_file(STATE)
+    t9_head_json = head_sha(TOP100_BASE_JSON)
+    t9_head_md = head_sha(TOP100_BASE_MD)
+    try:
+        proc = run_cli(CLI, "--check")
+        check("b0.exit_code", proc.returncode == 0, f"exit={proc.returncode}")
+        ev_path = EVIDENCE / "task-12-decision-check.json"
+        check("b0.evidence_written", ev_path.is_file())
+        ev = load(ev_path)
+        check("b0.verdict", ev.get("verdict") == "SKIPPED_NO_QUALIFIED_CANDIDATE",
+              f"verdict={ev.get('verdict')}")
+        check("b0.exit_recorded", ev.get("exit_code") == 0)
+        check("b0.never_allow", "ALLOW" not in str(ev.get("verdict")))
+    finally:
+        check("b0.real_state_untouched", sha256_file(STATE) == state_before)
+        check("b0.top100_evidence_untouched",
+              sha256_file(TOP100_BASE_JSON) == t9_head_json
+              and sha256_file(TOP100_BASE_MD) == t9_head_md)
 
 
 # ── (b) next-round --check → SKIPPED_NO_QUALIFIED_CANDIDATE ──────────
@@ -380,6 +412,7 @@ def test_evidence_compliance() -> None:
 
 def main() -> int:
     test_skipped_register()
+    test_plain_check_defaults()
     test_check_skipped()
     test_fixtures()
     test_synthetic_future_round()
