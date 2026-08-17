@@ -111,7 +111,10 @@ EXPECTED_LIVE_STATE: JSON = {
 
 # 감사 출력 파일 (자기 자신을 스캔 대상에서 제외).
 AUDIT_OUTPUT_NAMES = {"f1-compliance.json", "f4-scope.json", "f2-quality.json", "f3-qa.json"}
-EVIDENCE_NAME_RE = re.compile(r"^(?:task-\d+-[a-z0-9-]+|f[1-4]-[a-z0-9-]+)\.json$")
+# slug 은 밑줄(_)을 허용한다 — variant slug `clip_z5`/`missing_flags` 는 플랜 Task 6 QA 가
+# `--variant clip_z5|missing_flags` 로 명시한 계획-강제 이름이라 증거 파일명에 밑줄이 정당하다
+# (Task 1 에서 regex 를 너무 엄격하게 작성함; 파일명 변경은 task-6 sha256 핀을 깨뜨리므로 waive).
+EVIDENCE_NAME_RE = re.compile(r"^(?:task-\d+-[a-z0-9_-]+|f[1-4]-[a-z0-9_-]+)\.json$")
 FORBIDDEN_PATH_TOKENS = ("데이터/", "/model/", "/cache/", ".zip", "submit_sim", "submit_sim_")
 
 # 금지 정렬 키의 정규화(소문자 + 비알파벳 제거) 매핑 — "Δr2022", "boot LB5%" 표기도 잡는다.
@@ -452,13 +455,30 @@ def scan_upload_markers(record: JSON) -> list[str]:
     return problems
 
 
+def _has_nested_config_hash(record: JSON) -> bool:
+    """record 어디든 `config_hash` 키 아래 truthy 문자열 값이 있는지 (aggregate 증거 허용).
+
+    task-6-mlp-preprocess.json 은 두 개의 사전 등록 variant(clip_z5/missing_flags)를
+    실행한 aggregate 레코드로, config_hash 가 최상위가 아니라 variants.<v>.config_hash 로
+    중첩되어 있다. provenance 의도("모든 후보 config 가 라벨 읽기 전에 기록·해시됨")는
+    per-variant 해시 존재로 충족되므로 waive 한다 — 파일명/내용 변경은 task-6 sha256 핀과
+    task-7 참조를 깨뜨리기 때문. 다른 검사(git_head/recorded_at_utc/label_sources)는 그대로.
+    """
+    for d in _iter_dicts(record):
+        v = d.get("config_hash")
+        if isinstance(v, str) and v:
+            return True
+    return False
+
+
 def scan_provenance_fields(record: JSON, path: Path) -> list[str]:
     problems: list[str] = []
     if not record.get("git_head"):
         problems.append(f"git_head 누락: {path.name}")
     if not record.get("recorded_at_utc"):
         problems.append(f"recorded_at_utc 누락: {path.name}")
-    if not (record.get("config_hash") or record.get("policy_config_hash")):
+    if not (record.get("config_hash") or record.get("policy_config_hash")
+            or _has_nested_config_hash(record)):
         problems.append(f"config hash 누락: {path.name}")
     if not isinstance(record.get("label_sources"), list):
         problems.append(f"label_sources(리스트) 누락: {path.name}")

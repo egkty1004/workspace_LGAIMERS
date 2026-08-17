@@ -192,12 +192,72 @@ def test_evidence_compliance() -> None:
         check(f"e.path_tokens.{name}", not toks, f"tokens={toks}")
 
 
+# ── (f) F1/F4 audit waive fixes (final-wave prep) ────────────────────
+UNDERSCORE_EVIDENCE = [
+    "task-6-mlp-preprocess-clip_z5.json",
+    "task-6-mlp-preprocess-config-clip_z5-promote.json",
+    "task-6-mlp-preprocess-config-clip_z5.json",
+    "task-6-mlp-preprocess-config-missing_flags-promote.json",
+    "task-6-mlp-preprocess-config-missing_flags.json",
+    "task-6-mlp-preprocess-missing_flags.json",
+    "task-7-promotion-mlp-clip_z5.json",
+    "task-7-promotion-mlp-missing_flags.json",
+]
+BAD_NAMES = ["Task_6_foo.json", "task-6-Foo.json", "x-task-6.json"]
+
+
+def test_audit_waive_fixes() -> None:
+    print("[test] (f) F1/F4 audit waive fixes: underscore slugs + nested config hash")
+    # (a) real task-6 aggregate evidence passes provenance (nested per-variant config_hash)
+    t6 = load(EVIDENCE / "task-6-mlp-preprocess.json")
+    check("f.a.task6_provenance_clean",
+          not nrp.scan_provenance_fields(t6, EVIDENCE / "task-6-mlp-preprocess.json"))
+    # (b) EVIDENCE_NAME_RE accepts all 8 underscore-named files, rejects genuinely bad names
+    check("f.b.underscore_all_match",
+          all(bool(nrp.EVIDENCE_NAME_RE.match(n)) for n in UNDERSCORE_EVIDENCE))
+    check("f.b.bad_names_rejected",
+          all(not nrp.EVIDENCE_NAME_RE.match(n) for n in BAD_NAMES))
+    # (c) negative: no config hash anywhere still REJECTs (check not gutted)
+    no_hash = {"git_head": "abc", "recorded_at_utc": "2026-08-16T00:00:00+00:00",
+               "label_sources": []}
+    probs = nrp.scan_provenance_fields(no_hash, Path("no-hash.json"))
+    check("f.c.no_hash_rejected", any("config hash" in p for p in probs), f"problems={probs}")
+    nested_ok = dict(no_hash)
+    nested_ok["variants"] = {"clip_z5": {"config_hash": "a" * 64}}
+    check("f.c.nested_hash_accepted",
+          not nrp.scan_provenance_fields(nested_ok, Path("nested.json")))
+    # (d) full audits PASS on the real evidence dir (zero violations)
+    proc = run_cli(POLICY_CLI, "--audit-compliance", "--evidence-dir", str(EVIDENCE))
+    check("f.d.audit_compliance_exit0", proc.returncode == 0, f"exit={proc.returncode}")
+    check("f.d.f1_verdict", load(EVIDENCE / "f1-compliance.json").get("verdict") == "PASS")
+    proc = run_cli(POLICY_CLI, "--audit-scope", "--evidence-dir", str(EVIDENCE))
+    check("f.d.audit_scope_exit0", proc.returncode == 0, f"exit={proc.returncode}")
+    check("f.d.f4_verdict", load(EVIDENCE / "f4-scope.json").get("verdict") == "PASS")
+    # (e) negative fixtures still exit 2: injected R-sort key (F1) / bad name (F4)
+    tmp = Path(tempfile.mkdtemp(prefix="nrp_audit_neg_"))
+    try:
+        shutil.copy2(EVIDENCE / "task-1-state-policy.json", tmp / "task-1-state-policy.json")
+        injected = {"git_head": "abc", "recorded_at_utc": "2026-08-16T00:00:00+00:00",
+                    "config_hash": "a" * 64, "label_sources": ["primary"],
+                    "delta_r2022": 5.0}
+        (tmp / "task-2-injected-r-sort.json").write_text(
+            json.dumps(injected), encoding="utf-8")
+        proc = run_cli(POLICY_CLI, "--audit-compliance", "--evidence-dir", str(tmp))
+        check("f.e.f1_r_sort_exit2", proc.returncode == 2, f"exit={proc.returncode}")
+        (tmp / "Task_6_foo.json").write_text("{}", encoding="utf-8")
+        proc = run_cli(POLICY_CLI, "--audit-scope", "--evidence-dir", str(tmp))
+        check("f.e.f4_bad_name_exit2", proc.returncode == 2, f"exit={proc.returncode}")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def main() -> int:
     test_skipped_path()
     test_candidate_routing()
     test_deploy_fixtures()
     test_f2_audit()
     test_evidence_compliance()
+    test_audit_waive_fixes()
     total = len(PASSED) + len(FAILED)
     print(f"\n{len(PASSED)}/{total} PASS, {len(FAILED)} FAIL")
     return 0 if not FAILED else 1
