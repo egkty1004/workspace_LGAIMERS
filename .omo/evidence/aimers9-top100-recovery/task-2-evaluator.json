@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "title": "Todo 2 — immutable rolling-origin recovery evaluator (smoke)",
+  "task": "aimers9-top100-recovery/task-2-evaluator",
+  "verdict": "PASS",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-17T23:58:41+00:00",
+  "git_head": "a89b1d086ee3f0c755e8f498f4b4c442f677c8d4",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "mode": "smoke",
+  "manifest": {
+    "schema_version": 1,
+    "candidate_id": "smoke-candidate",
+    "code_hashes": {
+      "recovery_policy.py": "7b98ee0fb0bb608fc5bed3fbd36edb702f41c66fc0f4ea978b0dfbe89ec3a788",
+      "recovery_evaluator.py": "0d4e8fbb2b20bbed00229245fde6e7b49e4c474d227a14783baeee768578be5d",
+      "common.py": "21c04b5182c7a277d27d3468acb3d92ee9a09e578ddfcc35fafb1ed5930be2da"
+    },
+    "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+    "data_hash": "d2081186b458b49f60b082be480c273135833e15ba59a76d033af28bcf8763ff",
+    "origins": {
+      "selection": [
+        "r2022",
+        "r2023"
+      ],
+      "terminal": "primary",
+      "diagnostic": "r2024",
+      "all": [
+        "r2022",
+        "r2023",
+        "primary",
+        "r2024"
+      ]
+    },
+    "seeds": [
+      42,
+      43
+    ],
+    "formula": {
+      "scoring": "common.score(np.clip(common.sigmoid(z + C_LOGIT), .30, .70), y)",
+      "c_logit": -0.0461645795229729,
+      "clip_lo": 0.3,
+      "clip_hi": 0.7,
+      "baseline": "reconciled v93 6-leg contract (C_LOGIT=-0.0461645795229729)",
+      "note": "deployed-formula scoring is immutable; raw-logit Brier is diagnostic only, never a selection key"
+    },
+    "selection_keys": [
+      "mean_selection_delta_bss"
+    ],
+    "forbidden_sort_keys": [
+      "r2024",
+      "public",
+      "leaderboard",
+      "boot_lb5"
+    ],
+    "bootstrap": {
+      "definition": "each origin's paired row-bootstrap LB5 for delta-BSS > 0; exactly n row indices sampled with replacement; same indices reused for baseline/candidate deployed clipped probabilities; single-class resample dropped and redrawn; common.score(candidate*)-common.score(baseline*); empirical fifth percentile reported",
+      "n_resamples": 10000,
+      "seed_base": 20260817,
+      "rng": "np.random.default_rng(20260817 + outer_year)"
+    },
+    "terminal_firewall": {
+      "state": "UNFROZEN",
+      "rule": "primary labels structurally unreadable until FROZEN; --screen reads only r2022/r2023; r2024 diagnostic-only after Task 8"
+    },
+    "manifest_hash": "d725b0d73ce32a28192517240097a70a67fc621ec3ea7fdf54e8eee0cca5dfed"
+  },
+  "origins": {
+    "selection": [
+      "r2022",
+      "r2023"
+    ],
+    "terminal": "primary",
+    "diagnostic": "r2024",
+    "row_overlap": {
+      "r2022": {
+        "overlap_rows_with_primary": 0,
+        "expected": true,
+        "reason": "row-ID disjoint from primary"
+      },
+      "r2023": {
+        "overlap_rows_with_primary": 0,
+        "expected": true,
+        "reason": "row-ID disjoint from primary"
+      },
+      "r2024": {
+        "overlap_rows_with_primary": 133,
+        "expected": true,
+        "reason": "r2024 val = (season==2024) & R subset of primary val (overlapping diagnostic origin, branch-inert)"
+      }
+    }
+  },
+  "scoring": {
+    "formula": "common.score(np.clip(common.sigmoid(z + C_LOGIT), .30, .70), y)",
+    "c_logit": -0.0461645795229729,
+    "clip_lo": 0.3,
+    "clip_hi": 0.7,
+    "baseline": "reconciled v93 6-leg contract"
+  },
+  "selection_keys": [
+    "mean_selection_delta_bss"
+  ],
+  "forbidden_sort_keys": [
+    "r2024",
+    "public",
+    "leaderboard",
+    "boot_lb5"
+  ],
+  "bootstrap": {
+    "n_resamples": 10000,
+    "seed_base": 20260817,
+    "rng": "np.random.default_rng(20260817 + outer_year)"
+  },
+  "terminal_firewall": {
+    "state": "UNFROZEN",
+    "rule": "primary labels structurally unreadable until FROZEN"
+  },
+  "checks": [
+    {
+      "rule": "policy_config_hash",
+      "ok": true,
+      "reason": "config_hash=158be42401fc5ce3… (라벨 무관)"
+    },
+    {
+      "rule": "manifest_valid",
+      "ok": true,
+      "reason": "manifest_hash=d725b0d73ce32a28… violations=[]"
+    },
+    {
+      "rule": "origin_masks",
+      "ok": true,
+      "reason": "origins=['r2022', 'r2023', 'primary', 'r2024'] leak=[]"
+    },
+    {
+      "rule": "row_disjointness",
+      "ok": true,
+      "reason": "r2022/r2023 disjoint from primary; r2024 overlap documented: {\"r2022\": {\"overlap_rows_with_primary\": 0, \"expected\": true, \"reason\": \"row-ID disjoint from primary\"}, \"r2023\": {\"overlap_rows_with_primary\": 0, \"expected\": true, \"reason\": \"row-ID disjoint from primary\"}, \"r2024\": {\"overlap_rows_with_primary\": 133, \"expected\": true, \"reason\": \"r2024 val = (season==2024) & R subset of primary val (overlapping diagnostic origin, branch-inert)\"}}"
+    },
+    {
+      "rule": "selection_labels_only",
+      "ok": true,
+      "reason": "labels=['r2022', 'r2023'] — primary/r2024 미로드"
+    },
+    {
+      "rule": "terminal_firewall",
+      "ok": true,
+      "reason": "primary 라벨 읽기 차단 (firewall_state='UNFROZEN'): [FIREWALL] primary 라벨은 동결 전에 읽을 수 없습니다 (firewall_state='UNFROZEN', 필요 'FROZEN') — exit 2"
+    },
+    {
+      "rule": "screen_gate_path",
+      "ok": true,
+      "reason": "gate verdict=REJECT (합성 경로 검증)"
+    },
+    {
+      "rule": "bootstrap_definition",
+      "ok": true,
+      "reason": "paired row-bootstrap LB5(r2022)=+0.0000 (10,000 resamples, rng=default_rng(20260817+outer_year))"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "manifest_before_labels",
+      "ok": true,
+      "reason": "매니페스트는 라벨 로드 이전에 해시/기원/산식/부트스트랩/파이어월 상태를 기록"
+    }
+  ],
+  "notes": "스모크는 합성 데이터로 구조 경로만 검증 — 실제 라벨/모델/데이터 미사용. 매니페스트는 라벨 로드 이전에 해시됨."
+}

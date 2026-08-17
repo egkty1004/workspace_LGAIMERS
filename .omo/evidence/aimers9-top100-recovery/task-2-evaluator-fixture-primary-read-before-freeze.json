@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "title": "Todo 2 fixture — primary-read-before-freeze (adversarial, exit 2)",
+  "task": "aimers9-top100-recovery/task-2-evaluator-fixture-primary-read-before-freeze",
+  "verdict": "FIXTURE_REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-17T23:58:41+00:00",
+  "git_head": "a89b1d086ee3f0c755e8f498f4b4c442f677c8d4",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "primary-read-before-freeze",
+  "matched": true,
+  "detail": "파이어월이 primary 라벨 읽기를 차단: [FIREWALL] primary 라벨은 동결 전에 읽을 수 없습니다 (firewall_state='UNFROZEN', 필요 'FROZEN') — exit 2",
+  "checks": [
+    {
+      "rule": "fixture_primary-read-before-freeze",
+      "ok": true,
+      "reason": "파이어월이 primary 라벨 읽기를 차단: [FIREWALL] primary 라벨은 동결 전에 읽을 수 없습니다 (firewall_state='UNFROZEN', 필요 'FROZEN') — exit 2"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-2-evaluator-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'primary-read-before-freeze' 는 반드시 exit 2 — 가드가 위반을 차단해야 함."
+}
