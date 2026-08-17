@@ -1,7 +1,7 @@
 # Todo 11 fixture — stale-live-state (recovery readiness, adversarial) — REJECT (exit 2)
 
-- **recorded_at_utc**: 2026-08-17T04:20:41.440916+00:00
-- **git_head**: 371b77e63be86f650636fbb1fdb6a89d3098fd86
+- **recorded_at_utc**: 2026-08-17T04:24:18.998354+00:00
+- **git_head**: 3ebbfb4dbd4d39033c6abe227a9ada74ce42e967
 - **label_sources**: [] (labels_read=False)
 
 ## Findings

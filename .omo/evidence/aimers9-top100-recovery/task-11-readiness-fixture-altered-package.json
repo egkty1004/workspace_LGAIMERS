@@ -5,8 +5,8 @@
   "mode": "check-recovery-fixture",
   "verdict": "REJECT",
   "exit_code": 2,
-  "recorded_at_utc": "2026-08-17T04:21:07.402624+00:00",
-  "git_head": "371b77e63be86f650636fbb1fdb6a89d3098fd86",
+  "recorded_at_utc": "2026-08-17T04:24:22.625407+00:00",
+  "git_head": "3ebbfb4dbd4d39033c6abe227a9ada74ce42e967",
   "label_sources": [],
   "labels_read": false,
   "fixture": "altered-package-guard",
@@ -35,5 +35,5 @@
     }
   ],
   "notes": "fixture 'altered-package' 는 반드시 exit 2 — binding_guard 규칙 위반 기대 (matched=True). Notion append/상태 변경/업로드 없음.",
-  "config_hash": "ac3adff26096bf802401f48fbf40811599961857db786d419a4948f42eac95d4"
+  "config_hash": "ac524000a81da3d2ef10b608e95ce37ee9218070bc987bd1f3046093ed511889"
 }

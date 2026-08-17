@@ -5,8 +5,8 @@
   "mode": "check-recovery-fixture",
   "verdict": "REJECT",
   "exit_code": 2,
-  "recorded_at_utc": "2026-08-17T04:20:41.440916+00:00",
-  "git_head": "371b77e63be86f650636fbb1fdb6a89d3098fd86",
+  "recorded_at_utc": "2026-08-17T04:24:18.998354+00:00",
+  "git_head": "3ebbfb4dbd4d39033c6abe227a9ada74ce42e967",
   "label_sources": [],
   "labels_read": false,
   "fixture": "stale-live-state-guard",
@@ -35,5 +35,5 @@
     }
   ],
   "notes": "fixture 'stale-live-state' 는 반드시 exit 2 — observed_at_is_reported_at 규칙 위반 기대 (matched=True). Notion append/상태 변경/업로드 없음.",
-  "config_hash": "9e3f98ca005f41813808bb832f5583f90e214d026431176670a0d53c39add47a"
+  "config_hash": "f77c541bf9250a20a36c6197228a396efd663f485b8c17d8993a1fe89450628f"
 }

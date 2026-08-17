@@ -1,7 +1,7 @@
 # Todo 11 — register recovery readiness (aimers9-top100-recovery) — SKIPPED_BASELINE_BLOCK (exit 1)
 
-- **recorded_at_utc**: 2026-08-17T04:20:41.751053+00:00
-- **git_head**: 371b77e63be86f650636fbb1fdb6a89d3098fd86
+- **recorded_at_utc**: 2026-08-17T04:22:47.367232+00:00
+- **git_head**: 3ebbfb4dbd4d39033c6abe227a9ada74ce42e967
 - **label_sources**: [] (labels_read=False)
 
 ## Checks

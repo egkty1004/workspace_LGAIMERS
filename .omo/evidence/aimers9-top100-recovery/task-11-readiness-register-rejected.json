@@ -5,8 +5,8 @@
   "mode": "register-recovery-qualified",
   "verdict": "SKIPPED_BASELINE_BLOCK",
   "exit_code": 1,
-  "recorded_at_utc": "2026-08-17T04:20:41.751053+00:00",
-  "git_head": "371b77e63be86f650636fbb1fdb6a89d3098fd86",
+  "recorded_at_utc": "2026-08-17T04:22:47.367232+00:00",
+  "git_head": "3ebbfb4dbd4d39033c6abe227a9ada74ce42e967",
   "label_sources": [],
   "labels_read": false,
   "state_path": "/home/2022113165/workspace_LGAIMERS/repro_979/leaderboard_state.json",
@@ -92,5 +92,5 @@
     }
   ],
   "notes": "Todo 11 register (BLOCK path): 등록 거부 — SKIPPED_BASELINE_BLOCK (exit 1). qualified-readiness 등록은 STATISTICAL_PASS + DEPLOYMENT_PASS + 결속 가드 통과 후에만 가능하며, 이 계획의 BLOCK 경로에서는 구조적으로 불가. 업로드·제출 횟수·리더보드 기록 없음.",
-  "config_hash": "ec5be97a6bb99133178dad628f59ef4c81703facb1aa37012a58b291bfaaa746"
+  "config_hash": "124ee4b0bc8984011d60147a8b1750e8dc17fb5488300bed6375882a7957b895"
 }
