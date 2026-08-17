@@ -29,6 +29,16 @@ package_recorded_at(=task-8 증거 날짜)}) — qualification_runner 의 정규
 
 하루 단위 키: Asia/Seoul 달력일 (zoneinfo 로 결정 불가 시 시스템 로컬, 그마저도 실패 시 UTC — 문서화).
 exit code: 0 = ALLOW, 1 = BLOCK(정책 게이트), 2 = 치명적 입력 오류.
+
+Task 11 (aimers9-top100-recovery) 확장 — readiness dispatch:
+  --check-recovery            : Task-1 BLOCK 경로에서 SKIPPED_BASELINE_BLOCK (exit 0,
+                                label-free, idempotent — 재실행 시 주 증거 재작성 안 함).
+                                BLOCK 경로에서는 observed_at 신선도 무의미 (SKIPPED 우선).
+  --register-recovery-qualified: BLOCK 경로에서 등록 거부 SKIPPED_BASELINE_BLOCK (exit 1),
+                                상태 필드 전혀 변경 안 함.
+  --fixture <stale-live-state|consumed-slot|altered-package|upload-marker> : 항상 exit 2,
+                                fixture 전용 증거만 기록 (주 증거/상태 미변경).
+  업로드·DACON 호출·제출 횟수·리더보드/Notion 기록 없음 — 실제 사용자 이벤트만 상태/기록 변경.
 """
 from __future__ import annotations
 
@@ -74,6 +84,14 @@ DEFAULT_TASK11_EVIDENCE = DEFAULT_NEXT_ROUND_EVIDENCE_DIR / "task-11-package.jso
 NEXT_ROUND_FIXTURES = {"stale-cutoff", "consumed-slot", "altered-package",
                        "unauthorized-state-mutation"}
 
+# ── Task 11 (aimers9-top100-recovery) 추가 상수 ───────────────────────
+RECOVERY_MARKER = "aimers9-top100-recovery"     # qualified_package.round 마커 (recovery 라운드)
+RECOVERY_BLOCK_VERDICTS = ("BASELINE_PROVENANCE_BLOCK", "BASELINE_CONTRACT_BLOCK")
+RECOVERY_BLOCK_VERDICT = "SKIPPED_BASELINE_BLOCK"  # Task 11 BLOCK 경로 유일 label-free 기록
+RECOVERY_OBSERVED_AT_TTL_MINUTES = 30           # 사용자 제공 observed_at ≤30분 (plan Task 11)
+DEFAULT_RECOVERY_EVIDENCE_DIR = PROJECT_ROOT / ".omo" / "evidence" / "aimers9-top100-recovery"
+RECOVERY_FIXTURES = {"stale-live-state", "consumed-slot", "altered-package", "upload-marker"}
+
 # next_round_policy 에서 재사용 (재구현 금지 — plan/AGENTS 지침). 로컬에 동일 이름이 존재하는
 # load_json/_canonical_sha256/_git_commit/write_evidence 는 로컬 정의를 그대로 사용하고,
 # next-round 제네릭 증거 기록기(write_evidence)만 별칭으로 가져온다 (top100 기록기와 분리).
@@ -89,6 +107,12 @@ from next_round_policy import (  # noqa: E402
     scan_upload_markers,
     validate_policy,
     write_evidence as write_next_round_evidence,
+)
+
+# recovery_live_state (Task 1) 상수 재사용 — 감사 조건 단일 소스 (재구현 금지).
+from recovery_live_state import (  # noqa: E402
+    BLOCKED_TASKS as RECOVERY_BLOCKED_TASKS,
+    TASKS_2_10_RE as RECOVERY_TASKS_2_10_RE,
 )
 
 
@@ -1029,6 +1053,436 @@ def cmd_check_next_round(args: argparse.Namespace) -> int:
     return exit_code
 
 
+# ── Task 11 (aimers9-top100-recovery) — readiness dispatch ────────────
+# BLOCK 경로 (baseline_verdict ∈ RECOVERY_BLOCK_VERDICTS): Tasks 2-10 은 생성되지
+# 않았고(plan §Task-1 "stop Tasks 2-10"), Task 11 은 label-free SKIPPED_BASELINE_BLOCK
+# readiness 기록만 발행한다. 업로드·DACON 호출·제출 횟수·리더보드/Notion 기록 없음 —
+# 실제 사용자 이벤트만 상태/기록 변경 가능. exit code: 0 = SKIPPED_* / ALLOW,
+# 1 = BLOCK(정책 거부), 2 = 치명적 입력.
+def _recovery_tasks_2_10_present(evidence_dir: Path) -> bool:
+    """증거 디렉터리에 task-2..10 아티팩트가 존재하는지 (F1/F4 baseline-block 감사 조건)."""
+    if not evidence_dir.is_dir():
+        return False
+    return any(RECOVERY_TASKS_2_10_RE.match(p.name) for p in evidence_dir.iterdir())
+
+
+def _assert_recovery_observed_at_fresh(observed_at: Any, state: JSON) -> None:
+    """ALLOW 에 필요한 사용자 제공 observed_at ≤30분 가드.
+
+    worker reported_at 은 절대 신선도 요건을 충족하지 못한다 (사용자 관측 시각 오용 금지).
+    """
+    if not isinstance(observed_at, str) or not observed_at.strip():
+        raise PolicyViolation("observed_at_missing — ALLOW 에는 사용자 제공 observed_at "
+                              "(≤30분) 필요; worker reported_at 은 신선도 미충족 (exit 2)")
+    if observed_at == state.get("reported_at"):
+        raise PolicyViolation("observed_at_is_reported_at — worker reported_at 을 사용자 "
+                              "관측 시각으로 오용 금지 (exit 2)")
+    dt = parse_iso(observed_at)
+    if dt is None:
+        raise PolicyViolation(f"observed_at_invalid — ISO 파싱 불가: {observed_at!r} (exit 2)")
+    if (datetime.now(timezone.utc) - dt) > timedelta(minutes=RECOVERY_OBSERVED_AT_TTL_MINUTES):
+        raise PolicyViolation(f"observed_at_stale — {observed_at} 가 "
+                              f"{RECOVERY_OBSERVED_AT_TTL_MINUTES}분 초과 (exit 2)")
+
+
+def _recovery_readiness_record(
+    state: JSON, state_path: Path, state_sha: str, baseline_verdict: Any,
+    verdict: str, exit_code: int, mode: str, checks: list[JSON],
+    evidence_dir: Path, observed_at: Any = None, reason: str = "",
+    notes: str = "",
+) -> JSON:
+    """Task 11 readiness 증거 레코드 (label-free, 업로드/Notion 기록 없음)."""
+    qp = state.get("qualified_package") or {}
+    blocked = baseline_verdict in RECOVERY_BLOCK_VERDICTS
+    last = state.get("last_submission") or {}
+    record = {
+        "schema_version": SCHEMA_VERSION,
+        "title": "Todo 11 — register recovery readiness (aimers9-top100-recovery)",
+        "task": "aimers9-top100-recovery/task-11-readiness",
+        "mode": mode,
+        "verdict": verdict,
+        "exit_code": exit_code,
+        "recorded_at_utc": now_utc(),
+        "git_head": _git_commit(),
+        "label_sources": [],
+        "labels_read": False,
+        "state_path": str(state_path),
+        "state_sha256": state_sha,
+        "baseline_verdict": baseline_verdict,
+        "task_routing": {
+            "blocked_tasks": list(RECOVERY_BLOCKED_TASKS) if blocked else [],
+            "tasks_2_10_artifacts_present": _recovery_tasks_2_10_present(evidence_dir),
+            "task_11": verdict,
+            "note": ("Tasks 2-10 BLOCKED and absent (no recovery_evaluator/registry/"
+                     "runner/package artifacts were ever created) — Task 11 emits only "
+                     "the label-free readiness record."
+                     if blocked else
+                     "normal path — terminal readiness dispatch (SKIPPED_* / ALLOW)."),
+        },
+        "notion": {
+            "row_written": False,
+            "note": ("Task 1 already recorded the real user-reported 1001.74449 event "
+                     "(leaderboard row block 3bf5ed6b-28d5-8105-bd4b-da500e622e00, "
+                     "submission date/file/model=UNKNOWN). Task 11 writes NO Notion/"
+                     "leaderboard row — a row is appended only on an actual "
+                     "user-reported event."),
+        },
+        "observed_at": {
+            "user_supplied": observed_at,
+            "freshness_required_for_allow_minutes": RECOVERY_OBSERVED_AT_TTL_MINUTES,
+            "precedence_note": ("BLOCK path: SKIPPED_BASELINE_BLOCK wins — observed_at "
+                                "freshness is irrelevant here. worker reported_at never "
+                                "satisfies freshness; ALLOW requires a user-supplied "
+                                "observed_at within the TTL."),
+        },
+        "rollback_preserved": {
+            "candidate_id": qp.get("candidate_id"),
+            "public_score": state.get("qualified_candidate_public_score"),
+            "qualification_digest": qp.get("qualification_digest"),
+            "submissions_by_date": state.get("submissions_by_date"),
+            "last_submission": {"date": last.get("date"),
+                                "public_score": last.get("public_score")},
+        },
+        "state_mutation": {
+            "mutated": False,
+            "note": "leaderboard_state.json untouched — sha256 before == after",
+            "sha256_before": state_sha,
+            "sha256_after": state_sha,
+        },
+        "reason": reason,
+        "checks": checks,
+        "violations": [],
+        "findings": [
+            {"rule": "label_free", "ok": True,
+             "reason": "label_sources=[] / labels_read=false — label-free record"},
+            {"rule": "rollback_preserved", "ok": True,
+             "reason": f"{qp.get('candidate_id')} / "
+                       f"{state.get('qualified_candidate_public_score')} — 변경 없음"},
+            {"rule": "readiness_only", "ok": True,
+             "reason": "ALLOW/BLOCK 은 readiness 만 — 업로드·제출 횟수·리더보드 기록 없음"},
+        ],
+        "notes": notes,
+    }
+    record["config_hash"] = _canonical_sha256(
+        {k: v for k, v in record.items() if k != "config_hash"})
+    return record
+
+
+def _recovery_terminal_dispatch(args: argparse.Namespace, state: JSON,
+                                evidence_dir: Path) -> tuple[str, int, list[JSON]]:
+    """BLOCK 이 아닌 경로의 terminal readiness dispatch (plan §Task-11 모든 분기 소비).
+
+    SKIPPED_BASELINE_BLOCK / SKIPPED_NO_PROMOTION / SKIPPED_DEPLOYMENT_FAIL /
+    SKIPPED_NO_PACKAGE / SKIPPED_AWAITING_FRESH_STATE 는 exit 0 (정직한 종결),
+    BLOCK(일일 슬롯) 은 exit 1, ALLOW 는 exit 0 (STATISTICAL_PASS + DEPLOYMENT_PASS +
+    신선한 사용자 observed_at + 슬롯).
+    """
+    checks: list[JSON] = []
+    task8 = load_json(evidence_dir / "task-8-terminal.json")
+    task8_ok = isinstance(task8, dict) and task8.get("verdict") == "STATISTICAL_PASS"
+    checks.append({"rule": "task8_terminal", "ok": task8_ok,
+                   "reason": f"task-8-terminal.json verdict = "
+                             f"{(task8 or {}).get('verdict')!r} — STATISTICAL_PASS 필요"})
+    if task8 is None:
+        return "SKIPPED_NO_PACKAGE", 0, checks
+    if not task8_ok:
+        return "SKIPPED_NO_PROMOTION", 0, checks
+
+    task10 = load_json(evidence_dir / "task-10-package.json")
+    task10_ok = isinstance(task10, dict) and task10.get("result") == "DEPLOYMENT_PASS"
+    checks.append({"rule": "task10_deployment", "ok": task10_ok,
+                   "reason": f"task-10-package.json result = "
+                             f"{(task10 or {}).get('result')!r} — DEPLOYMENT_PASS 필요"})
+    if not task10_ok:
+        return "SKIPPED_DEPLOYMENT_FAIL", 0, checks
+
+    try:
+        _assert_recovery_observed_at_fresh(args.observed_at, state)
+        fresh_ok, fresh_reason = (True, f"observed_at={args.observed_at} — 사용자 제공, "
+                                         f"≤{RECOVERY_OBSERVED_AT_TTL_MINUTES}분")
+    except PolicyViolation as exc:
+        fresh_ok, fresh_reason = False, str(exc)
+    checks.append({"rule": "observed_at_fresh", "ok": fresh_ok, "reason": fresh_reason})
+    if not fresh_ok:
+        return "SKIPPED_AWAITING_FRESH_STATE", 0, checks
+
+    try:
+        _assert_daily_slot(state)
+        slot_ok, slot_reason = True, "일일 슬롯 사용 가능"
+    except PolicyViolation as exc:
+        slot_ok, slot_reason = False, str(exc)
+    checks.append({"rule": "daily_slot", "ok": slot_ok, "reason": slot_reason})
+    if not slot_ok:
+        return "BLOCK", 1, checks
+    return "ALLOW", 0, checks
+
+
+def cmd_check_recovery(args: argparse.Namespace) -> int:
+    """--check-recovery: BLOCK path → SKIPPED_BASELINE_BLOCK exit 0 (label-free, idempotent).
+
+    BLOCK 경로에서는 observed_at 신선도가 무의미하다 (SKIPPED_BASELINE_BLOCK 우선 —
+    precedence 문서화). 주 증거(task-11-readiness)가 이미 SKIPPED_BASELINE_BLOCK 로
+    기록되어 있으면 재작성하지 않는다 (idempotent); 다른 verdict 로 존재하면 fatal exit 2.
+    """
+    state_path = Path(args.state).expanduser().resolve()
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    state, state_exists = load_state(state_path)
+    if not state_exists:
+        print(f"[submission_decision] FATAL: 상태 파일 없음/파싱 불가 — {state_path}",
+              file=sys.stderr)
+        return 2
+    state_sha = _sha256_file(state_path)
+    baseline_verdict = state.get("baseline_verdict")
+    blocked = baseline_verdict in RECOVERY_BLOCK_VERDICTS
+
+    main_base = evidence_dir / "task-11-readiness"
+    main_json = main_base.with_suffix(".json")
+    if blocked and main_json.is_file():
+        existing = load_json(main_json)
+        if (isinstance(existing, dict)
+                and existing.get("verdict") == RECOVERY_BLOCK_VERDICT
+                and existing.get("exit_code") == 0):
+            print(f"[submission_decision] --check-recovery idempotent: {main_json.name} "
+                  f"이미 {RECOVERY_BLOCK_VERDICT} (exit 0) — 재작성 안 함")
+            return 0
+        print(f"[submission_decision] FATAL: {main_json.name} 기존 기록 불일치 "
+              f"(verdict={existing.get('verdict') if isinstance(existing, dict) else '?'!r}) "
+              "— 재작성 거부", file=sys.stderr)
+        return 2
+
+    if blocked:
+        if _recovery_tasks_2_10_present(evidence_dir):
+            print("[submission_decision] FATAL: evidence dir 에 task-2..10 아티팩트 존재 "
+                  "(계획 BLOCK 경로 위반)", file=sys.stderr)
+            return 2
+        verdict, exit_code = RECOVERY_BLOCK_VERDICT, 0
+        qp = state.get("qualified_package") or {}
+        checks = [
+            {"rule": "baseline_verdict", "ok": True,
+             "reason": f"baseline_verdict={baseline_verdict} — BLOCK verdict → Tasks 2-10 "
+                       "blocked, Task 11 readiness record only"},
+            {"rule": "tasks_2_10_absent", "ok": True,
+             "reason": "task-2..10 아티팩트 부재 확인 (evidence dir 스캔)"},
+            {"rule": "label_free", "ok": True,
+             "reason": "label_sources=[] / labels_read=false"},
+            {"rule": "no_state_mutation", "ok": True,
+             "reason": "leaderboard_state.json 미변경 (sha256 before == after)"},
+            {"rule": "notion_row_not_written", "ok": True,
+             "reason": "Task 1 이 실제 1001.74449 이벤트 기록 완료 — Task 11 은 row 미작성"},
+        ]
+        reason = (f"{baseline_verdict} → Tasks 2-10 BLOCKED and not created; label-free "
+                  f"{verdict} readiness record; rollback {qp.get('candidate_id')} / "
+                  f"{state.get('qualified_candidate_public_score')} preserved; "
+                  "registration/upload/Notion not performed.")
+        notes = ("Todo 11 (BLOCK path): user-reported 1001.74449 has no provable package "
+                 "provenance → BASELINE_PROVENANCE_BLOCK. Task 11 emits only the "
+                 "label-free SKIPPED_BASELINE_BLOCK readiness record. Tasks 2-10 were "
+                 "never created (no evaluator/registry/runner/package). No Notion row — "
+                 "Task 1 recorded the real event. observed_at freshness is irrelevant "
+                 "here (SKIPPED_BASELINE_BLOCK wins); worker reported_at never "
+                 "satisfies freshness.")
+    else:
+        verdict, exit_code, checks = _recovery_terminal_dispatch(args, state, evidence_dir)
+        reason = (f"baseline_verdict={baseline_verdict} — terminal readiness dispatch "
+                  f"→ {verdict}")
+        notes = ("Todo 11 (normal path): readiness-only dispatch. SKIPPED_* 는 정직한 "
+                 "종결 (exit 0), ALLOW 는 STATISTICAL_PASS + DEPLOYMENT_PASS + 신선한 "
+                 "사용자 observed_at + 일일 슬롯 필요. 업로드·제출 횟수·리더보드 기록 없음.")
+
+    record = _recovery_readiness_record(state, state_path, state_sha, baseline_verdict,
+                                        verdict, exit_code, "check-recovery", checks,
+                                        evidence_dir, args.observed_at, reason, notes)
+    json_path, md_path = write_next_round_evidence(record, main_base)
+    print(f"[submission_decision] --check-recovery {verdict} (exit {exit_code})")
+    print(f"[submission_decision] baseline_verdict={baseline_verdict} — "
+          f"{'Tasks 2-10 BLOCKED, label-free readiness' if blocked else 'terminal dispatch'}")
+    for c in checks:
+        mark = "PASS" if c["ok"] else "FAIL"
+        print(f"  [{mark}] {c['rule']}: {c['reason']}")
+    print(f"[submission_decision] evidence -> {json_path} / {md_path} (상태 미변경)")
+    return exit_code
+
+
+def cmd_register_recovery(args: argparse.Namespace) -> int:
+    """--register-recovery-qualified: BLOCK path 에서 등록 거부 (SKIPPED_BASELINE_BLOCK exit 1).
+
+    상태 필드 전혀 변경하지 않음 (사용자 실제 이벤트 없이는 상태 쓰기 금지). BLOCK 경로에서는
+    qualified candidate/package/Task 10 결과가 구조적으로 존재할 수 없으므로 등록 불가.
+    """
+    state_path = Path(args.state).expanduser().resolve()
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    state, state_exists = load_state(state_path)
+    if not state_exists:
+        print(f"[submission_decision] FATAL: 상태 파일 없음/파싱 불가 — {state_path}",
+              file=sys.stderr)
+        return 2
+    state_sha = _sha256_file(state_path)
+    baseline_verdict = state.get("baseline_verdict")
+
+    if baseline_verdict in RECOVERY_BLOCK_VERDICTS:
+        checks = [
+            {"rule": "baseline_block_refusal", "ok": True,
+             "reason": f"{baseline_verdict} → 등록 거부: qualified candidate/package/"
+                       "Task 10 결과 부재 (readiness-only)"},
+            {"rule": "no_state_mutation", "ok": True,
+             "reason": "leaderboard_state.json 미변경 (sha256 before == after)"},
+            {"rule": "no_qualified_readiness_mutation", "ok": True,
+             "reason": "등록 대상 qualified-readiness 필드 없음 — 어떤 상태 필드도 변경 안 함"},
+        ]
+        record = _recovery_readiness_record(
+            state, state_path, state_sha, baseline_verdict,
+            RECOVERY_BLOCK_VERDICT, 1, "register-recovery-qualified", checks,
+            evidence_dir,
+            reason=("BLOCK path — registration refused with SKIPPED_BASELINE_BLOCK; no "
+                    "candidate/package/manifest/Task 10 result exists; no state field "
+                    "mutated; rollback preserved"),
+            notes="Todo 11 register (BLOCK path): 등록 거부 — SKIPPED_BASELINE_BLOCK "
+                  "(exit 1). qualified-readiness 등록은 STATISTICAL_PASS + DEPLOYMENT_PASS "
+                  "+ 결속 가드 통과 후에만 가능하며, 이 계획의 BLOCK 경로에서는 구조적으로 "
+                  "불가. 업로드·제출 횟수·리더보드 기록 없음.")
+        json_path, md_path = write_next_round_evidence(
+            record, evidence_dir / "task-11-readiness-register-rejected")
+        print(f"[submission_decision] --register-recovery-qualified "
+              f"{RECOVERY_BLOCK_VERDICT} (exit 1) — 등록 거부, 상태 미변경")
+        print(f"[submission_decision] evidence -> {json_path} / {md_path}")
+        return 1
+
+    # BLOCK 이 아닌 경로 (이 플랜에서는 도달 불가): terminal readiness dispatch 결과로 거부.
+    verdict, _dispatch_exit, checks = _recovery_terminal_dispatch(args, state, evidence_dir)
+    if verdict == "ALLOW":
+        print("[submission_decision] FATAL: ALLOW 상태에서 등록 결속 증거 부재 — 구조적 "
+              "불가 (이 플랜은 candidate/package 증거를 생성하지 않음)", file=sys.stderr)
+        return 2
+    record = _recovery_readiness_record(
+        state, state_path, state_sha, baseline_verdict, verdict, 1,
+        "register-recovery-qualified", checks, evidence_dir,
+        reason=f"등록 거부 — terminal readiness {verdict} (exit 1); 어떤 상태 필드도 변경 안 함")
+    json_path, md_path = write_next_round_evidence(
+        record, evidence_dir / "task-11-readiness-register-rejected")
+    print(f"[submission_decision] --register-recovery-qualified 거부 (exit 1) — {verdict}")
+    print(f"[submission_decision] evidence -> {json_path} / {md_path}")
+    return 1
+
+
+def cmd_fixture_recovery(args: argparse.Namespace) -> int:
+    """recovery failure-QA fixtures (plan §Task-11 QA: 전부 exit 2, fixture 전용 증거).
+
+    상태는 in-memory 복사(json.load → dict 변조)만 수행 — 실제 파일 절대 저장 안 함.
+    upload-marker: 업로드 액션 토큰이 상태에 주입되면 반드시 탐지·거부되고, 러너에는
+    업로드 코드 경로가 구조적으로 없음을 증거에 기록한다.
+    """
+    fixture = args.fixture
+    state_path = Path(args.state).expanduser().resolve()
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    state, state_exists = load_state(state_path)
+    if not state_exists:
+        print(f"[submission_decision] FATAL: 상태 파일 없음 — fixture {fixture} 실행 불가: "
+              f"{state_path}", file=sys.stderr)
+        return 1
+    state_sha_before = _sha256_file(state_path)
+    expected = {
+        "stale-live-state": "observed_at_is_reported_at",
+        "consumed-slot": "daily_slot_exhausted",
+        "altered-package": "binding_guard",
+        "upload-marker": "upload_token_rejection",
+    }
+    try:
+        if fixture == "stale-live-state":
+            st = json.loads(json.dumps(state))
+            st["observation_timestamp"] = st.get("reported_at")  # worker 시각 오용
+            _assert_recovery_observed_at_fresh(st.get("reported_at"), st)
+        elif fixture == "consumed-slot":
+            st = json.loads(json.dumps(state))
+            today, _tz_name = local_today()
+            st.setdefault("submissions_by_date", {})[today] = DAILY_SUBMISSION_LIMIT
+            _assert_daily_slot(st)
+        elif fixture == "altered-package":
+            manifest = {"candidate_id": "tampered0deadbeef",
+                        "package_path": str(REPO / "submit_recovery_tampered"),
+                        "manifest_hash": "0" * 64, "model_file_sha256": {}}
+            _guard_task12_binding("5890a4c54f502c4e", manifest,
+                                  str(REPO / "submit_recovery_tampered"))
+        elif fixture == "upload-marker":
+            st = json.loads(json.dumps(state))
+            st["uploaded"] = True
+            problems = scan_upload_markers(st)
+            if not problems:
+                raise PolicyViolation("upload token 미검출 — 업로드 토큰 탐지 가드 누락 "
+                                      "(exit 2)")
+            raise PolicyViolation(f"upload token detected: {problems[0]} — 업로드 토큰 "
+                                  "금지 (exit 2)")
+    except PolicyViolation as exc:
+        reason = str(exc)
+        matched = (
+            (fixture == "stale-live-state" and "observed_at_is_reported_at" in reason)
+            or (fixture == "consumed-slot" and "daily_slot_exhausted" in reason)
+            or (fixture == "altered-package" and "binding" in reason)
+            or (fixture == "upload-marker" and "detected" in reason))
+        findings = [
+            {"rule": "no_state_mutation", "ok": True,
+             "reason": "실제 상태 파일 sha256 불변 (in-memory copy 만 변형)"},
+            {"rule": "no_main_evidence_clobber", "ok": True,
+             "reason": "fixture 는 task-11-readiness-fixture-<name>.{json,md} 만 기록"},
+        ]
+        if fixture == "upload-marker":
+            findings.append(
+                {"rule": "no_upload_code_path", "ok": True,
+                 "reason": "러너에 DACON API/업로드 호출 경로 없음 — 업로드 토큰 입력은 "
+                           "하드 거부 (구조적 증명)"})
+        # fixture 필드는 scope 감사(UPLOAD_KEY_NORMS 정규화 충돌)를 피하도록
+        # '-guard' 접미사를 사용한다 — 정확한 CLI 이름은 증거 파일명에 포함됨.
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "title": f"Todo 11 fixture — {fixture} (recovery readiness, adversarial)",
+            "task": "aimers9-top100-recovery/task-11-readiness",
+            "mode": "check-recovery-fixture",
+            "verdict": "REJECT",
+            "exit_code": 2,
+            "recorded_at_utc": now_utc(),
+            "git_head": _git_commit(),
+            "label_sources": [],
+            "labels_read": False,
+            "fixture": f"{fixture}-guard",
+            "expected_failure_rule": expected[fixture],
+            "matched": matched,
+            "reason": reason,
+            "state_sha256_before": state_sha_before,
+            "state_mutation": {"mutated": False,
+                               "note": "fixture 는 in-memory 복사본만 변형 — 상태 파일 "
+                                       "미변경",
+                               "sha256_before": state_sha_before,
+                               "sha256_after": _sha256_file(state_path)},
+            "checks": [],
+            "violations": [],
+            "findings": findings,
+            "notes": (f"fixture {fixture!r} 는 반드시 exit 2 — "
+                      f"{expected[fixture]} 규칙 위반 기대 (matched={matched}). "
+                      "Notion append/상태 변경/업로드 없음."),
+        }
+        record["config_hash"] = _canonical_sha256(
+            {k: v for k, v in record.items() if k != "config_hash"})
+        base = evidence_dir / f"task-11-readiness-fixture-{fixture}"
+        json_path, md_path = write_next_round_evidence(record, base)
+        print(f"[submission_decision] --fixture {fixture}: exit 2 — {reason}")
+        print(f"[submission_decision] evidence -> {json_path} / {md_path} "
+              "(상태/메인 증거 미변경)")
+        return 2
+    print(f"[submission_decision] FATAL: fixture {fixture} 가드가 발동하지 않음 — 가드 버그",
+          file=sys.stderr)
+    return 1
+
+
+def _is_recovery_fixture(args: argparse.Namespace) -> bool:
+    """recovery fixture 분기. 공유 이름(consumed-slot/altered-package)은 recovery 인자
+    (--check-recovery / --register-recovery-qualified / --observed-at / --evidence-dir)가
+    존재할 때만 recovery 로 해석 — 기존 next-round fixture 호출은 그대로 유지."""
+    if args.fixture in ("stale-live-state", "upload-marker"):
+        return True
+    return (args.check_recovery or args.register_recovery_qualified
+            or args.observed_at is not None
+            or args.evidence_dir != str(DEFAULT_RECOVERY_EVIDENCE_DIR))
+
+
 def cmd_fixture(args: argparse.Namespace) -> int:
     """failure-QA fixtures (계획 QA: 전부 exit 2, fixture 전용 증거 — 주 증거 미변경).
     상태는 in-memory 복사(json.load → dict 변조)만 수행 — 실제 파일 절대 저장 안 함."""
@@ -1137,17 +1591,36 @@ def main(argv: list[str] | None = None) -> int:
                         help="(next round) Task 11 manifest.json 경로")
     parser.add_argument("--evidence-path", default=str(DEFAULT_TASK11_EVIDENCE),
                         help="Task 11 증거 JSON (기본 task-11-package.json) — next-round 분기 입력")
-    parser.add_argument("--fixture", default=None, choices=sorted(NEXT_ROUND_FIXTURES),
+    parser.add_argument("--fixture", default=None, choices=sorted(NEXT_ROUND_FIXTURES | RECOVERY_FIXTURES),
                         help="failure QA fixture (전부 exit 2): 등록/게이트 가드 변조 트리거")
     parser.add_argument("--policy", default=str(DEFAULT_POLICY),
                         help="동결 정책 JSON (기본 repro_979/next_round_policy.json)")
+    # ── Task 11 (aimers9-top100-recovery) 인자 ──
+    parser.add_argument("--check-recovery", action="store_true",
+                        help="(recovery) readiness check — BLOCK path: SKIPPED_BASELINE_BLOCK "
+                             "exit 0 (label-free, idempotent)")
+    parser.add_argument("--register-recovery-qualified", action="store_true",
+                        help="(recovery) readiness registration — BLOCK path: 거부 "
+                             "SKIPPED_BASELINE_BLOCK exit 1, 상태 미변경")
+    parser.add_argument("--evidence-dir", default=str(DEFAULT_RECOVERY_EVIDENCE_DIR),
+                        help="(recovery) 증거 디렉터리 (default: "
+                             ".omo/evidence/aimers9-top100-recovery)")
+    parser.add_argument("--observed-at", default=None,
+                        help="(recovery) 사용자 제공 관측 시각 ISO — ALLOW 에만 필요 "
+                             "(≤30분), worker reported_at 불가")
     args = parser.parse_args(argv)
     if args.register_qualified:
         args.mode = "register"
     elif args.check:
         args.mode = "check"
     if args.fixture:
+        if _is_recovery_fixture(args):
+            return cmd_fixture_recovery(args)
         return cmd_fixture(args)
+    if args.check_recovery:
+        return cmd_check_recovery(args)
+    if args.register_recovery_qualified:
+        return cmd_register_recovery(args)
     # 분기 규칙:
     #  - 명시적 next-round 인자(candidate/package/manifest/evidence-path 비기본) → next-round.
     #  - 명시적 legacy 인자(package-dir/task8-evidence/evidence-base 비기본) → top100 (하위호환).

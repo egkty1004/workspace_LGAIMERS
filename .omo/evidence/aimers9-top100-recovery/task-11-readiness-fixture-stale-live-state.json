@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "title": "Todo 11 fixture — stale-live-state (recovery readiness, adversarial)",
+  "task": "aimers9-top100-recovery/task-11-readiness",
+  "mode": "check-recovery-fixture",
+  "verdict": "REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-17T04:20:41.440916+00:00",
+  "git_head": "371b77e63be86f650636fbb1fdb6a89d3098fd86",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "stale-live-state-guard",
+  "expected_failure_rule": "observed_at_is_reported_at",
+  "matched": true,
+  "reason": "observed_at_is_reported_at — worker reported_at 을 사용자 관측 시각으로 오용 금지 (exit 2)",
+  "state_sha256_before": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a",
+  "state_mutation": {
+    "mutated": false,
+    "note": "fixture 는 in-memory 복사본만 변형 — 상태 파일 미변경",
+    "sha256_before": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a",
+    "sha256_after": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a"
+  },
+  "checks": [],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_state_mutation",
+      "ok": true,
+      "reason": "실제 상태 파일 sha256 불변 (in-memory copy 만 변형)"
+    },
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-11-readiness-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'stale-live-state' 는 반드시 exit 2 — observed_at_is_reported_at 규칙 위반 기대 (matched=True). Notion append/상태 변경/업로드 없음.",
+  "config_hash": "9e3f98ca005f41813808bb832f5583f90e214d026431176670a0d53c39add47a"
+}

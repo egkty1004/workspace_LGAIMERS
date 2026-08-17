@@ -49,6 +49,7 @@ CLI = REPO / "submission_decision.py"
 
 sys.path.insert(0, str(REPO))
 import next_round_policy as nrp  # noqa: E402
+import recovery_live_state as rls  # noqa: E402
 import submission_decision as sd  # noqa: E402
 
 PASSED: list[str] = []
@@ -350,7 +351,12 @@ def test_top100_compat() -> None:
     tmp = Path(tempfile.mkdtemp(prefix="nr_t12_top100_"))
     try:
         state_path = tmp / "state.json"
-        state_path.write_text((STATE).read_text(encoding="utf-8"), encoding="utf-8")
+        state = load(STATE)
+        # Task 1 이 date_captured 를 보고일(2026-08-17)로 갱신해 보고일 당일엔
+        # 컷오프가 fresh 해진다 — 레거시 BLOCK 경로를 결정적으로 테스트하려면
+        # temp 복사본의 캡처 시각을 과거로 고정한다 (실제 상태는 미변경).
+        state["date_captured"] = "2020-01-01T00:00:00+00:00"
+        state_path.write_text(json.dumps(state), encoding="utf-8")
         base = tmp / "task-9-submission"
         proc = run_cli(CLI, "--mode", "register", "--package-dir", str(REAL_PKG),
                        "--task8-evidence", str(TASK8_EV), "--state", str(state_path),
@@ -410,6 +416,132 @@ def test_evidence_compliance() -> None:
         check(f"g.no_upload.{path.name}", not nrp.scan_upload_markers(rec))
 
 
+# ── (h) Task 11 recovery readiness (aimers9-top100-recovery) ─────────
+def test_recovery_baseline_block() -> None:
+    print("[test] (h1) --check-recovery BLOCK path → SKIPPED_BASELINE_BLOCK exit 0 "
+          "(label-free); (h2) idempotent re-run does not clobber")
+    state_before = sha256_file(STATE)
+    tmp = Path(tempfile.mkdtemp(prefix="nr_t11_check_"))
+    try:
+        proc = run_cli(CLI, "--check-recovery", "--state", str(STATE),
+                       "--evidence-dir", str(tmp))
+        check("h1.exit0", proc.returncode == 0, f"exit={proc.returncode}")
+        ev_path = tmp / "task-11-readiness.json"
+        check("h1.evidence_written", ev_path.is_file())
+        ev = load(ev_path)
+        check("h1.verdict", ev.get("verdict") == "SKIPPED_BASELINE_BLOCK",
+              f"verdict={ev.get('verdict')}")
+        check("h1.exit_recorded", ev.get("exit_code") == 0)
+        check("h1.no_labels", ev.get("label_sources") == []
+              and ev.get("labels_read") is False)
+        check("h1.baseline_verdict", ev.get("baseline_verdict") == "BASELINE_PROVENANCE_BLOCK")
+        tr = ev.get("task_routing") or {}
+        check("h1.blocked_tasks", tr.get("blocked_tasks") == [str(i) for i in range(2, 11)],
+              f"blocked={tr.get('blocked_tasks')}")
+        check("h1.tasks_2_10_absent", tr.get("tasks_2_10_artifacts_present") is False)
+        check("h1.task_routing_note", bool(tr.get("note")))
+        check("h1.no_notion_row", (ev.get("notion") or {}).get("row_written") is False)
+        sm = ev.get("state_mutation") or {}
+        check("h1.no_state_mutation", sm.get("mutated") is False
+              and sm.get("sha256_before") == state_before)
+        check("h1.git_head", len(str(ev.get("git_head") or "")) >= 7)
+        check("h1.recorded_at_utc", bool(ev.get("recorded_at_utc")))
+        check("h1.name_re", bool(nrp.EVIDENCE_NAME_RE.match(ev_path.name)))
+        sha1 = sha256_file(ev_path)
+        proc2 = run_cli(CLI, "--check-recovery", "--state", str(STATE),
+                        "--evidence-dir", str(tmp))
+        check("h2.exit0", proc2.returncode == 0, f"exit={proc2.returncode}")
+        check("h2.not_clobbered", sha256_file(ev_path) == sha1,
+              "second run must not rewrite main evidence")
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+        check("h1.real_state_untouched", sha256_file(STATE) == state_before)
+
+
+def test_recovery_fixtures() -> None:
+    print("[test] (h3) 4 recovery fixtures exit 2, fixture evidence, main not clobbered")
+    state_before = sha256_file(STATE)
+    for name in sorted(sd.RECOVERY_FIXTURES):
+        tmp = Path(tempfile.mkdtemp(prefix=f"nr_t11_fix_{name}_"))
+        try:
+            proc = run_cli(CLI, "--fixture", name, "--state", str(STATE),
+                           "--evidence-dir", str(tmp))
+            fix_path = tmp / f"task-11-readiness-fixture-{name}.json"
+            check(f"h3.{name}.exit2", proc.returncode == 2, f"exit={proc.returncode}")
+            check(f"h3.{name}.evidence", fix_path.is_file()
+                  and load(fix_path).get("exit_code") == 2)
+            check(f"h3.{name}.verdict", fix_path.is_file()
+                  and load(fix_path).get("verdict") == "REJECT")
+            check(f"h3.{name}.fixture_field", fix_path.is_file()
+                  and name in load(fix_path).get("fixture", ""))
+            check(f"h3.{name}.reason", fix_path.is_file() and load(fix_path).get("reason"))
+            check(f"h3.{name}.name_re", fix_path.is_file()
+                  and bool(nrp.EVIDENCE_NAME_RE.match(fix_path.name)))
+            check(f"h3.{name}.main_not_clobbered",
+                  not (tmp / "task-11-readiness.json").exists())
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    check("h3.real_state_untouched", sha256_file(STATE) == state_before)
+
+
+def test_recovery_register_blocked() -> None:
+    print("[test] (h4) --register-recovery-qualified BLOCK path → refuse exit 1, no mutation")
+    state_before = sha256_file(STATE)
+    tmp = Path(tempfile.mkdtemp(prefix="nr_t11_reg_"))
+    try:
+        proc = run_cli(CLI, "--register-recovery-qualified", "--state", str(STATE),
+                       "--evidence-dir", str(tmp))
+        check("h4.exit1", proc.returncode == 1, f"exit={proc.returncode}")
+        ev_path = tmp / "task-11-readiness-register-rejected.json"
+        check("h4.evidence_written", ev_path.is_file())
+        ev = load(ev_path)
+        check("h4.verdict", ev.get("verdict") == "SKIPPED_BASELINE_BLOCK",
+              f"verdict={ev.get('verdict')}")
+        check("h4.exit_recorded", ev.get("exit_code") == 1)
+        sm = ev.get("state_mutation") or {}
+        check("h4.no_state_mutation", sm.get("mutated") is False
+              and sm.get("sha256_before") == state_before)
+        check("h4.mode", ev.get("mode") == "register-recovery-qualified")
+        check("h4.name_re", bool(nrp.EVIDENCE_NAME_RE.match(ev_path.name)))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+        check("h4.real_state_untouched", sha256_file(STATE) == state_before)
+
+
+def test_recovery_evidence_compliance() -> None:
+    print("[test] (h5) naming/provenance/scope compliance of recovery evidence "
+          "(incl. value-level upload-norm scan like --audit-scope-baseline-block)")
+    scanned: list[tuple[Path, dict]] = []
+    for mode in ("check", "register"):
+        tmp = Path(tempfile.mkdtemp(prefix=f"nr_t11_comp_{mode}_"))
+        try:
+            cli_args = (["--check-recovery"] if mode == "check"
+                        else ["--register-recovery-qualified"])
+            run_cli(CLI, *cli_args, "--state", str(STATE), "--evidence-dir", str(tmp))
+            for fname in ("task-11-readiness.json",
+                          "task-11-readiness-register-rejected.json"):
+                p = tmp / fname
+                if p.is_file():
+                    scanned.append((p, load(p)))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    for name in sorted(sd.RECOVERY_FIXTURES):
+        tmp = Path(tempfile.mkdtemp(prefix=f"nr_t11_comp_{name}_"))
+        try:
+            run_cli(CLI, "--fixture", name, "--state", str(STATE), "--evidence-dir", str(tmp))
+            p = tmp / f"task-11-readiness-fixture-{name}.json"
+            scanned.append((p, load(p)))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+    check("h5.new_evidence_found", len(scanned) == 6, f"n={len(scanned)}")
+    for path, rec in scanned:
+        check(f"h5.name.{path.name}", bool(nrp.EVIDENCE_NAME_RE.match(path.name)))
+        problems = scan_clean(rec, path, set())
+        check(f"h5.clean.{path.name}", not problems, f"problems={problems}")
+        bad = [s for s in rls._iter_strs(rec) if rls._norm_key(s) in rls.UPLOAD_KEY_NORMS]
+        check(f"h5.scope.{path.name}", not bad, f"norm-collisions={bad}")
+
+
 def main() -> int:
     test_skipped_register()
     test_plain_check_defaults()
@@ -419,6 +551,10 @@ def main() -> int:
     test_missing_task11()
     test_top100_compat()
     test_evidence_compliance()
+    test_recovery_baseline_block()
+    test_recovery_fixtures()
+    test_recovery_register_blocked()
+    test_recovery_evidence_compliance()
     total = len(PASSED) + len(FAILED)
     print(f"\n{len(PASSED)}/{total} PASS, {len(FAILED)} FAIL")
     return 0 if not FAILED else 1

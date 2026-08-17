@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "title": "Todo 11 — register recovery readiness (aimers9-top100-recovery)",
+  "task": "aimers9-top100-recovery/task-11-readiness",
+  "mode": "register-recovery-qualified",
+  "verdict": "SKIPPED_BASELINE_BLOCK",
+  "exit_code": 1,
+  "recorded_at_utc": "2026-08-17T04:20:41.751053+00:00",
+  "git_head": "371b77e63be86f650636fbb1fdb6a89d3098fd86",
+  "label_sources": [],
+  "labels_read": false,
+  "state_path": "/home/2022113165/workspace_LGAIMERS/repro_979/leaderboard_state.json",
+  "state_sha256": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a",
+  "baseline_verdict": "BASELINE_PROVENANCE_BLOCK",
+  "task_routing": {
+    "blocked_tasks": [
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10"
+    ],
+    "tasks_2_10_artifacts_present": false,
+    "task_11": "SKIPPED_BASELINE_BLOCK",
+    "note": "Tasks 2-10 BLOCKED and absent (no recovery_evaluator/registry/runner/package artifacts were ever created) — Task 11 emits only the label-free readiness record."
+  },
+  "notion": {
+    "row_written": false,
+    "note": "Task 1 already recorded the real user-reported 1001.74449 event (leaderboard row block 3bf5ed6b-28d5-8105-bd4b-da500e622e00, submission date/file/model=UNKNOWN). Task 11 writes NO Notion/leaderboard row — a row is appended only on an actual user-reported event."
+  },
+  "observed_at": {
+    "user_supplied": null,
+    "freshness_required_for_allow_minutes": 30,
+    "precedence_note": "BLOCK path: SKIPPED_BASELINE_BLOCK wins — observed_at freshness is irrelevant here. worker reported_at never satisfies freshness; ALLOW requires a user-supplied observed_at within the TTL."
+  },
+  "rollback_preserved": {
+    "candidate_id": "5890a4c54f502c4e",
+    "public_score": 992.8390640403,
+    "qualification_digest": "e3e047dde80f28b31bb9b98b498e37c9ca95cca80686e23207fe875b50487f72",
+    "submissions_by_date": {
+      "2026-08-14": 2
+    },
+    "last_submission": {
+      "date": "2026-08-14",
+      "public_score": 992.8390640403
+    }
+  },
+  "state_mutation": {
+    "mutated": false,
+    "note": "leaderboard_state.json untouched — sha256 before == after",
+    "sha256_before": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a",
+    "sha256_after": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a"
+  },
+  "reason": "BLOCK path — registration refused with SKIPPED_BASELINE_BLOCK; no candidate/package/manifest/Task 10 result exists; no state field mutated; rollback preserved",
+  "checks": [
+    {
+      "rule": "baseline_block_refusal",
+      "ok": true,
+      "reason": "BASELINE_PROVENANCE_BLOCK → 등록 거부: qualified candidate/package/Task 10 결과 부재 (readiness-only)"
+    },
+    {
+      "rule": "no_state_mutation",
+      "ok": true,
+      "reason": "leaderboard_state.json 미변경 (sha256 before == after)"
+    },
+    {
+      "rule": "no_qualified_readiness_mutation",
+      "ok": true,
+      "reason": "등록 대상 qualified-readiness 필드 없음 — 어떤 상태 필드도 변경 안 함"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "label_free",
+      "ok": true,
+      "reason": "label_sources=[] / labels_read=false — label-free record"
+    },
+    {
+      "rule": "rollback_preserved",
+      "ok": true,
+      "reason": "5890a4c54f502c4e / 992.8390640403 — 변경 없음"
+    },
+    {
+      "rule": "readiness_only",
+      "ok": true,
+      "reason": "ALLOW/BLOCK 은 readiness 만 — 업로드·제출 횟수·리더보드 기록 없음"
+    }
+  ],
+  "notes": "Todo 11 register (BLOCK path): 등록 거부 — SKIPPED_BASELINE_BLOCK (exit 1). qualified-readiness 등록은 STATISTICAL_PASS + DEPLOYMENT_PASS + 결속 가드 통과 후에만 가능하며, 이 계획의 BLOCK 경로에서는 구조적으로 불가. 업로드·제출 횟수·리더보드 기록 없음.",
+  "config_hash": "ec5be97a6bb99133178dad628f59ef4c81703facb1aa37012a58b291bfaaa746"
+}

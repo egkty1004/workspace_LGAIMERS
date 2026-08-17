@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "title": "Todo 11 fixture — upload-marker (recovery readiness, adversarial)",
+  "task": "aimers9-top100-recovery/task-11-readiness",
+  "mode": "check-recovery-fixture",
+  "verdict": "REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-17T04:20:41.678637+00:00",
+  "git_head": "371b77e63be86f650636fbb1fdb6a89d3098fd86",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "upload-marker-guard",
+  "expected_failure_rule": "upload_token_rejection",
+  "matched": true,
+  "reason": "upload token detected: 업로드 마커 발견: 'uploaded' = True — 업로드 토큰 금지 (exit 2)",
+  "state_sha256_before": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a",
+  "state_mutation": {
+    "mutated": false,
+    "note": "fixture 는 in-memory 복사본만 변형 — 상태 파일 미변경",
+    "sha256_before": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a",
+    "sha256_after": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a"
+  },
+  "checks": [],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_state_mutation",
+      "ok": true,
+      "reason": "실제 상태 파일 sha256 불변 (in-memory copy 만 변형)"
+    },
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-11-readiness-fixture-<name>.{json,md} 만 기록"
+    },
+    {
+      "rule": "no_upload_code_path",
+      "ok": true,
+      "reason": "러너에 DACON API/업로드 호출 경로 없음 — 업로드 토큰 입력은 하드 거부 (구조적 증명)"
+    }
+  ],
+  "notes": "fixture 'upload-marker' 는 반드시 exit 2 — upload_token_rejection 규칙 위반 기대 (matched=True). Notion append/상태 변경/업로드 없음.",
+  "config_hash": "0c846c936520a5d7ef747e0a2b84f9031d28f80f23634e60409d425040375171"
+}

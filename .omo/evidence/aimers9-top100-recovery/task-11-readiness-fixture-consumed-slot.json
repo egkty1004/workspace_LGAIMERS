@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "title": "Todo 11 fixture — consumed-slot (recovery readiness, adversarial)",
+  "task": "aimers9-top100-recovery/task-11-readiness",
+  "mode": "check-recovery-fixture",
+  "verdict": "REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-17T04:21:07.314885+00:00",
+  "git_head": "371b77e63be86f650636fbb1fdb6a89d3098fd86",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "consumed-slot-guard",
+  "expected_failure_rule": "daily_slot_exhausted",
+  "matched": true,
+  "reason": "daily_slot_exhausted — 2026-08-17(Asia/Seoul) 제출 5회 — 하루 5회 제한 초과/도달 (BLOCK)",
+  "state_sha256_before": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a",
+  "state_mutation": {
+    "mutated": false,
+    "note": "fixture 는 in-memory 복사본만 변형 — 상태 파일 미변경",
+    "sha256_before": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a",
+    "sha256_after": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a"
+  },
+  "checks": [],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_state_mutation",
+      "ok": true,
+      "reason": "실제 상태 파일 sha256 불변 (in-memory copy 만 변형)"
+    },
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-11-readiness-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'consumed-slot' 는 반드시 exit 2 — daily_slot_exhausted 규칙 위반 기대 (matched=True). Notion append/상태 변경/업로드 없음.",
+  "config_hash": "314df2f2cb30bef4142f747390cd830b6ac3bd824679afd6a171fe0e2fe2d4ec"
+}
