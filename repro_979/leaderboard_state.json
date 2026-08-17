@@ -1,25 +1,64 @@
 {
   "schema_version": 1,
-  "description": "Todo 9 submission-decision state. User updates rank_100_cutoff / date_captured / current_best_public_score after checking the LIVE DACON leaderboard (https://dacon.io/competitions/official/236743/leaderboard). This file IS a commit target (small config).",
-  "rank_100_cutoff": 1083.03417,
-  "rank_100_cutoff_note": "LIVE rank-100 cutoff (USER-CONFIRMED from the leaderboard, 2026-08-15). Supersedes stale 2026-08-14 value 1077.02694. Plan TL;DR value 1066.47756 is HISTORICAL reference only - never hardcode. Unknown = BLOCK (cutoff_unknown).",
-  "date_captured": "2026-08-15T21:00:00+09:00",
-  "date_captured_note": "ISO timestamp when rank_100_cutoff was captured on the live leaderboard: 2026-08-15 (Asia/Seoul), user-confirmed observation; capture time recorded as 21:00 KST. Must be within 24h TTL of a check run, else BLOCK (cutoff_stale).",
-  "team_rank": 272,
-  "team_rank_note": "Team rank on the live leaderboard (USER-CONFIRMED, 2026-08-15).",
-  "current_best_public_score": 992.8390640403,
-  "current_best_public_score_note": "New best = submit_lgb_mlp_cat (lgb_mlp_cat 5890a4c54f502c4e), Public 992.8390640403, +4.52 over champ_cat 988.32. Re-confirmed on the live leaderboard 2026-08-15. Update to the best REAL public score when it changes.",
+  "description": "Aimers9-top100-score-recovery Todo 1: reconciled live leaderboard state. User updates rank_100_cutoff / team_rank / current_best_public_score after checking the LIVE DACON leaderboard (https://dacon.io/competitions/official/236743/leaderboard). observation_timestamp stays UNKNOWN unless the user supplies the exact observation time; reported_at is the worker-captured recording time only. baseline_verdict decides Task 2-10 routing.",
+  "rank_100_cutoff": 1090.64249,
+  "rank_100_cutoff_note": "LIVE rank-100 cutoff (USER-REPORTED, 2026-08-17). Supersedes 2026-08-15 value 1083.03417. Unknown = BLOCK (cutoff_unknown).",
+  "date_captured": "2026-08-17",
+  "date_captured_note": "Date on which the user reported the live values (2026-08-17). Exact observation time was NOT provided → observation_timestamp=UNKNOWN; date_captured carries the report date only, never an invented clock time.",
+  "observation_timestamp": "UNKNOWN",
+  "observation_timestamp_note": "The user did NOT provide the exact time they observed the leaderboard. Per plan rules this stays UNKNOWN — never mislabel worker reported_at as the observation/submission timestamp. A precise observed_at must be user-supplied.",
+  "reported_at": "2026-08-17T12:34:43+09:00",
+  "reported_at_note": "Worker-captured current Asia/Seoul timestamp when this reconciled state was recorded (2026-08-17 12:34:43 KST). This is NOT the user's observation/submission time.",
+  "team_rank": 287,
+  "team_rank_note": "Team rank on the live leaderboard (USER-REPORTED, 2026-08-17). Supersedes 2026-08-15 value 272.",
+  "current_best_public_score": 1001.74449,
+  "current_best_public_score_note": "Team best Public score (USER-REPORTED, 2026-08-17). PACKAGE PROVENANCE UNPROVEN — no artifact (package/commit/evidence) in this workspace is associated with 1001.74449. baseline_verdict=BASELINE_PROVENANCE_BLOCK; do NOT treat as package-backed until provenance is reconciled. Rollback best remains qualified_candidate_public_score=992.8390640403 (5890a4c54f502c4e).",
   "source": "user-reported DACON leaderboard",
-  "source_note": "Provenance of the 2026-08-15 live-state fields (rank_100_cutoff / team_rank / current_best_public_score): supplied by the user after checking the LIVE DACON leaderboard (https://dacon.io/competitions/official/236743/leaderboard). Only a user-reported observation may update these fields.",
+  "source_note": "Provenance of the 2026-08-17 live-state fields (rank_100_cutoff / team_rank / current_best_public_score): supplied by the user after checking the LIVE DACON leaderboard. Only a user-reported observation may update these fields; observation_timestamp remains UNKNOWN until supplied.",
+  "baseline_verdict": "BASELINE_PROVENANCE_BLOCK",
+  "baseline_verdict_note": "Todo 1 provenance investigation (2026-08-17): retrainable source / preprocessing / configuration / model hashes / per-origin refit capability for Public 1001.74449 CANNOT be proven from workspace artifacts (submit_* packages, evidence, git history, docs all predate/contradict it; the only occurrences of 1001.74449 are the plan/draft/ledger describing it as user-reported with UNKNOWN provenance). Weight contract uncheckable (no package identified). Unverified hypothesis only (no evidence): the score may originate from a submission outside this workspace, e.g. a team-member re-submission of the shared 5890a4c54f502c4e package — cannot be confirmed locally. Tasks 2-10 BLOCKED; Task 11 may emit only SKIPPED_BASELINE_BLOCK. Rollback 5890a4c54f502c4e / 992.8390640403 preserved.",
+  "package_provenance_1001_74449": {
+    "retrainable_source": {
+      "proven": false,
+      "evidence": "no submit package or training source tied to 1001.74449 found; searched repro_979/submit_*, aimers9_final_blend_team_share_20260814, .omo/evidence, docs/exp_hgb_validation.md, git log --all -S 1001.74449 (no commits)",
+      "reason": "1001.74449 exists only in untracked .omo plan/draft/ledger as user-reported; zero artifact association"
+    },
+    "preprocessing": {
+      "proven": false,
+      "evidence": "no preprocessing manifest for any 1001.74449 package; the only proven preprocessing contract (common.py byte-identical to GIHO extract) belongs to 5890a4c54f502c4e (Public 992.8390640403)",
+      "reason": "no package identified → no preprocessing to verify"
+    },
+    "configuration": {
+      "proven": false,
+      "evidence": "no config/feature list/blend config for a 1001.74449 package; best proven config is the .30/.35/.35 logit blend of 5890a4c54f502c4e (C_LOGIT=-0.0404, clip .30/.70)",
+      "reason": "no package identified → no configuration to verify"
+    },
+    "model_hashes": {
+      "proven": false,
+      "evidence": "no model files/provenance.json/sha256 for a 1001.74449 package; rollback 5890a4c54f502c4e model hashes are verified and intact (qualification_digest e3e047dd...)",
+      "reason": "no package identified → no model hashes to verify"
+    },
+    "per_origin_refit": {
+      "proven": false,
+      "evidence": "no per-origin refit capability recorded for any 1001.74449 package; for rollback only CatBoost is refittable in-workspace (deploy_train_catboost_full.py), LGB/MLP are byte-frozen GIHO copies",
+      "reason": "no package identified → refit capability unprovable"
+    },
+    "weight_contract": {
+      "proven": false,
+      "evidence": "no script.py/provenance.json to check the .30/.35/.35 LGB/MLP/Cat logit contract against; the contract is proven ONLY for 5890a4c54f502c4e",
+      "reason": "no package identified → contract uncheckable (falls under PROVENANCE_BLOCK, not CONTRACT_BLOCK)"
+    },
+    "note": "All six elements unproven for 1001.74449. The workspace's best PROVEN package remains lgb_mlp_cat 5890a4c54f502c4e with Public 992.8390640403 (registered qualification_digest e3e047dde80f28b31bb9b98b498e37c9ca95cca80686e23207fe875b50487f72). Honest verdict: BASELINE_PROVENANCE_BLOCK — Tasks 2-10 blocked, Task 11 may emit SKIPPED_BASELINE_BLOCK."
+  },
   "qualified_candidate_public_score": 992.8390640403,
-  "qualified_candidate_public_score_note": "Public score of the qualified candidate (lgb_mlp_cat 5890a4c54f502c4e) - real DACON score reported 2026-08-14.",
+  "qualified_candidate_public_score_note": "Public score of the qualified rollback candidate (lgb_mlp_cat 5890a4c54f502c4e) - real DACON score reported 2026-08-14. PRESERVED — do NOT overwrite with 1001.74449 (that would misattribute the unproven score to this package).",
   "allow_below_cutoff": false,
   "allow_below_cutoff_note": "Explicit override to permit submission when target margin <= 0. Default false; set true only with user intent.",
   "timezone_for_daily_key": "Asia/Seoul",
   "submissions_by_date": {
     "2026-08-14": 2
   },
-  "submissions_by_date_note": "One entry per local calendar day (Asia/Seoul): {YYYY-MM-DD: count}. Runner enforces DAILY_SUBMISSION_LIMIT=5. Add a row AFTER a real submission (user action).",
+  "submissions_by_date_note": "One entry per local calendar day (Asia/Seoul): {YYYY-MM-DD: count}. Runner enforces DAILY_SUBMISSION_LIMIT=5. PRESERVED — add a row ONLY after a real user-reported submission event.",
   "last_submission": {
     "date": "2026-08-14",
     "file_model": "submit_lgb_mlp_cat.zip (lgb_mlp_cat: lgb x0.30 + mlp x0.35 + catboost x0.35, candidate 5890a4c54f502c4e)",
@@ -27,7 +66,7 @@
     "runtime_s": 18,
     "verdict": "improved_vs_champ_cat (+4.52 over 988.32); below top-100 cutoff 1077.03"
   },
-  "last_submission_note": "{date, file_model, public_score, verdict} of the most recent real submission - user fills after DACON returns a score.",
+  "last_submission_note": "{date, file_model, public_score, verdict} of the most recent PROVEN real submission (2026-08-14). The user-reported 1001.74449 event has no file/model/date → not promoted to last_submission. PRESERVED.",
   "qualified_package": {
     "candidate_id": "5890a4c54f502c4e",
     "candidate": "lgb_mlp_cat",
@@ -36,5 +75,5 @@
     "qualification_date": "2026-08-14",
     "package_validated": true
   },
-  "qualified_package_note": "Registered by: python3 repro_979/submission_decision.py --register-qualified (after Todo 8 PASS). Holds candidate_id / qualification_digest / package_validated."
+  "qualified_package_note": "Rollback qualified package PRESERVED unchanged (candidate 5890a4c54f502c4e, digest e3e047dd..., package_validated=true). Todo 1 does not alter this — it is the rollback baseline until the 1001.74449 provenance is reconciled (or proven impossible)."
 }

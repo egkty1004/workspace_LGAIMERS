@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "title": "Todo 1 fixture — invented-event (adversarial, exit 2)",
+  "task": "aimers9-top100-recovery/task-1-live-state-fixture-invented-event",
+  "verdict": "FIXTURE_REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-17T03:36:17+00:00",
+  "git_head": "c191a5864749aabedd9c3166475c52d59cddd21e",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "invented-event",
+  "state_sha256_before": "b1aacb7cadf22bb2cb4b1410926ec0fb595f2aa130dff353d7bfdfe60e55cd4a",
+  "state_mutation": {
+    "mutated": false,
+    "note": "fixture 는 in-memory 복사본만 변형 — 상태 파일 미변경"
+  },
+  "expected_failure_rule": "observation_timestamp_unknown",
+  "matched": true,
+  "failing_checks": [
+    {
+      "rule": "observation_timestamp_unknown",
+      "ok": false,
+      "reason": "observation_timestamp = '2026-08-17T10:00:00+09:00' — 사용자가 관측 시각을 제공하지 않았으므로 'UNKNOWN' 이어야 함"
+    },
+    {
+      "rule": "submissions_by_date_preserved",
+      "ok": false,
+      "reason": "submissions_by_date = {'2026-08-14': 2, '2026-08-17': 1} (필요 {'2026-08-14': 2}) — 제출 횟수 변경 금지 (실제 제출 이벤트만)"
+    }
+  ],
+  "checks": [
+    {
+      "rule": "user_value_rank_100_cutoff",
+      "ok": true,
+      "reason": "rank_100_cutoff = 1090.64249 (사용자 보고값 일치)"
+    },
+    {
+      "rule": "user_value_current_best_public_score",
+      "ok": true,
+      "reason": "current_best_public_score = 1001.74449 (사용자 보고값 일치)"
+    },
+    {
+      "rule": "user_value_team_rank",
+      "ok": true,
+      "reason": "team_rank = 287 (사용자 보고값 일치)"
+    },
+    {
+      "rule": "date_captured",
+      "ok": true,
+      "reason": "date_captured = 2026-08-17 (보고일; 관측 시각은 UNKNOWN)"
+    },
+    {
+      "rule": "observation_timestamp_unknown",
+      "ok": false,
+      "reason": "observation_timestamp = '2026-08-17T10:00:00+09:00' — 사용자가 관측 시각을 제공하지 않았으므로 'UNKNOWN' 이어야 함"
+    },
+    {
+      "rule": "reported_at_kst",
+      "ok": true,
+      "reason": "reported_at = 2026-08-17T12:34:43+09:00 (+09:00, worker-captured)"
+    },
+    {
+      "rule": "rollback_qualified_package",
+      "ok": true,
+      "reason": "qualified_package 유지: 5890a4c54f502c4e"
+    },
+    {
+      "rule": "rollback_qualification_digest",
+      "ok": true,
+      "reason": "qualification_digest 유지"
+    },
+    {
+      "rule": "score_package_mismatch",
+      "ok": true,
+      "reason": "qualified_candidate_public_score = 992.8390640403 (rollback 실점수 유지)"
+    },
+    {
+      "rule": "submissions_by_date_preserved",
+      "ok": false,
+      "reason": "submissions_by_date = {'2026-08-14': 2, '2026-08-17': 1} (필요 {'2026-08-14': 2}) — 제출 횟수 변경 금지 (실제 제출 이벤트만)"
+    },
+    {
+      "rule": "last_submission_preserved",
+      "ok": true,
+      "reason": "last_submission 유지 (date=2026-08-14)"
+    },
+    {
+      "rule": "baseline_verdict_facts_consistency",
+      "ok": true,
+      "reason": "baseline_verdict = BASELINE_PROVENANCE_BLOCK (provenance 필드와 일관)"
+    },
+    {
+      "rule": "rollback_package_hashes",
+      "ok": true,
+      "reason": "rollback 패키지 모델 파일 33건 디스크 재해시 일치"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_state_mutation",
+      "ok": true,
+      "reason": "실제 상태 파일 sha256 불변 (in-memory copy 만 변형)"
+    },
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-1-live-state-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'invented-event' 는 반드시 exit 2 — observation_timestamp_unknown 규칙 위반 기대. Notion append/상태 변경 없음."
+}
