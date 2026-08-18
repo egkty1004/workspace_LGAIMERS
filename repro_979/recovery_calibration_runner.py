@@ -272,14 +272,14 @@ def _bounded_labels(train, masks) -> dict[str, np.ndarray[Any, Any]]:
 
 
 def build_causal_panel(train, masks,
-                       baseline_logits: dict[str, np.ndarray[Any, Any]]) -> JSON:
+                       baseline_logits: dict[str, np.ndarray[Any, Any]]) -> dict[int, JSON]:
     """인과 패널 — 사용 가능한 one-year-ahead OOF 연도별 {z, y}.
 
     연도 2022 = r2022 로짓 (모델 <=2021 학습, 2022 R 행 적용), 연도 2023 = r2023 로짓
     (모델 <=2022 학습, 2023 R 행 적용). 2021 OOF 는 동결 캐시에 없음 (v93 모델이
     2019-2024 전체 학습 — 재학습 없이는 one-year-ahead OOF 불가, 금지).
     """
-    panel: JSON = {}
+    panel: dict[int, JSON] = {}
     for origin in rp.SELECTION_ORIGINS:
         outer_year = int(origin.replace("r", ""))
         va = masks[origin][1]
@@ -309,7 +309,8 @@ def fit_beta(z_fit: np.ndarray[Any, Any], y_fit: np.ndarray[Any, Any]):
     from sklearn.linear_model import LogisticRegression  # noqa: PLC0415
     p0 = _p0(z_fit)
     X = _beta_features(p0)
-    model = LogisticRegression(**BETA_LR)
+    model = LogisticRegression(penalty="l2", C=1.0, solver="lbfgs", tol=1e-8,
+                               max_iter=1000, fit_intercept=True)
     model.fit(X, np.asarray(y_fit, dtype=np.float64))
     return model
 
@@ -324,7 +325,8 @@ def fit_isotonic(z_fit: np.ndarray[Any, Any], y_fit: np.ndarray[Any, Any]):
     """Isotonic 캘리브레이션 피팅 (동결 IsotonicRegression). 반환: fitted model."""
     from sklearn.isotonic import IsotonicRegression  # noqa: PLC0415
     p0 = _p0(z_fit)
-    model = IsotonicRegression(**ISOTONIC)
+    model = IsotonicRegression(increasing=True, y_min=1e-6, y_max=1 - 1e-6,
+                               out_of_bounds="clip")
     model.fit(p0, np.asarray(y_fit, dtype=np.float64))
     return model
 
@@ -336,7 +338,7 @@ def apply_isotonic(model, z_apply: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]
     return p
 
 
-def apply_transform(cid: str, panel: JSON, fit_years: list[int],
+def apply_transform(cid: str, panel: dict[int, JSON], fit_years: list[int],
                     z_apply: np.ndarray[Any, Any]) -> np.ndarray[Any, Any]:
     """prior-OOF 연도(fit_years)에서 변환 피팅 후 z_apply 에 1회 적용.
 
@@ -404,8 +406,8 @@ def run_screen(train, masks, baseline_logits, labels) -> JSON:
             model = fit_beta(z_fit, y_fit)
             deploy_diag[cid] = {
                 "fit_years": deploy_fit_years,
-                "coef": [float(v) for v in model.coef_[0].tolist()],
-                "intercept": float(model.intercept_[0]),
+                "coef": [float(v) for v in np.asarray(model.coef_).ravel().tolist()],
+                "intercept": float(np.asarray(model.intercept_).ravel()[0]),
             }
         else:
             model = fit_isotonic(z_fit, y_fit)
