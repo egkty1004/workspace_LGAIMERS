@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "title": "Todo 4 fixture — terminal-label-read (adversarial, exit 2)",
+  "task": "aimers9-top100-recovery/task-4-catboost-fixture-terminal-label-read",
+  "verdict": "FIXTURE_REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-18T01:54:04+00:00",
+  "git_head": "7bd68d9bf3697cecd2912b1c085e35e4a08607b2",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "terminal-label-read",
+  "matched": true,
+  "detail": "파이어월이 primary 라벨 읽기를 차단: [FIREWALL] primary 라벨은 동결 전에 읽을 수 없습니다 (firewall_state='UNFROZEN', 필요 'FROZEN') — exit 2",
+  "checks": [
+    {
+      "rule": "fixture_terminal-label-read",
+      "ok": true,
+      "reason": "파이어월이 primary 라벨 읽기를 차단: [FIREWALL] primary 라벨은 동결 전에 읽을 수 없습니다 (firewall_state='UNFROZEN', 필요 'FROZEN') — exit 2"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-4-catboost-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'terminal-label-read' 는 반드시 exit 2 — 가드가 위반을 차단해야 함."
+}

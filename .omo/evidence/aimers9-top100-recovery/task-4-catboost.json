@@ -1,0 +1,340 @@
+{
+  "schema_version": 1,
+  "title": "Todo 4 — screen bounded recovery CatBoost variants",
+  "task": "aimers9-top100-recovery/task-4-catboost",
+  "verdict": "REJECT",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-18T01:51:43+00:00",
+  "git_head": "7bd68d9bf3697cecd2912b1c085e35e4a08607b2",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [
+    "r2022",
+    "r2023"
+  ],
+  "labels_read": true,
+  "mode": "screen-all",
+  "candidates": {
+    "control": "catboost_c1_control",
+    "selectable": [
+      "catboost_c2_lossguide",
+      "catboost_c3_ordered",
+      "catboost_c4_rmse"
+    ]
+  },
+  "config": {
+    "cat_features": [
+      "top_bottom",
+      "game_type",
+      "base_state",
+      "platoon",
+      "count_state"
+    ],
+    "features": [
+      "season",
+      "game_month",
+      "game_dayofweek",
+      "inning",
+      "top_bottom",
+      "game_type",
+      "balls_before",
+      "strikes_before",
+      "outs_before",
+      "run_top_before",
+      "run_bot_before",
+      "run_total_before",
+      "score_diff_home",
+      "score_diff_pitcher_team",
+      "runner_on_1b",
+      "runner_on_2b",
+      "runner_on_3b",
+      "num_runners_on",
+      "base_state",
+      "home_win_expectancy",
+      "away_win_expectancy",
+      "li",
+      "pitcher_id",
+      "batter_id",
+      "pitcher_hand",
+      "batter_hand",
+      "pitcher_team_id",
+      "batter_team_id",
+      "asof_pitcher_n",
+      "asof_pitcher_success_rate",
+      "asof_pitcher_reverse_rate",
+      "asof_pitcher_middle_rate",
+      "asof_pitcher_ball_rate",
+      "asof_pitcher_strike_rate",
+      "asof_pitcher_prev1_game_success_rate",
+      "asof_pitcher_prev3_game_success_rate",
+      "asof_pitcher_prev5_game_success_rate",
+      "asof_pitcher_prev1_game_middle_rate",
+      "asof_pitcher_prev3_game_middle_rate",
+      "asof_pitcher_prev5_game_middle_rate",
+      "asof_batter_n",
+      "asof_batter_success_rate",
+      "asof_batter_middle_rate",
+      "asof_pitcher_pitchmix_n",
+      "asof_pitcher_fastball_rate",
+      "asof_pitcher_breaking_rate",
+      "asof_pitcher_offspeed_rate",
+      "platoon",
+      "count_state"
+    ],
+    "futility_seeds": [
+      52,
+      53
+    ],
+    "full_seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "max_train_rows": 30000,
+    "bounded_subset_note": "Task 3 bounded-subset 결정과 동일 — 각 기원의 처음 30000 행 (학습+검증) 사용, baseline 캐시와 동일 부분집합",
+    "reconciliation": "각 Cat 후보는 v93 6-레그 블렌드의 CatBoost 레그 (0.0701*(z_cat - z_base) 항)를 대체 — LGB/MLP/FTT/ArmB v93 가중치 고정",
+    "inner_selection": {
+      "od_type": "Iter",
+      "od_wait": 100,
+      "use_best_model": true,
+      "record": "each seed best_iteration+1 before outer labels read"
+    }
+  },
+  "variants": {
+    "catboost_c2_lossguide": {
+      "futility": {
+        "seeds": [
+          52,
+          53
+        ],
+        "per_origin": {
+          "r2022": {
+            "origin": "r2022",
+            "delta_bss_vs_c1": 3.340741378898656,
+            "bss_c1": 1832.7386154790904,
+            "bss_candidate": 1836.079356857989,
+            "n_rows": 30000
+          },
+          "r2023": {
+            "origin": "r2023",
+            "delta_bss_vs_c1": -0.9646772187843453,
+            "bss_c1": 1790.0868227931244,
+            "bss_candidate": 1789.12214557434,
+            "n_rows": 30000
+          }
+        },
+        "mean_delta_bss_vs_c1": 1.1880320800571553,
+        "survives_futility": true
+      },
+      "full": {
+        "seeds": [
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51
+        ],
+        "per_origin": {
+          "r2022": {
+            "origin": "r2022",
+            "delta_bss_vs_baseline": -95.35171241780154,
+            "brier_candidate": 0.24541335460451077,
+            "brier_baseline": 0.24517497588392245,
+            "bootstrap_lb5": -106.44806833735173,
+            "mean_shift": 0.0014865720259470971,
+            "finite": true,
+            "n_rows": 30000
+          },
+          "r2023": {
+            "origin": "r2023",
+            "delta_bss_vs_baseline": -95.96180383932847,
+            "brier_candidate": 0.24517974823876731,
+            "brier_baseline": 0.244940184100356,
+            "bootstrap_lb5": -108.6260521946634,
+            "mean_shift": 0.0010035243470855049,
+            "finite": true,
+            "n_rows": 30000
+          }
+        },
+        "gate": {
+          "origins": {
+            "r2022": {
+              "delta_bss": -95.35171241780154,
+              "brier_candidate": 0.24541335460451077,
+              "brier_baseline": 0.24517497588392245,
+              "bootstrap_lb5": -106.44806833735173,
+              "mean_shift": 0.0014865720259470971,
+              "finite": true,
+              "checks": {
+                "delta_bss_gt_1": false,
+                "brier_reduced": false,
+                "bootstrap_lb5_gt_0": false,
+                "mean_shift_le_005": true,
+                "finite": true
+              }
+            },
+            "r2023": {
+              "delta_bss": -95.96180383932847,
+              "brier_candidate": 0.24517974823876731,
+              "brier_baseline": 0.244940184100356,
+              "bootstrap_lb5": -108.6260521946634,
+              "mean_shift": 0.0010035243470855049,
+              "finite": true,
+              "checks": {
+                "delta_bss_gt_1": false,
+                "brier_reduced": false,
+                "bootstrap_lb5_gt_0": false,
+                "mean_shift_le_005": true,
+                "finite": true
+              }
+            }
+          },
+          "passed": false,
+          "verdict": "REJECT",
+          "violations": [
+            "r2022: ΔBSS=-95.3517(>1.0?False) Brier 0.245413<0.245175?False LB5=-106.4481(>0?False) mean_shift=0.001487(<=0.005?True) finite=True",
+            "r2023: ΔBSS=-95.9618(>1.0?False) Brier 0.245180<0.244940?False LB5=-108.6261(>0?False) mean_shift=0.001004(<=0.005?True) finite=True"
+          ]
+        }
+      }
+    },
+    "catboost_c3_ordered": {
+      "futility": {
+        "seeds": [
+          52,
+          53
+        ],
+        "per_origin": {
+          "r2022": {
+            "origin": "r2022",
+            "delta_bss_vs_c1": 1.799143650138376,
+            "bss_c1": 1832.7386154790904,
+            "bss_candidate": 1834.5377591292288,
+            "n_rows": 30000
+          },
+          "r2023": {
+            "origin": "r2023",
+            "delta_bss_vs_c1": -1.0135957390632484,
+            "bss_c1": 1790.0868227931244,
+            "bss_candidate": 1789.0732270540611,
+            "n_rows": 30000
+          }
+        },
+        "mean_delta_bss_vs_c1": 0.3927739555375638,
+        "survives_futility": false
+      }
+    },
+    "catboost_c4_rmse": {
+      "futility": {
+        "seeds": [
+          52,
+          53
+        ],
+        "per_origin": {
+          "r2022": {
+            "origin": "r2022",
+            "delta_bss_vs_c1": 1.9267593164950085,
+            "bss_c1": 1832.7386154790904,
+            "bss_candidate": 1834.6653747955854,
+            "n_rows": 30000
+          },
+          "r2023": {
+            "origin": "r2023",
+            "delta_bss_vs_c1": -14.445775918881054,
+            "bss_c1": 1790.0868227931244,
+            "bss_candidate": 1775.6410468742433,
+            "n_rows": 30000
+          }
+        },
+        "mean_delta_bss_vs_c1": -6.259508301193023,
+        "survives_futility": false
+      }
+    }
+  },
+  "survivors": [
+    "catboost_c2_lossguide"
+  ],
+  "passed_variants": [],
+  "checks": [
+    {
+      "rule": "futility_catboost_c2_lossguide",
+      "ok": true,
+      "reason": "mean ΔBSS vs C1=+1.1880 survives=True"
+    },
+    {
+      "rule": "futility_catboost_c3_ordered",
+      "ok": true,
+      "reason": "mean ΔBSS vs C1=+0.3928 survives=False"
+    },
+    {
+      "rule": "futility_catboost_c4_rmse",
+      "ok": true,
+      "reason": "mean ΔBSS vs C1=-6.2595 survives=False"
+    },
+    {
+      "rule": "full_catboost_c2_lossguide",
+      "ok": false,
+      "reason": "verdict=REJECT violations=['r2022: ΔBSS=-95.3517(>1.0?False) Brier 0.245413<0.245175?False LB5=-106.4481(>0?False) mean_shift=0.001487(<=0.005?True) finite=True', 'r2023: ΔBSS=-95.9618(>1.0?False) Brier 0.245180<0.244940?False LB5=-108.6261(>0?False) mean_shift=0.001004(<=0.005?True) finite=True']"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "futility_catboost_c3_ordered",
+      "ok": false,
+      "reason": "mean ΔBSS vs C1=+0.3928 — futility REJECT (필요 mean>0 & 각 기원>-1.0)"
+    },
+    {
+      "rule": "futility_catboost_c4_rmse",
+      "ok": false,
+      "reason": "mean ΔBSS vs C1=-6.2595 — futility REJECT (필요 mean>0 & 각 기원>-1.0)"
+    },
+    {
+      "rule": "full_catboost_c2_lossguide",
+      "ok": false,
+      "reason": "full screen REJECT: ['r2022: ΔBSS=-95.3517(>1.0?False) Brier 0.245413<0.245175?False LB5=-106.4481(>0?False) mean_shift=0.001487(<=0.005?True) finite=True', 'r2023: ΔBSS=-95.9618(>1.0?False) Brier 0.245180<0.244940?False LB5=-108.6261(>0?False) mean_shift=0.001004(<=0.005?True) finite=True']"
+    }
+  ],
+  "findings": [
+    {
+      "rule": "selection_labels_only",
+      "ok": true,
+      "reason": "r2022/r2023 선택 라벨만 읽음 — primary 미로드 (구조적 파이어월)"
+    },
+    {
+      "rule": "bounded_subset_consistency",
+      "ok": true,
+      "reason": "baseline 캐시와 동일한 30000 행 부분집합 사용 — 공정 비교"
+    },
+    {
+      "rule": "reconciliation_v93",
+      "ok": true,
+      "reason": "Cat 후보는 v93 6-레그 블렌드의 CatBoost 레그만 대체"
+    }
+  ],
+  "runtime_s": 228.24,
+  "notion_receipt": {
+    "table_block_id": "3b55ed6b-28d5-8135-9341-fa1109df78af",
+    "row_block_id": "3c05ed6b-28d5-8134-8718-c9211dc0748e",
+    "row_written": true,
+    "columns": [
+      "날짜",
+      "실험/모델",
+      "검증 세트",
+      "BSS",
+      "Brier",
+      "r",
+      "비고"
+    ]
+  }
+}

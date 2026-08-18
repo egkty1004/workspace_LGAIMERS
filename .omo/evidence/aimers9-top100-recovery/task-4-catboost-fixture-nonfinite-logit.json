@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "title": "Todo 4 fixture — nonfinite-logit (adversarial, exit 2)",
+  "task": "aimers9-top100-recovery/task-4-catboost-fixture-nonfinite-logit",
+  "verdict": "FIXTURE_REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-18T01:54:04+00:00",
+  "git_head": "7bd68d9bf3697cecd2912b1c085e35e4a08607b2",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "nonfinite-logit",
+  "matched": true,
+  "detail": "비유한 로짓 감지 (inf/nan) — finite 게이트가 거부",
+  "checks": [
+    {
+      "rule": "fixture_nonfinite-logit",
+      "ok": true,
+      "reason": "비유한 로짓 감지 (inf/nan) — finite 게이트가 거부"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-4-catboost-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'nonfinite-logit' 는 반드시 exit 2 — 가드가 위반을 차단해야 함."
+}
