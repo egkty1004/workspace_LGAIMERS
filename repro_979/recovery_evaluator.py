@@ -7,7 +7,11 @@ Enforces the pre-registered policy defined in recovery_policy.py. The evaluator:
   - Canonicalizes/hashes candidate manifests BEFORE any label load.
   - Runs candidate selection on the r2022/r2023 selection origins only (--screen).
   - Freezes exactly one passing candidate and flips the terminal firewall to FROZEN
-    (--freeze) before any primary label can be read.
+    (--freeze) before any primary label can be read. Todo 7: --freeze reads ONLY the
+    Task 4-6 terminal screen evidence, rejects absent/invalid manifests, selects the
+    highest mean(r2022,r2023) delta-BSS survivor under all Task-2 gates (smallest
+    canonical ID on exact tie), or writes NO_PROMOTION when none pass (firewall stays
+    UNFROZEN, package/state untouched, primary labels never read).
   - Spends the 2024 terminal check exactly once (--terminal-check) against the
     reconciled v93 6-leg baseline.
   - Audits evidence for compliance (F1), quality/temporal-leakage (F2), and
@@ -22,13 +26,15 @@ Commands (every audit takes --evidence-dir and supports --fixture <name>):
   --smoke                          structural happy-path validation (exit 0)
   --validate-manifest --candidate <id>   build + validate an immutable manifest
   --screen                         candidate screen on r2022/r2023 (selection labels only)
-  --freeze                         freeze one passing candidate, flip firewall to FROZEN
+  --freeze                         Todo 7: freeze survivor from Task 4-6 evidence or NO_PROMOTION
   --terminal-check                 spend the 2024 terminal check once (primary labels)
   --audit-compliance --evidence-dir <dir>   F1 plan-compliance audit
   --audit-quality   --evidence-dir <dir>   F2 quality/temporal-leakage audit
   --audit-scope     --evidence-dir <dir>   F4 scope/records audit
   --fixture <name>                 adversarial fixture (always exit 2):
                                    primary-read-before-freeze / r2024-sort-key / manifest-mutation
+                                   / legacy-deepfm / catboost9-digest / unknown-public-baseline
+                                   / primary-sort-key / stale-screen-evidence / altered-r2024
 
 Exit codes: 0 = PASS, 1 = fatal input error, 2 = policy/gate/fixture violation.
 """
@@ -56,7 +62,19 @@ SCHEMA_VERSION = rp.SCHEMA_VERSION
 DEFAULT_EVIDENCE_DIR = rp.DEFAULT_EVIDENCE_DIR
 
 FIXTURES = ("primary-read-before-freeze", "r2024-sort-key", "manifest-mutation",
-            "legacy-deepfm", "catboost9-digest", "unknown-public-baseline")
+            "legacy-deepfm", "catboost9-digest", "unknown-public-baseline",
+            "primary-sort-key", "stale-screen-evidence", "altered-r2024")
+
+# ── Todo 7 --freeze: Task 4-6 terminal screen evidence (the ONLY freeze inputs) ──
+FREEZE_SCREEN_EVIDENCE = ("task-4-catboost.json", "task-5-residual.json",
+                          "task-6-calibration.json")
+FREEZE_FIXTURES = ("primary-sort-key", "stale-screen-evidence", "altered-r2024")
+# Insensitivity tamper fixtures: primary/Public/leaderboard and r2024 key norms.
+FREEZE_PRIMARY_LB_KEY_NORMS = {"primarybss", "primarydeltabss", "publicscore",
+                               "leaderboard", "cutoff", "rank"}
+FREEZE_R2024_KEY_NORMS = {"r2024", "r2024deltabss", "r2024bss", "r2024brier"}
+FREEZE_INJECT_VALUE = 99999.0
+FREEZE_PERTURB_STEP = 12345.6789
 
 
 class RegistryError(RuntimeError):
@@ -316,9 +334,11 @@ def _load_v93_common():
     import importlib.util  # noqa: PLC0415
     sys.path.insert(0, str(BASELINE_PKG_DIR))
     spec = importlib.util.spec_from_file_location("v93_common", BASELINE_PKG_DIR / "common.py")
+    assert spec is not None and spec.loader is not None
     common_mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(common_mod)
     spec2 = importlib.util.spec_from_file_location("v93_mlp_model", BASELINE_PKG_DIR / "mlp_model.py")
+    assert spec2 is not None and spec2.loader is not None
     mlp_mod = importlib.util.module_from_spec(spec2)
     spec2.loader.exec_module(mlp_mod)
     return common_mod, mlp_mod
@@ -755,7 +775,7 @@ def cmd_reproduce_baseline(args: argparse.Namespace) -> int:
     if cached_meta.is_file():
         meta = rp.load_json(cached_meta)
         if meta and meta.get("cache_key") == cache_key:
-            result = {
+            result: JSON = {
                 "cache_key": cache_key,
                 "blend": meta.get("blend"),
                 "c_logit": meta.get("c_logit"),
@@ -903,70 +923,380 @@ def cmd_screen(args: argparse.Namespace) -> int:
     return 0
 
 
-# ── --freeze ──────────────────────────────────────────────────────────
-def cmd_freeze(args: argparse.Namespace) -> int:
-    """후보 동결 — 파이어월을 FROZEN 으로 전환 (primary 라벨 읽기 전에).
+# ── --freeze (Todo 7) ─────────────────────────────────────────────────
+def _load_screen_evidence(evidence_dir: Path) -> dict[str, JSON] | None:
+    """Task 4-6 terminal screen evidence 로드 — 부재/파싱 불가 시 None (exit 2)."""
+    out: dict[str, JSON] = {}
+    for fname in FREEZE_SCREEN_EVIDENCE:
+        path = evidence_dir / fname
+        if not path.is_file():
+            print(f"[recovery_evaluator] --freeze: 스크린 증거 부재: {fname}",
+                  file=sys.stderr)
+            return None
+        rec = rp.load_json(path)
+        if rec is None:
+            print(f"[recovery_evaluator] --freeze: 스크린 증거 파싱 불가: {fname}",
+                  file=sys.stderr)
+            return None
+        out[fname] = rec
+    return out
 
-    Task 2 는 인프라만 — 실제 후보 선택은 Task 7 이 수행. 여기서는 동결 경로와
-    파이어월 전환을 구조 검증한다 (합성 로짓, 라벨은 합성).
+
+def _extract_candidate_screens(record: JSON, fname: str) -> list[JSON]:
+    """Task 4-6 증거에서 후보 스크린 결과 추출 (full screen gate 보유 후보만).
+
+    task-4: variants[*].full.gate (futility 실패 후보는 full gate 없음 → 제외).
+    task-5: candidate_id + gate.
+    task-6: per_candidate[*].gate (selectable 만 — control 은 승리 불가).
+    """
+    out: list[JSON] = []
+    variants = record.get("variants")
+    if isinstance(variants, dict):
+        for cid, v in variants.items():
+            if not isinstance(v, dict):
+                continue
+            full = v.get("full")
+            gate = full.get("gate") if isinstance(full, dict) else None
+            if isinstance(gate, dict):
+                out.append(_candidate_from_gate(str(cid), True, gate))
+        return out
+    if record.get("candidate_id") and isinstance(record.get("gate"), dict):
+        out.append(_candidate_from_gate(str(record["candidate_id"]), True, record["gate"]))
+        return out
+    per_cand = record.get("per_candidate")
+    if isinstance(per_cand, dict):
+        for cid, entry in per_cand.items():
+            if not isinstance(entry, dict):
+                continue
+            gate = entry.get("gate")
+            if isinstance(gate, dict):
+                out.append(_candidate_from_gate(str(cid), entry.get("selectable") is True, gate))
+        return out
+    return out
+
+
+def _candidate_from_gate(cid: str, selectable: bool, gate: JSON) -> JSON:
+    """게이트 구조에서 후보 스크린 요약 구성 (r2022/r2023 origin deltas + mean)."""
+    origins = gate.get("origins") or {}
+    deltas: list[float] = []
+    origin_summary: dict[str, JSON] = {}
+    for o in ("r2022", "r2023"):
+        od = origins.get(o) or {}
+        d = od.get("delta_bss")
+        if isinstance(d, (int, float)) and not isinstance(d, bool):
+            deltas.append(float(d))
+        elif isinstance(d, str):
+            try:
+                deltas.append(float(d))
+            except ValueError:
+                pass
+        origin_summary[o] = {k: v for k, v in od.items() if k != "checks"}
+    mean = float(np.mean(deltas)) if deltas else None
+    return {
+        "candidate_id": cid,
+        "selectable": selectable,
+        "gate_passed": gate.get("passed") is True,
+        "mean_delta_bss": mean,
+        "origins": origin_summary,
+    }
+
+
+def _validate_screen_evidence(record: JSON, fname: str) -> list[str]:
+    """Task 4-6 terminal screen evidence 구조 검증 — absent/invalid/stale 거부."""
+    problems: list[str] = []
+    if not isinstance(record, dict):
+        return ["evidence not a dict"]
+    verdict = record.get("verdict")
+    if verdict not in ("PASS", "REJECT"):
+        problems.append(f"verdict {verdict!r} not terminal (필요 PASS/REJECT) — "
+                        f"stale/incomplete screen")
+    if not isinstance(record.get("config_hash"), str) or not record["config_hash"]:
+        problems.append("config_hash 누락")
+    if not isinstance(record.get("label_sources"), list):
+        problems.append("label_sources(리스트) 누락")
+    if not _extract_candidate_screens(record, fname):
+        problems.append("후보 스크린 결과(gate) 없음 — invalid manifest")
+    return problems
+
+
+def _select_survivor(survivors: list[JSON]) -> JSON | None:
+    """가장 높은 mean(r2022,r2023) ΔBSS 생존자 선택; 정확한 동률 → 가장 작은 canonical ID."""
+    if not survivors:
+        return None
+    survivors = sorted(
+        survivors,
+        key=lambda s: (-(s["mean_delta_bss"] if s["mean_delta_bss"] is not None else -1e300),
+                       str(s["candidate_id"] or "")),
+    )
+    return survivors[0]
+
+
+def _decide_freeze(evidence: dict[str, JSON]) -> JSON:
+    """Task 4-6 terminal screen evidence → freeze 결정 (순수 함수, 라벨 무관).
+
+    evidence: {filename: record}. 각 record 는 검증된 terminal screen evidence.
+    반환: {decision, candidates, survivors, violations, trace}.
+    """
+    violations: list[JSON] = []
+    trace: list[JSON] = []
+    candidates: list[JSON] = []
+    for fname, rec in evidence.items():
+        for p in _validate_screen_evidence(rec, fname):
+            violations.append({"rule": f"screen_evidence:{fname}", "ok": False, "reason": p})
+        for cand in _extract_candidate_screens(rec, fname):
+            candidates.append(cand)
+
+    try:
+        reg = load_registry()
+    except RegistryError as exc:
+        violations.append({"rule": "registry", "ok": False, "reason": str(exc)})
+        reg = None
+    if reg is not None:
+        reg_problems = validate_registry(reg)
+        for p in reg_problems:
+            violations.append({"rule": "registry", "ok": False, "reason": p})
+        allowed = set((reg.get("selectable_ids") or []) + (reg.get("control_ids") or []))
+        for cand in candidates:
+            if cand["candidate_id"] not in allowed:
+                violations.append({"rule": "unregistered_candidate", "ok": False,
+                                   "reason": f"{cand['candidate_id']} 미등록"})
+
+    survivors = [c for c in candidates if c["gate_passed"] and c["selectable"]]
+    winner = _select_survivor(survivors)
+    if winner is not None:
+        decision: JSON = {
+            "terminal_verdict": "FROZEN",
+            "frozen_candidate_id": winner["candidate_id"],
+            "mean_delta_bss": winner["mean_delta_bss"],
+            "selection_key": "mean_selection_delta_bss",
+            "tie_rule": "smallest canonical candidate ID on exact tie",
+            "source": "task-4/5/6 screen evidence",
+        }
+    else:
+        decision = {
+            "terminal_verdict": "NO_PROMOTION",
+            "frozen_candidate_id": None,
+            "mean_delta_bss": None,
+            "selection_key": "mean_selection_delta_bss",
+            "tie_rule": "smallest canonical candidate ID on exact tie",
+            "note": "no candidate passed all Task-2 screen gates",
+        }
+    trace.append({"rule": "selection", "ok": True,
+                  "reason": f"survivors={[s['candidate_id'] for s in survivors]} → "
+                            f"{decision['terminal_verdict']}"})
+    return {
+        "decision": decision,
+        "candidates": candidates,
+        "survivors": [s["candidate_id"] for s in survivors],
+        "violations": violations,
+        "trace": trace,
+    }
+
+
+def _tampered_copies(records: list[JSON], key_norms: set[str]) -> list[JSON]:
+    """주입+변형 인-메모리 복사 (evidence 파일은 건드리지 않음)."""
+    out: list[JSON] = []
+    for rec in records:
+        rec = json.loads(json.dumps(rec))  # deep copy
+        for d in _iter_dicts(rec):
+            existing = {rp._norm_key(k) for k in d}
+            for i, norm in enumerate(sorted(key_norms)):
+                if norm in existing:
+                    for k, v in list(d.items()):
+                        if rp._norm_key(k) == norm and _is_numeric(v):
+                            d[k] = float(v) + (FREEZE_PERTURB_STEP if i % 2 == 0
+                                               else -FREEZE_PERTURB_STEP)
+                else:
+                    d[norm] = FREEZE_INJECT_VALUE
+        out.append(rec)
+    return out
+
+
+def _run_freeze_fixture(args: argparse.Namespace) -> int:
+    """Task 7 --freeze fixtures — 항상 exit 2 (가드 발동)."""
+    name = args.fixture
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    matched = False
+    detail = ""
+
+    if name == "stale-screen-evidence":
+        evidence = _load_screen_evidence(evidence_dir)
+        if evidence is None:
+            detail = "스크린 증거 로드 실패 — fixture 실행 불가"
+        else:
+            stale = json.loads(json.dumps(evidence["task-4-catboost.json"]))
+            stale["verdict"] = "PENDING"  # 비종결 = stale
+            stale_evidence = dict(evidence)
+            stale_evidence["task-4-catboost.json"] = stale
+            res = _decide_freeze(stale_evidence)
+            if not res["violations"]:
+                detail = "stale(비종결) 스크린 증거가 freeze 를 통과 — 무결성 위반!"
+            else:
+                matched = True
+                detail = f"stale 스크린 증거 거부: {res['violations'][0]['reason']}"
+    elif name in ("primary-sort-key", "altered-r2024"):
+        evidence = _load_screen_evidence(evidence_dir)
+        if evidence is None:
+            detail = "스크린 증거 로드 실패 — fixture 실행 불가"
+        else:
+            clean = _decide_freeze(evidence)
+            if clean["violations"]:
+                detail = "사전 위반 존재 — fixture 실행 불가"
+            else:
+                if name == "primary-sort-key":
+                    norms = FREEZE_PRIMARY_LB_KEY_NORMS
+                    label = "primary/Public/리더보드 값"
+                else:
+                    norms = FREEZE_R2024_KEY_NORMS
+                    label = "r2024 진단 값"
+                tampered = _tampered_copies(list(evidence.values()), norms)
+                tampered_evidence = dict(zip(evidence.keys(), tampered))
+                res = _decide_freeze(tampered_evidence)
+                unchanged = (clean["decision"]["terminal_verdict"]
+                             == res["decision"]["terminal_verdict"]
+                             and clean["decision"]["frozen_candidate_id"]
+                             == res["decision"]["frozen_candidate_id"])
+                if not unchanged:
+                    detail = (f"변조({label}) 후 결정 변경 — 무결성 위반! "
+                              f"{clean['decision']['terminal_verdict']} → "
+                              f"{res['decision']['terminal_verdict']}")
+                else:
+                    matched = True
+                    detail = (f"변조({label}) 후 결정 불변 — "
+                              f"{clean['decision']['terminal_verdict']} "
+                              f"(주입/변형 키 norm: {sorted(norms)})")
+    else:
+        print(f"[recovery_evaluator] FATAL: 알 수 없는 freeze fixture {name!r}",
+              file=sys.stderr)
+        return 1
+
+    record = _record_base("FIXTURE_REJECT", 2,
+                          f"aimers9-top100-recovery/task-7-freeze-fixture-{name}",
+                          f"Todo 7 freeze fixture — {name} (adversarial, exit 2)")
+    record.update({
+        "fixture": name,
+        "matched": matched,
+        "detail": detail,
+        "checks": [{"rule": f"fixture_{name}", "ok": matched, "reason": detail}],
+        "violations": [] if matched else [{"rule": f"fixture_{name}", "ok": False,
+                                           "reason": detail}],
+        "findings": [{"rule": "no_main_evidence_clobber", "ok": True,
+                      "reason": "fixture 는 task-7-freeze-fixture-<name>.{json,md} 만 기록"}],
+        "notes": f"fixture {name!r} 는 반드시 exit 2 — 가드가 위반을 차단해야 함.",
+    })
+    base = evidence_dir / f"task-7-freeze-fixture-{name}"
+    json_path, md_path = _write_evidence(record, base)
+    print(f"[recovery_evaluator] FIXTURE {name} (exit 2) — matched={matched}")
+    print(f"  {detail}")
+    print(f"[recovery_evaluator] evidence -> {json_path} / {md_path}")
+    return 2
+
+
+def cmd_freeze(args: argparse.Namespace) -> int:
+    """Todo 7 — Task 4-6 terminal screen evidence 만 읽고 후보 동결/NO_PROMOTION.
+
+    --freeze 는 Task 4-6 스크린 증거(JSON)만 소비한다. primary/r2024 라벨은 절대
+    읽지 않는다 (구조적 파이어월). 생존자가 없으면 NO_PROMOTION — 파이어월 UNFROZEN
+    유지, 패키지/상태 미변경. 생존자가 있으면 파이어월 FROZEN 전환 후 동결.
     """
     evidence_dir = Path(args.evidence_dir).expanduser().resolve()
-    manifest = rp.build_manifest(args.candidate or "frozen-candidate", seeds=[42, 43])
-    mprob = rp.validate_manifest(manifest)
-    if mprob:
-        print("[recovery_evaluator] --freeze: 매니페스트 무효", file=sys.stderr)
+    evidence = _load_screen_evidence(evidence_dir)
+    if evidence is None:
+        print("[recovery_evaluator] --freeze: Task 4-6 스크린 증거 부재/무효 (exit 2)",
+              file=sys.stderr)
         return 2
 
-    train = _synthetic_train()
-    masks = rp.build_origin_masks(train)
-    y = rp.read_selection_labels(train, masks)
-    z = _synthetic_logits(masks, train)
-    cand_p = {o: rp.deployed_probs(z[o]) for o in rp.SELECTION_ORIGINS}
-    base_p = {o: rp.deployed_probs(z[o] - 0.3) for o in rp.SELECTION_ORIGINS}
-    gate = rp.screen_gate(cand_p, base_p, y)
+    res = _decide_freeze(evidence)
+    violations = res["violations"]
+    if violations:
+        print("[recovery_evaluator] --freeze: REJECT (exit 2)")
+        for v in violations:
+            print(f"  [REJECT] {v['rule']}: {v['reason']}")
+        return 2
 
-    if not gate["passed"]:
-        record = _record_base("NO_PROMOTION", 0,
-                              "aimers9-top100-recovery/task-2-evaluator",
-                              "Todo 2 — recovery freeze (NO_PROMOTION)")
-        record.update({
-            "mode": "freeze", "candidate_id": manifest["candidate_id"],
-            "manifest": manifest, "gate": gate,
-            "terminal_firewall": {"state": rp.firewall_state(),
-                                  "note": "NO_PROMOTION — 파이어월 UNFROZEN 유지, "
-                                          "primary 라벨 미로드"},
-            "checks": [{"rule": "screen_gate", "ok": False,
-                        "reason": f"verdict={gate['verdict']} — 동결 없음"}],
-            "violations": [{"rule": "screen_gate", "ok": False, "reason": v}
-                           for v in gate["violations"]],
-        })
-        json_path, md_path = _write_evidence(record, evidence_dir / "task-2-evaluator-freeze")
-        print(f"[recovery_evaluator] --freeze: NO_PROMOTION (exit 0)")
-        print(f"[recovery_evaluator] evidence -> {json_path} / {md_path}")
-        return 0
+    decision = res["decision"]
+    terminal = decision["terminal_verdict"]
+    if terminal == "FROZEN":
+        rp.set_firewall(rp.FIREWALL_FROZEN)
 
-    # 게이트 통과 → 동결 + 파이어월 FROZEN (primary 라벨 읽기 전에)
-    rp.set_firewall(rp.FIREWALL_FROZEN)
-    record = _record_base("FROZEN", 0,
-                          "aimers9-top100-recovery/task-2-evaluator",
-                          "Todo 2 — recovery freeze (FROZEN)")
+    checks: list[JSON] = [
+        {"rule": "screen_evidence_present", "ok": True,
+         "reason": f"{len(evidence)} Task 4-6 스크린 증거 로드 (부재/무효 시 exit 2)"},
+        {"rule": "selection_key", "ok": True,
+         "reason": "선택 키 = mean_selection_delta_bss 단일 — primary/r2024/Public 정렬 금지"},
+        {"rule": "terminal_labels_unread", "ok": True,
+         "reason": "freeze 는 스크린 증거 JSON 만 읽음 — primary/r2024 라벨 미로드"},
+    ]
+    if terminal == "FROZEN":
+        checks.append({"rule": "firewall_frozen", "ok": True,
+                       "reason": "파이어월 FROZEN — primary 라벨 읽기 전에 동결"})
+    else:
+        checks.append({"rule": "firewall_unfrozen", "ok": True,
+                       "reason": "NO_PROMOTION — 파이어월 UNFROZEN 유지, 패키지/상태 미변경"})
+
+    screen_evidence_hashes: dict[str, JSON] = {}
+    for fname, rec in evidence.items():
+        screen_evidence_hashes[fname] = {
+            "sha256": _sha256_file(evidence_dir / fname),
+            "verdict": rec.get("verdict"),
+            "config_hash": rec.get("config_hash"),
+        }
+
+    hashes: JSON = {
+        "code_hashes": rp.code_hashes(),
+        "config_hash": rp.policy_config_hash(),
+        "data_hash": rp.data_hash(),
+        "screen_evidence": screen_evidence_hashes,
+    }
+    if terminal == "FROZEN":
+        try:
+            reg = load_registry()
+            cand_cfg = ((reg.get("candidates") or {}).get(decision["frozen_candidate_id"]) or {})
+            hashes["candidate_config_hash"] = cand_cfg.get("config_hash")
+        except RegistryError:
+            hashes["candidate_config_hash"] = None
+
+    record = _record_base(terminal, 0,
+                          "aimers9-top100-recovery/task-7-freeze",
+                          "Todo 7 — freeze recovery selection verdict")
     record.update({
-        "mode": "freeze", "candidate_id": manifest["candidate_id"],
-        "manifest": manifest, "gate": gate,
-        "terminal_firewall": {"state": rp.firewall_state(),
-                              "note": "동결 후 파이어월 FROZEN — primary 라벨 읽기 허용 "
-                                      "(--terminal-check 만)"},
-        "checks": [
-            {"rule": "screen_gate", "ok": True, "reason": f"verdict={gate['verdict']}"},
-            {"rule": "firewall_frozen", "ok": rp.firewall_state() == rp.FIREWALL_FROZEN,
-             "reason": "파이어월 FROZEN — primary 라벨 읽기 전에 동결"},
-        ],
+        "mode": "freeze",
+        "decision": decision,
+        "screen_evidence": screen_evidence_hashes,
+        "candidates": res["candidates"],
+        "survivors": res["survivors"],
+        "terminal_firewall": {
+            "state": rp.firewall_state(),
+            "note": ("NO_PROMOTION — 파이어월 UNFROZEN 유지, primary 라벨 미로드, "
+                     "패키지/상태 미변경" if terminal == "NO_PROMOTION"
+                     else "동결 후 파이어월 FROZEN — primary 라벨 읽기 허용 "
+                          "(--terminal-check 만)"),
+        },
+        "hashes": hashes,
+        "checks": checks,
         "violations": [],
-        "findings": [{"rule": "freeze_before_primary", "ok": True,
-                      "reason": "동결/파이어월 전환은 primary 라벨 읽기 이전에 수행"}],
+        "findings": [
+            {"rule": "selection_trace", "ok": True,
+             "reason": f"survivors={res['survivors']} → {terminal} "
+                       f"(mean_selection_delta_bss, tie=smallest canonical ID)"},
+            {"rule": "no_primary_read", "ok": True,
+             "reason": "freeze 경로는 스크린 증거 JSON 만 읽음 — primary/r2024 라벨 "
+                       "구조적으로 미로드 (파이어월)"},
+            {"rule": "no_package_no_state_mutation", "ok": True,
+             "reason": "NO_PROMOTION — 패키지 생성 없음, leaderboard_state.json 미변경"},
+        ],
     })
-    json_path, md_path = _write_evidence(record, evidence_dir / "task-2-evaluator-freeze")
-    print(f"[recovery_evaluator] --freeze: FROZEN (exit 0) — 파이어월 FROZEN")
+    json_path, md_path = _write_evidence(record, evidence_dir / "task-7-freeze")
+    print(f"[recovery_evaluator] --freeze: {terminal} (exit 0)")
+    for c in res["candidates"]:
+        print(f"  {c['candidate_id']}: gate_passed={c['gate_passed']} "
+              f"mean_delta_bss={c['mean_delta_bss']}")
+    if terminal == "FROZEN":
+        print(f"[recovery_evaluator] frozen candidate: {decision['frozen_candidate_id']} "
+              f"— 파이어월 FROZEN")
+    else:
+        print(f"[recovery_evaluator] NO_PROMOTION — 파이어월 UNFROZEN 유지, "
+              f"패키지/상태 미변경")
     print(f"[recovery_evaluator] evidence -> {json_path} / {md_path}")
     return 0
 
@@ -1023,6 +1353,8 @@ def cmd_terminal_check(args: argparse.Namespace) -> int:
 def cmd_fixture(args: argparse.Namespace) -> int:
     name = args.fixture
     evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    if name in FREEZE_FIXTURES:
+        return _run_freeze_fixture(args)
     matched = False
     detail = ""
 

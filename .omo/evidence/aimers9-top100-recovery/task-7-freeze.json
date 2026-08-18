@@ -1,0 +1,231 @@
+{
+  "schema_version": 1,
+  "title": "Todo 7 — freeze recovery selection verdict",
+  "task": "aimers9-top100-recovery/task-7-freeze",
+  "verdict": "NO_PROMOTION",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-18T03:14:36+00:00",
+  "git_head": "6eb2d11a5525b25092d5d2ba3ba31c8112e51393",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "mode": "freeze",
+  "decision": {
+    "terminal_verdict": "NO_PROMOTION",
+    "frozen_candidate_id": null,
+    "mean_delta_bss": null,
+    "selection_key": "mean_selection_delta_bss",
+    "tie_rule": "smallest canonical candidate ID on exact tie",
+    "note": "no candidate passed all Task-2 screen gates"
+  },
+  "screen_evidence": {
+    "task-4-catboost.json": {
+      "sha256": "2ae6b080ab696e08d0a503dda13c95aa40d22c0bef929266fcac64076ed27435",
+      "verdict": "REJECT",
+      "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420"
+    },
+    "task-5-residual.json": {
+      "sha256": "b3d1eee55ec34ea3849269691a3eb70dddfa3dd8872bfec98dc7af5d0a31a8f3",
+      "verdict": "REJECT",
+      "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420"
+    },
+    "task-6-calibration.json": {
+      "sha256": "19591419752d2136cc371da5993905c24720991597604bcf5a025c04f91b3a24",
+      "verdict": "REJECT",
+      "config_hash": "a8d344c7a98fd9571c556c322c9f428dbb6ab940484d8951d08c8c19c96a84e5"
+    }
+  },
+  "candidates": [
+    {
+      "candidate_id": "catboost_c2_lossguide",
+      "selectable": true,
+      "gate_passed": false,
+      "mean_delta_bss": -95.656758128565,
+      "origins": {
+        "r2022": {
+          "delta_bss": -95.35171241780154,
+          "brier_candidate": 0.24541335460451077,
+          "brier_baseline": 0.24517497588392245,
+          "bootstrap_lb5": -106.44806833735173,
+          "mean_shift": 0.0014865720259470971,
+          "finite": true
+        },
+        "r2023": {
+          "delta_bss": -95.96180383932847,
+          "brier_candidate": 0.24517974823876731,
+          "brier_baseline": 0.244940184100356,
+          "bootstrap_lb5": -108.6260521946634,
+          "mean_shift": 0.0010035243470855049,
+          "finite": true
+        }
+      }
+    },
+    {
+      "candidate_id": "residual_ridge",
+      "selectable": true,
+      "gate_passed": false,
+      "mean_delta_bss": -1907.2508285225222,
+      "origins": {
+        "r2022": {
+          "delta_bss": -1929.779072444926,
+          "brier_candidate": 0.258995659008863,
+          "brier_baseline": 0.24517497588392245,
+          "bootstrap_lb5": -2086.4444947233937,
+          "mean_shift": 0.09701733049097172,
+          "finite": true
+        },
+        "r2023": {
+          "delta_bss": -1884.7225846001181,
+          "brier_candidate": 0.2628097216358717,
+          "brier_baseline": 0.244940184100356,
+          "bootstrap_lb5": -2060.19100781346,
+          "mean_shift": 0.1089987732555594,
+          "finite": true
+        }
+      }
+    },
+    {
+      "candidate_id": "calibration_beta",
+      "selectable": true,
+      "gate_passed": false,
+      "mean_delta_bss": 119.72175212459626,
+      "origins": {
+        "r2022": {
+          "delta_bss": 0.0,
+          "brier_candidate": 0.24517497588392245,
+          "brier_baseline": 0.24517497588392245,
+          "bootstrap_lb5": 0.0,
+          "mean_shift": 0.0,
+          "finite": true
+        },
+        "r2023": {
+          "delta_bss": 239.44350424919253,
+          "brier_candidate": 0.24434242463254016,
+          "brier_baseline": 0.244940184100356,
+          "bootstrap_lb5": 104.22424417384602,
+          "mean_shift": 0.007101255037326504,
+          "finite": true
+        }
+      }
+    },
+    {
+      "candidate_id": "calibration_isotonic",
+      "selectable": true,
+      "gate_passed": false,
+      "mean_delta_bss": 82.27816911298135,
+      "origins": {
+        "r2022": {
+          "delta_bss": 0.0,
+          "brier_candidate": 0.24517497588392245,
+          "brier_baseline": 0.24517497588392245,
+          "bootstrap_lb5": 0.0,
+          "mean_shift": 0.0,
+          "finite": true
+        },
+        "r2023": {
+          "delta_bss": 164.5563382259627,
+          "brier_candidate": 0.24452937692698076,
+          "brier_baseline": 0.244940184100356,
+          "bootstrap_lb5": 29.15024488538929,
+          "mean_shift": 0.006350569200834155,
+          "finite": true
+        }
+      }
+    },
+    {
+      "candidate_id": "calibration_identity",
+      "selectable": false,
+      "gate_passed": false,
+      "mean_delta_bss": 0.0,
+      "origins": {
+        "r2022": {
+          "delta_bss": 0.0,
+          "brier_candidate": 0.24517497588392245,
+          "brier_baseline": 0.24517497588392245,
+          "bootstrap_lb5": 0.0,
+          "mean_shift": 0.0,
+          "finite": true
+        },
+        "r2023": {
+          "delta_bss": 0.0,
+          "brier_candidate": 0.244940184100356,
+          "brier_baseline": 0.244940184100356,
+          "bootstrap_lb5": 0.0,
+          "mean_shift": 0.0,
+          "finite": true
+        }
+      }
+    }
+  ],
+  "survivors": [],
+  "terminal_firewall": {
+    "state": "UNFROZEN",
+    "note": "NO_PROMOTION — 파이어월 UNFROZEN 유지, primary 라벨 미로드, 패키지/상태 미변경"
+  },
+  "hashes": {
+    "code_hashes": {
+      "recovery_policy.py": "7b98ee0fb0bb608fc5bed3fbd36edb702f41c66fc0f4ea978b0dfbe89ec3a788",
+      "recovery_evaluator.py": "d9425442199e260d6eee867aae341ee7e5d5ec3f494acd44488f03d2967cb273",
+      "common.py": "21c04b5182c7a277d27d3468acb3d92ee9a09e578ddfcc35fafb1ed5930be2da"
+    },
+    "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+    "data_hash": "d2081186b458b49f60b082be480c273135833e15ba59a76d033af28bcf8763ff",
+    "screen_evidence": {
+      "task-4-catboost.json": {
+        "sha256": "2ae6b080ab696e08d0a503dda13c95aa40d22c0bef929266fcac64076ed27435",
+        "verdict": "REJECT",
+        "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420"
+      },
+      "task-5-residual.json": {
+        "sha256": "b3d1eee55ec34ea3849269691a3eb70dddfa3dd8872bfec98dc7af5d0a31a8f3",
+        "verdict": "REJECT",
+        "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420"
+      },
+      "task-6-calibration.json": {
+        "sha256": "19591419752d2136cc371da5993905c24720991597604bcf5a025c04f91b3a24",
+        "verdict": "REJECT",
+        "config_hash": "a8d344c7a98fd9571c556c322c9f428dbb6ab940484d8951d08c8c19c96a84e5"
+      }
+    }
+  },
+  "checks": [
+    {
+      "rule": "screen_evidence_present",
+      "ok": true,
+      "reason": "3 Task 4-6 스크린 증거 로드 (부재/무효 시 exit 2)"
+    },
+    {
+      "rule": "selection_key",
+      "ok": true,
+      "reason": "선택 키 = mean_selection_delta_bss 단일 — primary/r2024/Public 정렬 금지"
+    },
+    {
+      "rule": "terminal_labels_unread",
+      "ok": true,
+      "reason": "freeze 는 스크린 증거 JSON 만 읽음 — primary/r2024 라벨 미로드"
+    },
+    {
+      "rule": "firewall_unfrozen",
+      "ok": true,
+      "reason": "NO_PROMOTION — 파이어월 UNFROZEN 유지, 패키지/상태 미변경"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "selection_trace",
+      "ok": true,
+      "reason": "survivors=[] → NO_PROMOTION (mean_selection_delta_bss, tie=smallest canonical ID)"
+    },
+    {
+      "rule": "no_primary_read",
+      "ok": true,
+      "reason": "freeze 경로는 스크린 증거 JSON 만 읽음 — primary/r2024 라벨 구조적으로 미로드 (파이어월)"
+    },
+    {
+      "rule": "no_package_no_state_mutation",
+      "ok": true,
+      "reason": "NO_PROMOTION — 패키지 생성 없음, leaderboard_state.json 미변경"
+    }
+  ]
+}

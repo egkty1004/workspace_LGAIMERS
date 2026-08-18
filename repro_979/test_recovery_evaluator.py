@@ -67,6 +67,14 @@ def scan_clean(rec: dict[str, Any]) -> list[str]:
     return rp.scan_scope(rec, Path("x.json"))
 
 
+def copy_screen_evidence(tmp: Path) -> None:
+    """실제 Task 4-6 스크린 증거를 임시 디렉토리로 복사 (--freeze 입력용)."""
+    tmp.mkdir(parents=True, exist_ok=True)
+    src = rp.DEFAULT_EVIDENCE_DIR
+    for fname in re.FREEZE_SCREEN_EVIDENCE:
+        shutil.copy(src / fname, tmp / fname)
+
+
 # ── (a) happy --smoke ─────────────────────────────────────────────────
 def test_smoke(tmp: Path) -> None:
     print("[test] (a) happy --smoke -> exit 0, immutable manifest evidence")
@@ -108,6 +116,8 @@ def test_fixtures(tmp: Path) -> None:
     if main_ev.is_file():
         main_sha = main_ev.read_bytes()
     for name in sorted(re.FIXTURES):
+        if name in re.FREEZE_FIXTURES:
+            continue  # Task 7 freeze fixtures are covered by test (m)
         proc = run_cli("--fixture", name, "--evidence-dir", str(tmp))
         check(f"b.{name}.exit2", proc.returncode == 2, f"(rc={proc.returncode})")
         fix = tmp / f"task-2-evaluator-fixture-{name}.json"
@@ -164,16 +174,26 @@ def test_firewall(tmp: Path) -> None:
               and rec.get("labels_read") is True, f"{rec.get('label_sources')}")
 
 
-# ── (e) freeze flips firewall; terminal-check requires FROZEN ─────────
+# ── (e) freeze reads Task 4-6 evidence; terminal-check requires FROZEN ─
 def test_freeze_terminal(tmp: Path) -> None:
-    print("[test] (e) freeze flips firewall; terminal-check requires FROZEN")
+    print("[test] (e) freeze reads Task 4-6 evidence; terminal-check requires FROZEN")
     rp.set_firewall(rp.FIREWALL_UNFROZEN)
     # terminal-check before freeze -> exit 2
     proc = run_cli("--terminal-check", "--candidate", "t", "--evidence-dir", str(tmp))
     check("e.terminal_before_freeze_exit2", proc.returncode == 2, f"(rc={proc.returncode})")
-    # freeze (synthetic gate is REJECT -> NO_PROMOTION, firewall stays UNFROZEN)
-    proc = run_cli("--freeze", "--candidate", "t", "--evidence-dir", str(tmp))
+    # freeze with real Task 4-6 evidence -> NO_PROMOTION (all REJECT), firewall UNFROZEN
+    copy_screen_evidence(tmp)
+    proc = run_cli("--freeze", "--evidence-dir", str(tmp))
     check("e.freeze_exit0", proc.returncode == 0, f"(rc={proc.returncode})")
+    ev = tmp / "task-7-freeze.json"
+    if ev.is_file():
+        rec = load(ev)
+        check("e.freeze_verdict", rec.get("verdict") == "NO_PROMOTION",
+              str(rec.get("verdict")))
+        check("e.freeze_labels_unread", rec.get("labels_read") is False
+              and rec.get("label_sources") == [])
+        check("e.freeze_firewall_unfrozen",
+              rec.get("terminal_firewall", {}).get("state") == rp.FIREWALL_UNFROZEN)
     # firewall mechanics: FROZEN allows primary read; --terminal-check exits 0 when FROZEN
     train = re._synthetic_train()
     masks = rp.build_origin_masks(train)
@@ -320,6 +340,150 @@ def test_task3_fixtures(tmp: Path) -> None:
               "(main task-3-baseline-registry.json byte-identical)")
 
 
+def _mk_task6_evidence(cands: list[dict[str, Any]]) -> dict[str, Any]:
+    """합성 task-6 스타일 증거 — 후보 게이트 구조 (선택 로직 단위 테스트용)."""
+    per: dict[str, Any] = {}
+    for c in cands:
+        per[c["candidate_id"]] = {
+            "selectable": c["selectable"],
+            "gate": {
+                "origins": {
+                    "r2022": {"delta_bss": c["mean_delta_bss"], "brier_candidate": 0.24,
+                              "brier_baseline": 0.245, "bootstrap_lb5": 1.0,
+                              "mean_shift": 0.001, "finite": True},
+                    "r2023": {"delta_bss": c["mean_delta_bss"], "brier_candidate": 0.24,
+                              "brier_baseline": 0.245, "bootstrap_lb5": 1.0,
+                              "mean_shift": 0.001, "finite": True},
+                },
+                "passed": c["gate_passed"],
+                "verdict": "PASS" if c["gate_passed"] else "REJECT",
+            },
+        }
+    return {
+        "schema_version": 1,
+        "verdict": "PASS" if any(c["gate_passed"] for c in cands) else "REJECT",
+        "config_hash": "a8d344c7a98fd9571c556c322c9f428dbb6ab940484d8951d08c8c19c96a84e5",
+        "label_sources": ["r2022", "r2023"],
+        "labels_read": True,
+        "per_candidate": per,
+    }
+
+
+# ── (l) Todo 7: freeze happy path (NO_PROMOTION) ──────────────────────
+def test_task7_freeze(tmp: Path) -> None:
+    print("[test] (l) --freeze reads Task 4-6 evidence -> NO_PROMOTION, labels unread")
+    copy_screen_evidence(tmp)
+    proc = run_cli("--freeze", "--evidence-dir", str(tmp))
+    check("l.exit0", proc.returncode == 0, f"(rc={proc.returncode})")
+    ev = tmp / "task-7-freeze.json"
+    check("l.evidence", ev.is_file(), str(ev))
+    if not ev.is_file():
+        return
+    rec = load(ev)
+    check("l.verdict", rec.get("verdict") == "NO_PROMOTION", str(rec.get("verdict")))
+    check("l.decision", rec.get("decision", {}).get("terminal_verdict") == "NO_PROMOTION"
+          and rec.get("decision", {}).get("frozen_candidate_id") is None)
+    check("l.selection_key", rec.get("decision", {}).get("selection_key")
+          == "mean_selection_delta_bss")
+    check("l.tie_rule", "smallest canonical" in str(rec.get("decision", {}).get("tie_rule")))
+    check("l.survivors_empty", rec.get("survivors") == [], f"{rec.get('survivors')}")
+    check("l.labels_unread", rec.get("labels_read") is False
+          and rec.get("label_sources") == [])
+    check("l.firewall_unfrozen", rec.get("terminal_firewall", {}).get("state")
+          == rp.FIREWALL_UNFROZEN)
+    check("l.screen_evidence", len(rec.get("screen_evidence") or {}) == 3)
+    check("l.hashes", isinstance(rec.get("hashes", {}).get("code_hashes"), dict)
+          and bool(rec.get("hashes", {}).get("config_hash")))
+    check("l.scan_clean", not scan_clean(rec), f"{scan_clean(rec)}")
+    cands = {c["candidate_id"]: c for c in rec.get("candidates") or []}
+    for cid in ("catboost_c2_lossguide", "residual_ridge", "calibration_beta",
+                "calibration_isotonic"):
+        check(f"l.cand_{cid}", cid in cands and cands[cid]["gate_passed"] is False)
+    check("l.md", (tmp / "task-7-freeze.md").is_file())
+
+
+# ── (m) Todo 7: 3 new fixtures exit 2 ─────────────────────────────────
+def test_task7_fixtures(tmp: Path) -> None:
+    print("[test] (m) 3 Task 7 freeze fixtures exit 2, fixture evidence")
+    copy_screen_evidence(tmp)
+    main_ev = tmp / "task-7-freeze.json"
+    main_sha = main_ev.read_bytes() if main_ev.is_file() else None
+    for name in re.FREEZE_FIXTURES:
+        proc = run_cli("--fixture", name, "--evidence-dir", str(tmp))
+        check(f"m.{name}.exit2", proc.returncode == 2, f"(rc={proc.returncode})")
+        fix = tmp / f"task-7-freeze-fixture-{name}.json"
+        check(f"m.{name}.artifact", fix.is_file(), str(fix))
+        if fix.is_file():
+            rec = load(fix)
+            check(f"m.{name}.fixture_field", rec.get("fixture") == name)
+            check(f"m.{name}.matched", rec.get("matched") is True,
+                  f"detail={rec.get('detail')}")
+            check(f"m.{name}.scan_clean", not scan_clean(rec), f"{scan_clean(rec)}")
+    if main_sha is not None:
+        check("m.main_not_clobbered", main_ev.read_bytes() == main_sha,
+              "(main task-7-freeze.json byte-identical)")
+
+
+# ── (n) Todo 7: selection logic ───────────────────────────────────────
+def test_task7_selection(tmp: Path) -> None:
+    print("[test] (n) _select_survivor picks highest mean delta-BSS, tie -> smallest ID")
+
+    def mk(cid: str, mean: float) -> dict[str, Any]:
+        return {"candidate_id": cid, "selectable": True, "gate_passed": True,
+                "mean_delta_bss": mean, "origins": {}}
+
+    s = re._select_survivor([mk("a", 1.0)])
+    check("n.single", s is not None and s["candidate_id"] == "a")
+    s = re._select_survivor([mk("a", 1.0), mk("b", 5.0), mk("c", 3.0)])
+    check("n.highest", s is not None and s["candidate_id"] == "b")
+    s = re._select_survivor([mk("catboost_c2_lossguide", 2.0), mk("calibration_beta", 2.0)])
+    check("n.tie_smallest", s is not None and s["candidate_id"] == "calibration_beta")
+    check("n.empty", re._select_survivor([]) is None)
+    # non-selectable control excluded from survivors even when gate passes
+    cands = [{"candidate_id": "calibration_identity", "selectable": False,
+              "gate_passed": True, "mean_delta_bss": 99.0, "origins": {}}]
+    res = re._decide_freeze({"task-6-calibration.json": _mk_task6_evidence(cands)})
+    check("n.control_excluded", res["survivors"] == [], f"{res['survivors']}")
+
+
+# ── (o) Todo 7: evidence validation ───────────────────────────────────
+def test_task7_evidence_validation(tmp: Path) -> None:
+    print("[test] (o) absent/invalid screen evidence -> freeze exit 2")
+    proc = run_cli("--freeze", "--evidence-dir", str(tmp))
+    check("o.absent_exit2", proc.returncode == 2, f"(rc={proc.returncode})")
+    copy_screen_evidence(tmp)
+    (tmp / "task-4-catboost.json").write_text("{not json", encoding="utf-8")
+    proc = run_cli("--freeze", "--evidence-dir", str(tmp))
+    check("o.invalid_exit2", proc.returncode == 2, f"(rc={proc.returncode})")
+
+
+# ── (p) Todo 7: synthetic passing candidate -> FROZEN ─────────────────
+def test_task7_frozen_path(tmp: Path) -> None:
+    print("[test] (p) synthetic passing candidate -> FROZEN, firewall flips")
+    rp.set_firewall(rp.FIREWALL_UNFROZEN)
+    cands = [{"candidate_id": "calibration_beta", "selectable": True,
+              "gate_passed": True, "mean_delta_bss": 5.0, "origins": {}}]
+    res = re._decide_freeze({"task-6-calibration.json": _mk_task6_evidence(cands)})
+    check("p.decision_frozen", res["decision"]["terminal_verdict"] == "FROZEN"
+          and res["decision"]["frozen_candidate_id"] == "calibration_beta")
+    check("p.survivors", res["survivors"] == ["calibration_beta"])
+    d = tmp / "frozen_ev"
+    shutil.rmtree(d, ignore_errors=True)
+    d.mkdir(parents=True, exist_ok=True)
+    copy_screen_evidence(d)
+    (d / "task-6-calibration.json").write_text(
+        json.dumps(_mk_task6_evidence(cands), ensure_ascii=False), encoding="utf-8")
+    args = argparse.Namespace(evidence_dir=str(d), candidate=None)
+    check("p.cmd_freeze_frozen", re.cmd_freeze(args) == 0, "in-process freeze exit 0")
+    check("p.firewall_frozen", rp.firewall_state() == rp.FIREWALL_FROZEN)
+    rec = load(d / "task-7-freeze.json")
+    check("p.verdict_frozen", rec.get("verdict") == "FROZEN")
+    check("p.candidate_locked", rec.get("decision", {}).get("frozen_candidate_id")
+          == "calibration_beta")
+    check("p.candidate_config_hash", bool(rec.get("hashes", {}).get("candidate_config_hash")))
+    rp.set_firewall(rp.FIREWALL_UNFROZEN)  # reset
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="t2ev_test_") as td:
         tmp = Path(td)
@@ -334,6 +498,11 @@ def main() -> int:
         test_blocked_rejection(tmp / "i")
         test_baseline_package(tmp / "j")
         test_task3_fixtures(tmp / "k")
+        test_task7_freeze(tmp / "l")
+        test_task7_fixtures(tmp / "m")
+        test_task7_selection(tmp / "n")
+        test_task7_evidence_validation(tmp / "o")
+        test_task7_frozen_path(tmp / "p")
 
     n_pass, n_fail = len(PASSED), len(FAILED)
     print(f"\n[test] {n_pass} PASS / {n_fail} FAIL")
