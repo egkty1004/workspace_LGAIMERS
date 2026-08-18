@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "title": "Todo 3 — reproduce reconciled v93 6-leg baseline",
+  "task": "aimers9-top100-recovery/task-3-baseline-registry",
+  "verdict": "PASS",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-18T00:53:40+00:00",
+  "git_head": "fb2f49c14f34e9995306842d490b4718bb6964cc",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [
+    "r2022",
+    "r2023"
+  ],
+  "labels_read": true,
+  "mode": "reproduce-baseline",
+  "candidate_id": "baseline",
+  "baseline": {
+    "candidate_id": "submit_v93_6leg_r0477",
+    "package": "8.16 1001.7444910721 share/submit_v93_r0476",
+    "sha256": "8157e144090bcccbf1c44367c75a2d2427e040b8353c8c1e17334b41324ac5fb",
+    "package_hashes": {
+      "source_files": {
+        "script.py": "0bd2b92e18544b4062c102e7b7dcdc1a6662f0c53d26fbb7b3014b49a9f62b80",
+        "common.py": "fdf4b7f443650161c17f9eb63837cf117c9c8a5a726985ad5d2398109951353d",
+        "mlp_model.py": "44f184dd72ee1a569472123ed44fed967dbd97cbd061e755895bbc109e41e5f3",
+        "requirements.txt": "3db9007cc31a94d6ca49a8aa9c8ecc6e7a14e8a35e8311f1cdf4a0ce1be1a9b0"
+      },
+      "model_files": {
+        "armb_meta.json": "053a768d18f856012f2dea0b3ebc8334309239592509278659f1f485f83d7c27",
+        "armb_prep.pkl": "ac7bc2887b26e905692cd650898fbe70c2f29f494af425929a905b3b980d4e71",
+        "armb_s42.pt": "7c0f18df482630e64bd1f3af5ddf5a97ab86c7ececf5ed61260105a42dea6ab2",
+        "armb_s43.pt": "b9e206dca3185a7d4f1a5a1288d14569a57017bb24252389eb73dfb9ef7de891",
+        "armb_s44.pt": "eede10f99ef029bd9261ddf02877fb6379d227d8311c974b3f4ddefe288bc698",
+        "armb_s45.pt": "5f0af6b76516ac0a7bf97bb45d98fc737afc5b2e19609dc0b8f8cd8a5a239a13",
+        "armb_s46.pt": "0ceb35ca17daba1f540181fdbc3d1655b323a58f1b7641c9ee9f7563ecf3fcc7",
+        "armb_s47.pt": "d37583d2dcd07f0fe6749ebea44783eeb212e4cc41fa5fe7402deb8ff955f096",
+        "armb_s48.pt": "4e56616e821cb0dcb562e87cbd72628a1ce6b3168398f79d804241e1a68e56ef",
+        "armb_s49.pt": "1fa26e7471e9509ebb7f33706d996d7d130dbd5be5a21533505abe5c44f8135d",
+        "armb_s50.pt": "bd099bbfe0cfa572aca4a13fce95e747c3cf783e73349e198b375d7c10b5c744",
+        "armb_s51.pt": "32095e953686814b711ce7d917d990a36044b8cc7675dc3207dfd8d68bbde9de",
+        "catboost_prep.pkl": "0c434e65fd601806134f08e51b5cf5e72c5f43173a1715256ad1eeb1fc2e8653",
+        "catboost_s42.cbm": "70cb4a472336b7cf1333c078fa0fb7bf185b415dfd786f252798c7a94c7a6d41",
+        "catboost_s43.cbm": "3ea1faa311ff36011a682ce99600518c2db4a8421401ccf68bfc4325245373a1",
+        "catboost_s44.cbm": "5dfebe0dd144f72ea96c0a6804ee1c989394f5019d3982e2c1e4e5cc9fe50760",
+        "catboost_s45.cbm": "79e3f23501e244286eedffe1d62ce610469e96b4ccf07e677bd87002a0271503",
+        "catboost_s46.cbm": "61d4f7426aa3bc025d7076fb8793b394e284526b591646b57bc98219fa1e0806",
+        "catboost_s47.cbm": "4dcabe8642585ae4a7bea09469cbb20c157787aec9de090013ac3e354258f403",
+        "catboost_s48.cbm": "7739f943d59e8a31eabd0f521313b030d89305cbb566e253eeaf707fbe6f49aa",
+        "catboost_s49.cbm": "e624aeb94f12437019e0ceb8215d6490befdbf591b422b7d3669647562ca5f21",
+        "catboost_s50.cbm": "b47bd82362bd49c01d73c20eb76e7d81667dcba97c9db9a8c251783b7ef9d3ce",
+        "catboost_s51.cbm": "1d05d432952098164d9b8398c47a6cf96c66c534f381e1296233692f25e09218",
+        "f3_s42.txt": "0b5a63cacf39ae4c0f93fa34c54d4e1bc2ad5bc0175a71a143e39036efd5de7f",
+        "f3_s43.txt": "d4e8dcf4ad95b52ecb86a49cf02950cbf2050737d9db44713d992c67744b4722",
+        "f3_s44.txt": "676bb19e737caf8f0de1ed99bf7e9d22762485e04204600222e0bc2c6ba7f808",
+        "f3_s45.txt": "7e270e3332eaa236be16770b4cadf0e6ac0da84241516bb834ca919ca120ee20",
+        "f3_s46.txt": "1076d4f19818d1150918799e383d59e0262c3c4641773a15310f70d4d6533d98",
+        "f3_s47.txt": "a6775da634885b31e99db19e4fc4442012b0518e581f68e19e03af382681bffb",
+        "f3_s48.txt": "9813b4c7027af3987988b73c18bf5069a3d4dfa94f92682d5ea8480ea66d3322",
+        "f3_s49.txt": "067180e0dff0c703b9bc87fda3bb548cc256ca23d5827343584b94532f22520f",
+        "f3_s50.txt": "ddb75cff7e4e3fa75791fbd444c6c8edebce5ea7de5f3d755b24225c0d534de1",
+        "f3_s51.txt": "a5b27e653dbe9b6f733dcc10b098072eb8e30da3b36569b511fbe57f00ce46cd",
+        "ftt_meta.json": "ef785a5abf72ef5d9dfe409a4d854e9a207b1a72605f9004548081d0b67c2324",
+        "ftt_prep.pkl": "307f3efd2a45f98bd7fe429bcc029dfe23d798564c6a280a56f70c73844762a7",
+        "ftt_s42.pt": "456324bd0fc3758fc97a0a236cafa2b41feddfeaa7c37253ccd1b9f0564cd531",
+        "ftt_s43.pt": "38d1a55f1d4d3a0d06fbdadc12c393dbc677bdb0c06639f861a3a44a8e32fe79",
+        "ftt_s44.pt": "df0b6d81eb03195ddf138d266aa5aa4e4057667b37d3976b78b18ef4bdad0a1f",
+        "mlp_meta.json": "4892f1b5ce43cd57aef7b9c13a98adf8cc15ec285177aae7acb5a634d355c5e8",
+        "mlp_prep.pkl": "ac7bc2887b26e905692cd650898fbe70c2f29f494af425929a905b3b980d4e71",
+        "mlp_s42.pt": "5a1bf9cd457f7cbaf0916b78bef199a2111ba02c93ab9c42ad6848a6f3dadbc5",
+        "mlp_s43.pt": "d6e493cb0433c19ed94cab462b014da0f8a35f7fe6dc833b6fc82069c413759d",
+        "mlp_s44.pt": "cd95ccd3b7e55837442451a607615c4509cc866a3c4da853f29d9026f515f545",
+        "mlp_s45.pt": "27ffccf65c0c6106b612dc58dcaf63e7990bd43522b4809f7567e3dc88a842f5",
+        "mlp_s46.pt": "9a5002fc84da55c51dc26478a77ee4bfe0184ded730e85c9658e20328ab8bc11",
+        "mlp_s47.pt": "025d55e33cfb3b957750056891f1ed16b92ba8444078fa3addd2301192084883",
+        "mlp_s48.pt": "1f1becab5aca63b86f934fd0f88b43a6df70381b8759b45228269ff3bac1ac3e",
+        "mlp_s49.pt": "f46f345d4ae0b5113f04d4b033675ca120b041a66d8679b23e89a74a090dbe86",
+        "mlp_s50.pt": "87c76700101b49860769cd12e25e368ca22a76e519f2d7a915d7a5d2970037b3",
+        "mlp_s51.pt": "018cb20d1ebb3783bab98f2f300cff27aafabeda5641498b8b3cbf25aff04f39",
+        "train_meta.json": "60ee08356525b55faa2db4aab64ad4fdf4c69fb23f42759b4f5e87f2ed928f6a"
+      }
+    },
+    "blend": {
+      "z_base": "0.65*z_lgb + 0.35*z_mlp",
+      "z_blend": "z_base + 0.17991944576662527*(z_ftt - z_base) + 0.43481381354434545*(z_armb - z_base) + 0.0701066994221915*(z_cat - z_base)"
+    },
+    "c_logit": -0.0461645795229729,
+    "clip": [
+      0.3,
+      0.7
+    ],
+    "cache_key": "ee8ea9579969deaa3284ae6507ad28c1c2859fb507b956e2c0a4a93a28dc903f",
+    "cache_dir": "cache/recovery_baseline/ee8ea9579969deaa3284ae6507ad28c1c2859fb507b956e2c0a4a93a28dc903f",
+    "bounded": 30000,
+    "origins": {
+      "r2022": {
+        "bss": 1929.779072444926,
+        "brier": 0.24517497588392245,
+        "r": 0.5007666666666667,
+        "pred_mean": 0.49847433086361426,
+        "n_rows": 30000
+      },
+      "r2023": {
+        "bss": 1884.7225846001181,
+        "brier": 0.244940184100356,
+        "r": 0.4811666666666667,
+        "pred_mean": 0.4862784950698774,
+        "n_rows": 30000
+      }
+    }
+  },
+  "checks": [
+    {
+      "rule": "baseline_r2022",
+      "ok": true,
+      "reason": "BSS=1929.7791 Brier=0.245175 r=0.5008 pred_mean=0.4985 n=30000"
+    },
+    {
+      "rule": "baseline_r2023",
+      "ok": true,
+      "reason": "BSS=1884.7226 Brier=0.244940 r=0.4812 pred_mean=0.4863 n=30000"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "hash_addressed_cache",
+      "ok": true,
+      "reason": "baseline 로짓은 해시 주소 캐시에만 저장 (cache_key=ee8ea9579969deaa…)"
+    },
+    {
+      "rule": "selection_labels_only",
+      "ok": true,
+      "reason": "r2022/r2023 선택 라벨만 읽음 — primary 미로드 (구조적 파이어월)"
+    }
+  ]
+}

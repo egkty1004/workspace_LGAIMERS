@@ -129,12 +129,15 @@ def test_validate_manifest(tmp: Path) -> None:
     proc = run_cli("--validate-manifest", "--candidate", "baseline",
                    "--evidence-dir", str(tmp))
     check("c.exit0", proc.returncode == 0, f"(rc={proc.returncode})")
-    ev = tmp / "task-2-evaluator-validate-manifest.json"
+    ev = tmp / "task-3-baseline-registry.json"
     check("c.evidence", ev.is_file(), str(ev))
     if ev.is_file():
         rec = load(ev)
         check("c.manifest_valid", rec.get("verdict") == "PASS"
               and not rec.get("violations"), f"{rec.get('violations')}")
+        check("c.registry_valid", rec.get("registry", {}).get("valid") is True)
+        check("c.baseline_sha", rec.get("baseline", {}).get("sha256")
+              == "8157e144090bcccbf1c44367c75a2d2427e040b8353c8c1e17334b41324ac5fb")
 
 
 # ── (d) structural firewall: screen reads only selection labels ───────
@@ -230,6 +233,93 @@ def test_evidence_compliance(tmp: Path) -> None:
                   and rec.get("labels_read") is False)
 
 
+# ── (h) Todo 3: registry structure / config hashes / selectable+control ──
+def test_registry(tmp: Path) -> None:
+    print("[test] (h) registry structure, config hashes, selectable/control IDs")
+    reg = re.load_registry()
+    problems = re.validate_registry(reg)
+    check("h.registry_valid", not problems, f"{problems}")
+    check("h.selectable_ids",
+          reg.get("selectable_ids") == [
+              "catboost_c2_lossguide", "catboost_c3_ordered", "catboost_c4_rmse",
+              "residual_ridge", "calibration_beta", "calibration_isotonic"])
+    check("h.control_ids",
+          reg.get("control_ids") == ["catboost_c1_control", "calibration_identity"])
+    cands = reg.get("candidates") or {}
+    for cid in reg.get("selectable_ids", []) + reg.get("control_ids", []):
+        entry = cands.get(cid) or {}
+        cfg = entry.get("config") or {}
+        recomputed = rp._canonical_sha256(cfg)
+        check(f"h.config_hash_{cid}", entry.get("config_hash") == recomputed)
+        check(f"h.resource_cap_{cid}", isinstance(entry.get("resource_cap"), dict))
+    # selectable vs control flags
+    for cid in reg.get("selectable_ids", []):
+        check(f"h.selectable_flag_{cid}", cands.get(cid, {}).get("selectable") is True)
+    for cid in reg.get("control_ids", []):
+        check(f"h.control_flag_{cid}", cands.get(cid, {}).get("selectable") is False)
+    # blocked legacy present
+    blocked = reg.get("blocked_legacy") or {}
+    check("h.blocked_names", "asof_n_bucket" in (blocked.get("names") or [])
+          and "score_diff_binary" in (blocked.get("names") or []))
+    check("h.blocked_configs", "catboost9" in (blocked.get("configs") or [])
+          and "deepfm_dcnv2" in (blocked.get("configs") or []))
+    check("h.baseline_present", isinstance(reg.get("baseline"), dict)
+          and reg.get("baseline", {}).get("candidate_id") == "submit_v93_6leg_r0477")
+
+
+# ── (i) Todo 3: blocked legacy rejection before data loading ──────────
+def test_blocked_rejection(tmp: Path) -> None:
+    print("[test] (i) blocked legacy digest/name/config rejected before data loading")
+    reg = re.load_registry()
+    for blocked_id in ("deepfm_dcnv2", "catboost9", "asof_n_bucket",
+                       "score_diff_binary", "unknown-public-baseline"):
+        problems = re.reject_blocked(reg, blocked_id)
+        check(f"i.reject_{blocked_id}", bool(problems), f"{problems}")
+    # allowed candidates are NOT rejected
+    for cid in reg.get("selectable_ids", []) + reg.get("control_ids", []):
+        problems = re.reject_blocked(reg, cid)
+        check(f"i.allow_{cid}", not problems, f"{problems}")
+    # baseline is allowed
+    check("i.allow_baseline", not re.reject_blocked(reg, "baseline"))
+
+
+# ── (j) Todo 3: baseline package hashes ───────────────────────────────
+def test_baseline_package(tmp: Path) -> None:
+    print("[test] (j) baseline package hashes + sha256")
+    hashes = re.baseline_package_hashes()
+    src = hashes.get("source_files") or {}
+    check("j.source_files", all(src.get(n) and src[n] != "missing"
+                                for n in ("script.py", "common.py", "mlp_model.py",
+                                          "requirements.txt")), f"{src}")
+    model_files = hashes.get("model_files") or {}
+    check("j.model_files_51", len(model_files) == 51, f"n={len(model_files)}")
+    check("j.catboost_models", all(f"catboost_s{s}.cbm" in model_files
+                                   for s in range(42, 52)))
+    check("j.sha256", re.baseline_package_sha256()
+          == "8157e144090bcccbf1c44367c75a2d2427e040b8353c8c1e17334b41324ac5fb")
+
+
+# ── (k) Todo 3: 3 new fixtures exit 2 ─────────────────────────────────
+def test_task3_fixtures(tmp: Path) -> None:
+    print("[test] (k) 3 new fixtures exit 2, fixture evidence, main not clobbered")
+    main_ev = tmp / "task-3-baseline-registry.json"
+    main_sha = main_ev.read_bytes() if main_ev.is_file() else None
+    for name in ("legacy-deepfm", "catboost9-digest", "unknown-public-baseline"):
+        proc = run_cli("--fixture", name, "--evidence-dir", str(tmp))
+        check(f"k.{name}.exit2", proc.returncode == 2, f"(rc={proc.returncode})")
+        fix = tmp / f"task-2-evaluator-fixture-{name}.json"
+        check(f"k.{name}.artifact", fix.is_file(), str(fix))
+        if fix.is_file():
+            rec = load(fix)
+            check(f"k.{name}.fixture_field", rec.get("fixture") == name)
+            check(f"k.{name}.matched", rec.get("matched") is True,
+                  f"detail={rec.get('detail')}")
+            check(f"k.{name}.scan_clean", not scan_clean(rec), f"{scan_clean(rec)}")
+    if main_sha is not None:
+        check("k.main_not_clobbered", main_ev.read_bytes() == main_sha,
+              "(main task-3-baseline-registry.json byte-identical)")
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="t2ev_test_") as td:
         tmp = Path(td)
@@ -240,6 +330,10 @@ def main() -> int:
         test_freeze_terminal(tmp / "e")
         test_audits(tmp)
         test_evidence_compliance(tmp / "a")
+        test_registry(tmp / "h")
+        test_blocked_rejection(tmp / "i")
+        test_baseline_package(tmp / "j")
+        test_task3_fixtures(tmp / "k")
 
     n_pass, n_fail = len(PASSED), len(FAILED)
     print(f"\n[test] {n_pass} PASS / {n_fail} FAIL")

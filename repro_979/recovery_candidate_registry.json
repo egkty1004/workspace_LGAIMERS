@@ -1,0 +1,311 @@
+{
+  "schema_version": 1,
+  "description": "Todo 3 (aimers9-top100-score-recovery): frozen recovery candidate registry. Permits exactly the selectable candidate IDs below plus non-selectable controls. Every allowed candidate has a fully specified config hash and resource cap. The registry rejects every blocked legacy digest/name BEFORE any data loading. The baseline is the reconciled v93 6-leg contract (NOT the .30/.35/.35 rollback).",
+  "selectable_ids": [
+    "catboost_c2_lossguide",
+    "catboost_c3_ordered",
+    "catboost_c4_rmse",
+    "residual_ridge",
+    "calibration_beta",
+    "calibration_isotonic"
+  ],
+  "control_ids": [
+    "catboost_c1_control",
+    "calibration_identity"
+  ],
+  "candidates": {
+    "catboost_c1_control": {
+      "selectable": false,
+      "family": "catboost",
+      "role": "control (cannot win)",
+      "config": {
+        "version": "1.2.10",
+        "seed_aggregation": "mean(logits)",
+        "iterations": 4000,
+        "learning_rate": 0.05,
+        "l2_leaf_reg": 3,
+        "bootstrap_type": "Bernoulli",
+        "subsample": 0.8,
+        "random_strength": 1,
+        "thread_count": 6,
+        "allow_writing_files": false,
+        "verbose": false,
+        "loss_function": "Logloss",
+        "eval_metric": "Logloss",
+        "boosting_type": "Plain",
+        "grow_policy": "SymmetricTree",
+        "depth": 7
+      },
+      "config_hash": "022f8bcbbac75fbfcca90a81c6496b0882a5d3cb8558e7b4270452fedb8a2923",
+      "resource_cap": {
+        "thread_count": 6,
+        "peak_rss_gb": 28,
+        "inference_s": 540
+      },
+      "inner_masks": {
+        "r2022": {"train": "season<=2020 & R", "inner_val": "season==2021 & R"},
+        "r2023": {"train": "season<=2021 & R", "inner_val": "season==2022 & R"},
+        "primary": {"train": "season<=2022", "inner_val": "season==2023"}
+      },
+      "inner_selection": {
+        "od_type": "Iter",
+        "od_wait": 100,
+        "use_best_model": true,
+        "record": "each seed best_iteration+1 before outer labels read"
+      }
+    },
+    "catboost_c2_lossguide": {
+      "selectable": true,
+      "family": "catboost",
+      "role": "geometry variant (Lossguide)",
+      "config": {
+        "version": "1.2.10",
+        "seed_aggregation": "mean(logits)",
+        "iterations": 4000,
+        "learning_rate": 0.05,
+        "l2_leaf_reg": 3,
+        "bootstrap_type": "Bernoulli",
+        "subsample": 0.8,
+        "random_strength": 1,
+        "thread_count": 6,
+        "allow_writing_files": false,
+        "verbose": false,
+        "loss_function": "Logloss",
+        "eval_metric": "Logloss",
+        "boosting_type": "Plain",
+        "grow_policy": "Lossguide",
+        "max_leaves": 63,
+        "min_data_in_leaf": 500,
+        "depth": 7
+      },
+      "config_hash": "842b00df2db53ec6977f4a7ddf234440f7c9915d6ec45d772dd385610130f873",
+      "resource_cap": {
+        "thread_count": 6,
+        "peak_rss_gb": 28,
+        "inference_s": 540
+      },
+      "inner_masks": {
+        "r2022": {"train": "season<=2020 & R", "inner_val": "season==2021 & R"},
+        "r2023": {"train": "season<=2021 & R", "inner_val": "season==2022 & R"},
+        "primary": {"train": "season<=2022", "inner_val": "season==2023"}
+      },
+      "inner_selection": {
+        "od_type": "Iter",
+        "od_wait": 100,
+        "use_best_model": true,
+        "record": "each seed best_iteration+1 before outer labels read"
+      }
+    },
+    "catboost_c3_ordered": {
+      "selectable": true,
+      "family": "catboost",
+      "role": "boosting variant (Ordered)",
+      "config": {
+        "version": "1.2.10",
+        "seed_aggregation": "mean(logits)",
+        "iterations": 4000,
+        "learning_rate": 0.05,
+        "l2_leaf_reg": 3,
+        "bootstrap_type": "Bernoulli",
+        "subsample": 0.8,
+        "random_strength": 1,
+        "thread_count": 6,
+        "allow_writing_files": false,
+        "verbose": false,
+        "loss_function": "Logloss",
+        "eval_metric": "Logloss",
+        "boosting_type": "Ordered",
+        "grow_policy": "SymmetricTree",
+        "depth": 7
+      },
+      "config_hash": "d2b853bb1516bae90ec2f1aacc3dd8c76d594f52558a54fbbcc45dd6ae421afd",
+      "resource_cap": {
+        "thread_count": 6,
+        "peak_rss_gb": 28,
+        "inference_s": 540
+      },
+      "inner_masks": {
+        "r2022": {"train": "season<=2020 & R", "inner_val": "season==2021 & R"},
+        "r2023": {"train": "season<=2021 & R", "inner_val": "season==2022 & R"},
+        "primary": {"train": "season<=2022", "inner_val": "season==2023"}
+      },
+      "inner_selection": {
+        "od_type": "Iter",
+        "od_wait": 100,
+        "use_best_model": true,
+        "record": "each seed best_iteration+1 before outer labels read"
+      }
+    },
+    "catboost_c4_rmse": {
+      "selectable": true,
+      "family": "catboost",
+      "role": "loss variant (RMSE regression on binary, clipped to logit)",
+      "config": {
+        "version": "1.2.10",
+        "seed_aggregation": "mean(logits)",
+        "iterations": 4000,
+        "learning_rate": 0.05,
+        "l2_leaf_reg": 3,
+        "bootstrap_type": "Bernoulli",
+        "subsample": 0.8,
+        "random_strength": 1,
+        "thread_count": 6,
+        "allow_writing_files": false,
+        "verbose": false,
+        "loss_function": "RMSE",
+        "eval_metric": "RMSE",
+        "boosting_type": "Plain",
+        "grow_policy": "SymmetricTree",
+        "depth": 7,
+        "clip": [1e-6, 0.999999],
+        "output": "clipped-regression-output-converted-to-logit"
+      },
+      "config_hash": "b7281b231abab7a0bf9b00ce8617ae78a644c3dfc1301d9982212ff69f82c821",
+      "resource_cap": {
+        "thread_count": 6,
+        "peak_rss_gb": 28,
+        "inference_s": 540
+      },
+      "inner_masks": {
+        "r2022": {"train": "season<=2020 & R", "inner_val": "season==2021 & R"},
+        "r2023": {"train": "season<=2021 & R", "inner_val": "season==2022 & R"},
+        "primary": {"train": "season<=2022", "inner_val": "season==2023"}
+      },
+      "inner_selection": {
+        "od_type": "Iter",
+        "od_wait": 100,
+        "use_best_model": true,
+        "record": "each seed best_iteration+1 before outer labels read"
+      }
+    },
+    "residual_ridge": {
+      "selectable": true,
+      "family": "residual",
+      "role": "causal OOF residual ridge/logistic correction",
+      "config": {
+        "C_GRID": [0.001, 0.01, 0.1, 1.0],
+        "model": "LogisticRegression",
+        "penalty": "l2",
+        "solver": "lbfgs",
+        "fit_intercept": true,
+        "max_iter": 1000,
+        "tol": 1e-8,
+        "z_corrected": "z_base+clip(logit(p_residual)-C_LOGIT-z_base,-.05,.05)",
+        "standardize": ["base_logit", "balls_before", "strikes_before", "outs_before"],
+        "one_hot": ["game_type", "platoon", "base_state"]
+      },
+      "config_hash": "b5277abc152fe282dbef04f6ca7a06a4476813b8274b681115b55e80211bd7ef",
+      "resource_cap": {
+        "thread_count": 6,
+        "peak_rss_gb": 28,
+        "inference_s": 540
+      }
+    },
+    "calibration_beta": {
+      "selectable": true,
+      "family": "calibration",
+      "role": "Brier-focused Beta calibration (additive post-model treatment)",
+      "config": {
+        "eps": 1e-6,
+        "feature": ["log(p0)", "-log1p(-p0)"],
+        "model": "LogisticRegression",
+        "penalty": "l2",
+        "C": 1.0,
+        "solver": "lbfgs",
+        "tol": 1e-8,
+        "max_iter": 1000,
+        "fit_intercept": true,
+        "coefficients": "unrestricted"
+      },
+      "config_hash": "d158c0bd05e47b3a31662b7beb80677ec10c9660e384b92695cdd413c80ff1cc",
+      "resource_cap": {
+        "thread_count": 6,
+        "peak_rss_gb": 28,
+        "inference_s": 540
+      }
+    },
+    "calibration_isotonic": {
+      "selectable": true,
+      "family": "calibration",
+      "role": "Brier-focused isotonic calibration (additive post-model treatment)",
+      "config": {
+        "model": "IsotonicRegression",
+        "increasing": true,
+        "y_min": 1e-6,
+        "y_max": 0.999999,
+        "out_of_bounds": "clip",
+        "x_behavior": "sorted-x/tie-mean (scikit-learn)"
+      },
+      "config_hash": "4ad73fc900f4970f78e806df88fa86e082c9475734b88204fe71969c440288cb",
+      "resource_cap": {
+        "thread_count": 6,
+        "peak_rss_gb": 28,
+        "inference_s": 540
+      }
+    },
+    "calibration_identity": {
+      "selectable": false,
+      "family": "calibration",
+      "role": "control (cannot win)",
+      "config": {
+        "model": "identity",
+        "note": "control only, cannot win"
+      },
+      "config_hash": "a9c3098d886811c74b814eecaeb6a4108109bfdf13974c0c2007456bab7f0661",
+      "resource_cap": {
+        "thread_count": 6,
+        "peak_rss_gb": 28,
+        "inference_s": 540
+      }
+    }
+  },
+  "blocked_legacy": {
+    "description": "Every blocked legacy digest/name is rejected BEFORE any data loading. No retry of any rejected candidate/config digest.",
+    "names": [
+      "asof_n_bucket",
+      "score_diff_binary",
+      "count_platoon_3b2_same",
+      "recent_gap_success",
+      "return_gap",
+      "pitcher_debut",
+      "batter_debut",
+      "li_risp_flag",
+      "outs_count_3b2_2out",
+      "season_dev_success_pitcher",
+      "league_trend_ratio_middle",
+      "usage_rank_pitcher",
+      "log1p_usage_pitcher",
+      "count_state_abs_regime",
+      "debut_league_impute_success",
+      "batter_debut_league_impute_success",
+      "f_game_post2023_label_mapping"
+    ],
+    "configs": [
+      "catboost9",
+      "deepfm_dcnv2",
+      "clip_z5_missing_flags_mlp",
+      "old_xgboost",
+      "season_weight",
+      "slope_only",
+      "c_logit_clip_change"
+    ],
+    "digests": [
+      "a41e9b220d8b12c6a74138c3118b21c162e7c4c73493b2680be98f513d05"
+    ]
+  },
+  "baseline": {
+    "candidate_id": "submit_v93_6leg_r0477",
+    "package": "8.16 1001.7444910721 share/submit_v93_r0476.zip",
+    "sha256": "8157e144090bcccbf1c44367c75a2d2427e040b8353c8c1e17334b41324ac5fb",
+    "public_score": 1001.7444910721,
+    "blend": {
+      "z_base": "0.65*z_lgb + 0.35*z_mlp",
+      "z_blend": "z_base + 0.17991944576662527*(z_ftt - z_base) + 0.43481381354434545*(z_armb - z_base) + 0.0701066994221915*(z_cat - z_base)"
+    },
+    "c_logit": -0.0461645795229729,
+    "clip": [0.3, 0.7],
+    "seeds": "LGB/MLP/ArmB/Cat 42..51, FTT 42..44",
+    "model_files": 51,
+    "reconciliation_note": "The v93 6-leg contract is the NEW reconciled baseline to reproduce and beat. The .30/.35/.35 rollback (5890a4c54f502c4e, 992.8390640403) is preserved as prior-best comparison only. Task 3 Cat candidates replace the CatBoost leg within the v93 6-leg blend structure (the 0.0701*(z_cat - z_base) term), keeping LGB/MLP/FTT/ArmB fixed at their v93 weights."
+  }
+}

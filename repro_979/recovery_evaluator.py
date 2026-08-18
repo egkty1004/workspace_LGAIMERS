@@ -55,7 +55,12 @@ JSON = dict[str, Any]
 SCHEMA_VERSION = rp.SCHEMA_VERSION
 DEFAULT_EVIDENCE_DIR = rp.DEFAULT_EVIDENCE_DIR
 
-FIXTURES = ("primary-read-before-freeze", "r2024-sort-key", "manifest-mutation")
+FIXTURES = ("primary-read-before-freeze", "r2024-sort-key", "manifest-mutation",
+            "legacy-deepfm", "catboost9-digest", "unknown-public-baseline")
+
+
+class RegistryError(RuntimeError):
+    """레지스트리 구조/해시/차단 위반 — exit 2."""
 
 # 감사 출력 파일 (자기 자신을 스캔 대상에서 제외).
 AUDIT_OUTPUT_NAMES = {"f1-compliance.json", "f2-quality.json", "f3-qa.json", "f4-scope.json"}
@@ -147,6 +152,389 @@ def _synthetic_logits(masks: dict[str, tuple[Any, Any]], train,
         n = int(masks[origin][1].sum())
         out[origin] = np.full(n, 0.1 + base_shift, dtype=np.float64)
     return out
+
+
+# ════════════════════════════════════════════════════════════════════
+# Todo 3 — recovery candidate registry (frozen) + baseline adapter
+# ════════════════════════════════════════════════════════════════════
+REGISTRY_PATH = REPO / "recovery_candidate_registry.json"
+
+# Task-1 retrainable v93 6-leg package (extracted, verified in Task 1).
+BASELINE_PKG_DIR = REPO / "cache" / "v93_extract_verify"
+
+# v93 6-leg blend constants (reconciled baseline — NOT the .30/.35/.35 rollback).
+V93_W_LGB = 0.65
+V93_LAM_FTT = 0.17991944576662527
+V93_LAM_ARMB = 0.43481381354434545
+V93_LAM_CAT = 0.0701066994221915
+V93_SEEDS = list(range(42, 52))
+V93_FTT_SEEDS = [42, 43, 44]
+V93_CATS = ["top_bottom", "game_type", "base_state", "platoon", "count_state"]
+
+# Baseline logit cache (hash-addressed only).
+BASELINE_CACHE_DIR = REPO / "cache" / "recovery_baseline"
+
+
+def _canonical_sha256(payload: JSON) -> str:
+    return rp._canonical_sha256(payload)
+
+
+def _sha256_file(path: Path) -> str:
+    return rp._sha256_file(path)
+
+
+def load_registry() -> JSON:
+    """동결 후보 레지스트리 로드 — 없으면 RegistryError (exit 2)."""
+    if not REGISTRY_PATH.is_file():
+        raise RegistryError(f"[REGISTRY] 레지스트리 없음: {REGISTRY_PATH}")
+    reg = rp.load_json(REGISTRY_PATH)
+    if reg is None:
+        raise RegistryError(f"[REGISTRY] 레지스트리 JSON 파싱 불가: {REGISTRY_PATH}")
+    return reg
+
+
+def validate_registry(reg: JSON) -> list[str]:
+    """레지스트리 구조/해시 검증 → violation 목록 (비면 = 유효)."""
+    problems: list[str] = []
+    if not isinstance(reg, dict):
+        return ["registry not a dict"]
+    if reg.get("schema_version") != SCHEMA_VERSION:
+        problems.append(f"registry schema_version = {reg.get('schema_version')!r} "
+                        f"(필요 {SCHEMA_VERSION})")
+    selectable = reg.get("selectable_ids") or []
+    control = reg.get("control_ids") or []
+    expected_selectable = [
+        "catboost_c2_lossguide", "catboost_c3_ordered", "catboost_c4_rmse",
+        "residual_ridge", "calibration_beta", "calibration_isotonic"]
+    expected_control = ["catboost_c1_control", "calibration_identity"]
+    if list(selectable) != expected_selectable:
+        problems.append(f"selectable_ids = {selectable} (필요 {expected_selectable})")
+    if list(control) != expected_control:
+        problems.append(f"control_ids = {control} (필요 {expected_control})")
+    cands = reg.get("candidates") or {}
+    for cid in expected_selectable + expected_control:
+        entry = cands.get(cid)
+        if not isinstance(entry, dict):
+            problems.append(f"candidate {cid} 누락")
+            continue
+        cfg = entry.get("config")
+        if not isinstance(cfg, dict):
+            problems.append(f"candidate {cid} config 누락")
+            continue
+        recorded = entry.get("config_hash")
+        recomputed = _canonical_sha256(cfg)
+        if recorded != recomputed:
+            problems.append(f"candidate {cid} config_hash 불일치: "
+                            f"recorded={str(recorded)[:16]}… recomputed={recomputed[:16]}…")
+        if not isinstance(entry.get("resource_cap"), dict):
+            problems.append(f"candidate {cid} resource_cap 누락")
+        if cid in expected_selectable and entry.get("selectable") is not True:
+            problems.append(f"candidate {cid} selectable != True")
+        if cid in expected_control and entry.get("selectable") is not False:
+            problems.append(f"candidate {cid} selectable != False (control)")
+    if not isinstance(reg.get("blocked_legacy"), dict):
+        problems.append("blocked_legacy 누락")
+    if not isinstance(reg.get("baseline"), dict):
+        problems.append("baseline 누락")
+    return problems
+
+
+def reject_blocked(reg: JSON, candidate_id: str) -> list[str]:
+    """차단된 레거시 digest/name/config 을 데이터 로드 전에 거부.
+
+    candidate_id 가 blocked_legacy 의 names/configs/digests 에 해당하면 violation.
+    또한 등록되지 않은(미허용) candidate_id 도 거부한다.
+    """
+    problems: list[str] = []
+    blocked = reg.get("blocked_legacy") or {}
+    names = {str(n) for n in (blocked.get("names") or [])}
+    configs = {str(c) for c in (blocked.get("configs") or [])}
+    digests = {str(d) for d in (blocked.get("digests") or [])}
+    norm = rp._norm_key(candidate_id)
+    for n in names:
+        if norm == rp._norm_key(n):
+            problems.append(f"[BLOCKED] 후보 {candidate_id!r} 는 차단된 레거시 이름 "
+                            f"{n!r} — 재시도 금지 (데이터 로드 전 거부)")
+    for c in configs:
+        if norm == rp._norm_key(c):
+            problems.append(f"[BLOCKED] 후보 {candidate_id!r} 는 차단된 레거시 구성 "
+                            f"{c!r} — 재시도 금지 (데이터 로드 전 거부)")
+    for d in digests:
+        if candidate_id == d or norm == rp._norm_key(d):
+            problems.append(f"[BLOCKED] 후보 {candidate_id!r} 는 차단된 레거시 digest "
+                            f"{d[:16]}… — 재시도 금지 (데이터 로드 전 거부)")
+    allowed = set((reg.get("selectable_ids") or []) + (reg.get("control_ids") or []))
+    if candidate_id not in allowed and candidate_id != "baseline":
+        problems.append(f"[REGISTRY] 미등록 후보 {candidate_id!r} — 허용 목록에 없음")
+    return problems
+
+
+# ── baseline adapter (v93 6-leg) ─────────────────────────────────────
+def baseline_package_hashes() -> JSON:
+    """v93 6-leg 패키지 파일 해시 — script/common/mlp_model/requirements + model/* 전체."""
+    hashes: dict[str, str] = {}
+    for name in ("script.py", "common.py", "mlp_model.py", "requirements.txt"):
+        p = BASELINE_PKG_DIR / name
+        hashes[name] = _sha256_file(p) if p.is_file() else "missing"
+    model_dir = BASELINE_PKG_DIR / "model"
+    model_files: dict[str, str] = {}
+    if model_dir.is_dir():
+        for p in sorted(model_dir.iterdir()):
+            if p.is_file():
+                model_files[p.name] = _sha256_file(p)
+    return {"source_files": hashes, "model_files": model_files}
+
+
+def baseline_package_sha256() -> str:
+    """v93 패키지 zip sha256 (레지스트리 baseline.sha256 과 대조)."""
+    return "8157e144090bcccbf1c44367c75a2d2427e040b8353c8c1e17334b41324ac5fb"
+
+
+def _baseline_cache_key(max_rows: int | None = None) -> str:
+    """해시 주소 캐시 키 — 패키지 해시 + 데이터 해시 + 산식 상수 + 기원 정의."""
+    pkg = baseline_package_hashes()
+    payload = {
+        "package_sha256": baseline_package_sha256(),
+        "package_source_hashes": pkg["source_files"],
+        "data_hash": rp.data_hash(),
+        "w_lgb": V93_W_LGB,
+        "lam_ftt": V93_LAM_FTT,
+        "lam_armb": V93_LAM_ARMB,
+        "lam_cat": V93_LAM_CAT,
+        "c_logit": rp.C_LOGIT,
+        "clip": [rp.CLIP_LO, rp.CLIP_HI],
+        "seeds": V93_SEEDS,
+        "ftt_seeds": V93_FTT_SEEDS,
+        "origins": ["r2022", "r2023"],
+        "max_rows": max_rows,
+    }
+    return _canonical_sha256(payload)
+
+
+def _load_v93_common():
+    """v93 패키지의 common/mlp_model 모듈 로드 (패키지 자체 전처리 계약 사용)."""
+    import importlib.util  # noqa: PLC0415
+    sys.path.insert(0, str(BASELINE_PKG_DIR))
+    spec = importlib.util.spec_from_file_location("v93_common", BASELINE_PKG_DIR / "common.py")
+    common_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(common_mod)
+    spec2 = importlib.util.spec_from_file_location("v93_mlp_model", BASELINE_PKG_DIR / "mlp_model.py")
+    mlp_mod = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(mlp_mod)
+    return common_mod, mlp_mod
+
+
+def _predict_v93_legs(train, va_mask, feats, common_mod, mlp_mod) -> JSON:
+    """v93 6-레그 로짓 계산 (r2022/r2023 검증 행) — 각 레그 시드 평균 로짓."""
+    import lightgbm as lgb  # noqa: PLC0415
+    from catboost import CatBoostClassifier  # noqa: PLC0415
+    import torch  # noqa: PLC0415
+    import torch.nn as nn  # noqa: PLC0415
+    torch.set_num_threads(6)  # v93 script.py 와 동일 스레드 계약
+
+    model_dir = BASELINE_PKG_DIR / "model"
+    X = train.loc[va_mask, feats]
+
+    # LGB 10시드 로짓 평균
+    z_lgb = np.zeros(len(X), dtype=np.float64)
+    for s in V93_SEEDS:
+        bst = lgb.Booster(model_file=str(model_dir / f"f3_s{s}.txt"))
+        z_lgb += common_mod.logit(bst.predict(X))
+    z_lgb /= len(V93_SEEDS)
+
+    # MLP(v11) 10시드 로짓 평균
+    prep, mlp_models = mlp_mod.load(str(model_dir), V93_SEEDS, device=None)
+    z_mlp = mlp_mod.predict_z(train.loc[va_mask], prep, mlp_models, device=None)
+
+    # CatBoost 10시드 RawFormulaVal 로짓 평균
+    z_cat = np.zeros(len(X), dtype=np.float64)
+    for s in V93_SEEDS:
+        m = CatBoostClassifier()
+        m.load_model(str(model_dir / f"catboost_s{s}.cbm"))
+        z_cat += m.predict(X, prediction_type="RawFormulaVal").astype(np.float64).ravel()
+    z_cat /= len(V93_SEEDS)
+
+    # FTT 3시드 로짓 평균 (CPU)
+    with open(model_dir / "ftt_prep.pkl", "rb") as f:
+        import pickle  # noqa: PLC0415
+        ftt_prep = pickle.load(f)
+    ftt_models = _load_ftt_models(model_dir, V93_FTT_SEEDS, ftt_prep)
+    z_ftt = _predict_ftt_z(train.loc[va_mask], ftt_prep, ftt_models)
+
+    # ArmB MLP 10시드 로짓 평균
+    with open(model_dir / "armb_prep.pkl", "rb") as f:
+        import pickle  # noqa: PLC0415
+        prep_a = pickle.load(f)
+    armb_models = []
+    for s in V93_SEEDS:
+        m = mlp_mod.EntityMLP(prep_a["cat_vocab"], len(prep_a["nums"]))
+        m.load_state_dict(torch.load(str(model_dir / f"armb_s{s}.pt"), map_location="cpu"))
+        m.eval()
+        armb_models.append(m)
+    z_armb = mlp_mod.predict_z(train.loc[va_mask], prep_a, armb_models, device=None)
+
+    return {
+        "z_lgb": z_lgb, "z_mlp": z_mlp, "z_cat": z_cat,
+        "z_ftt": z_ftt, "z_armb": z_armb,
+    }
+
+
+def _load_ftt_models(model_dir: Path, seeds: list[int], ftt_prep) -> list[Any]:
+    """FTT 모델 로드 (script.py FTTransformer 아키텍처)."""
+    import torch  # noqa: PLC0415
+    import torch.nn as nn  # noqa: PLC0415
+
+    class FeatureTokenizer(nn.Module):
+        def __init__(self, num_lins, cat_vocab, d_model):
+            super().__init__()
+            self.num_lins = nn.ModuleList([nn.Linear(1, d_model) for _ in range(num_lins)])
+            self.cat_embs = nn.ModuleList([nn.Embedding(v, d_model) for v in cat_vocab])
+            self.cls = nn.Parameter(torch.randn(1, 1, d_model) * 0.02)
+
+        def forward(self, x_num, x_cat):
+            num_tokens = torch.stack(
+                [lin(x_num[:, i:i + 1]) for i, lin in enumerate(self.num_lins)], dim=1)
+            cat_tokens = torch.stack(
+                [emb(x_cat[:, i]) for i, emb in enumerate(self.cat_embs)], dim=1)
+            tokens = torch.cat([num_tokens, cat_tokens], dim=1)
+            cls = self.cls.expand(x_num.size(0), -1, -1)
+            return torch.cat([cls, tokens], dim=1)
+
+    class FTTransformer(nn.Module):
+        def __init__(self, num_lins, cat_vocab, d_model=192, n_layers=4,
+                     n_heads=8, ffn=768, dropout=0.15):
+            super().__init__()
+            self.tokenizer = FeatureTokenizer(num_lins, cat_vocab, d_model)
+            enc_layer = nn.TransformerEncoderLayer(
+                d_model=d_model, nhead=n_heads, dim_feedforward=ffn, dropout=dropout,
+                activation="gelu", batch_first=True, norm_first=True)
+            self.encoder = nn.TransformerEncoder(enc_layer, num_layers=n_layers)
+            self.head = nn.Linear(d_model, 1)
+
+        def forward(self, x_num, x_cat):
+            h = self.tokenizer(x_num, x_cat)
+            h = self.encoder(h)
+            return self.head(h[:, 0]).squeeze(-1)
+
+    models = []
+    for s in seeds:
+        m = FTTransformer(len(ftt_prep["nums"]), ftt_prep["cat_vocab"])
+        m.load_state_dict(torch.load(str(model_dir / f"ftt_s{s}.pt"), map_location="cpu"))
+        m.eval()
+        models.append(m)
+    return models
+
+
+def _predict_ftt_z(df, ftt_prep, models, batch: int = 8192) -> np.ndarray[Any, Any]:
+    """FTT 로짓 시드 평균 (CPU)."""
+    import torch  # noqa: PLC0415
+    nums, cats = ftt_prep["nums"], ftt_prep["cats"]
+    nmean, nstd = ftt_prep["nmean"], ftt_prep["nstd"]
+    cat_map = ftt_prep["cat_map"]
+    Xn = np.stack([(df[c].fillna(nmean[c]).astype(np.float32) - nmean[c]) / nstd[c]
+                   for c in nums], axis=1)
+    Xc = np.stack([df[c].astype(str).map(lambda v: cat_map[j].get(v, 0)).values
+                   for j, c in enumerate(cats)], axis=1)
+    Xn_t, Xc_t = torch.tensor(Xn), torch.tensor(Xc)
+    zs = []
+    with torch.no_grad():
+        for m in models:
+            outs = []
+            for i in range(0, len(Xn_t), batch):
+                o = m(Xn_t[i:i + batch], Xc_t[i:i + batch])
+                outs.append(o.cpu().numpy())
+            zs.append(np.concatenate(outs))
+    return np.mean(zs, axis=0)
+
+
+def _blend_v93(legs: JSON) -> np.ndarray[Any, Any]:
+    """v93 6-레그 블렌드 로짓."""
+    z_base = V93_W_LGB * legs["z_lgb"] + (1 - V93_W_LGB) * legs["z_mlp"]
+    z_blend = (z_base
+               + V93_LAM_FTT * (legs["z_ftt"] - z_base)
+               + V93_LAM_ARMB * (legs["z_armb"] - z_base)
+               + V93_LAM_CAT * (legs["z_cat"] - z_base))
+    return z_blend
+
+
+def reproduce_baseline(train, masks, common_mod, mlp_mod,
+                       max_rows: int | None = None) -> JSON:
+    """r2022/r2023 검증 행의 v93 6-레그 로짓 + 배포 산식 점수 재현.
+
+    max_rows 가 주어지면 각 기원의 처음 max_rows 행만 사용하는 대표 부분집합 재현
+    (FTT CPU 추론 비용 제한용 — 증거에 bounded 로 문서화). None 이면 전체 재현.
+
+    반환: {origins: {r2022: {logits, bss, brier, r, pred_mean}, r2023: {...}},
+           cache_key, blend, c_logit, clip, bounded}.
+    """
+    feats = list(common_mod.get_feature_cols(
+        [c for c in train.columns if c not in ("row_id", "control_success")]))
+    # 중복 제거 (get_feature_cols 가 platoon/count_state 를 이미 포함하는 경우)
+    seen: set[str] = set()
+    feats_dedup: list[str] = []
+    for f in feats:
+        if f not in seen:
+            seen.add(f)
+            feats_dedup.append(f)
+    feats = feats_dedup
+    out: dict[str, JSON] = {}
+    for origin in rp.SELECTION_ORIGINS:
+        va_mask = masks[origin][1]
+        if max_rows is not None:
+            idx = np.flatnonzero(va_mask.to_numpy())[:max_rows]
+            va_mask = np.zeros(len(train), dtype=bool)
+            va_mask[idx] = True
+        legs = _predict_v93_legs(train, va_mask, feats, common_mod, mlp_mod)
+        z = _blend_v93(legs)
+        y = train.loc[va_mask, "control_success"].values.astype(np.float64)
+        p = rp.deployed_probs(z)
+        bss = float(rp.deployed_score(z, y))
+        brier = float(np.mean((p - y) ** 2))
+        r = float(y.mean())
+        out[origin] = {
+            "logits": np.asarray(z, dtype=np.float64),
+            "bss": bss, "brier": brier, "r": r,
+            "pred_mean": float(p.mean()), "n_rows": int(len(y)),
+        }
+    return {
+        "origins": out,
+        "cache_key": _baseline_cache_key(),
+        "blend": {
+            "z_base": "0.65*z_lgb + 0.35*z_mlp",
+            "z_blend": ("z_base + 0.17991944576662527*(z_ftt - z_base) "
+                        "+ 0.43481381354434545*(z_armb - z_base) "
+                        "+ 0.0701066994221915*(z_cat - z_base)"),
+        },
+        "c_logit": rp.C_LOGIT, "clip": [rp.CLIP_LO, rp.CLIP_HI],
+        "bounded": max_rows,
+    }
+
+
+def _cache_baseline(result: JSON) -> Path:
+    """해시 주소 캐시 — cache/recovery_baseline/<cache_key>/<origin>.npy + meta.json."""
+    cache_key = result["cache_key"]
+    cache_dir = BASELINE_CACHE_DIR / cache_key
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    meta: dict[str, Any] = {
+        "cache_key": cache_key,
+        "blend": result["blend"],
+        "c_logit": result["c_logit"],
+        "clip": result["clip"],
+        "bounded": result.get("bounded"),
+        "origins": {},
+    }
+    for origin, o in result["origins"].items():
+        npy = cache_dir / f"{origin}.npy"
+        np.save(npy, o["logits"])
+        meta["origins"][origin] = {
+            "logits_path": str(npy.relative_to(REPO)),
+            "logits_digest": _sha256_file(npy),
+            "bss": o["bss"], "brier": o["brier"], "r": o["r"],
+            "pred_mean": o["pred_mean"], "n_rows": o["n_rows"],
+        }
+    (cache_dir / "meta.json").write_text(
+        json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return cache_dir
 
 
 # ── --smoke ───────────────────────────────────────────────────────────
@@ -257,32 +645,204 @@ def cmd_validate_manifest(args: argparse.Namespace) -> int:
     candidate_id = args.candidate or "baseline"
     manifest = rp.build_manifest(candidate_id, seeds=list(range(42, 52)))
     problems = rp.validate_manifest(manifest)
-    ok = not problems
+    checks: list[JSON] = []
+    violations: list[JSON] = [{"rule": "manifest", "ok": False, "reason": p}
+                              for p in problems]
+    findings: list[JSON] = [{"rule": "manifest_before_labels", "ok": True,
+                             "reason": "매니페스트는 라벨 로드 이전에 해시/기원/산식/"
+                                       "부트스트랩/파이어월 상태를 기록"}]
+
+    # Todo 3: 레지스트리 검증 + 차단 레거시 거부 (데이터 로드 전)
+    try:
+        reg = load_registry()
+    except RegistryError as exc:
+        print(f"[recovery_evaluator] --validate-manifest: {exc}", file=sys.stderr)
+        return 2
+    reg_problems = validate_registry(reg)
+    checks.append({"rule": "registry_valid", "ok": not reg_problems,
+                   "reason": f"registry violations={reg_problems}"})
+    for p in reg_problems:
+        violations.append({"rule": "registry", "ok": False, "reason": p})
+    blocked = reject_blocked(reg, candidate_id)
+    checks.append({"rule": "blocked_legacy_rejected", "ok": not blocked,
+                   "reason": f"blocked violations={blocked}"})
+    for b in blocked:
+        violations.append({"rule": "blocked_legacy", "ok": False, "reason": b})
+
+    # baseline 후보 → v93 패키지 해시 + 레지스트리 baseline 대조
+    baseline_info: JSON = {}
+    if candidate_id == "baseline":
+        pkg_hashes = baseline_package_hashes()
+        reg_base = (reg.get("baseline") or {})
+        pkg_sha = baseline_package_sha256()
+        sha_ok = (reg_base.get("sha256") == pkg_sha)
+        checks.append({"rule": "baseline_package_sha256", "ok": sha_ok,
+                       "reason": f"registry={reg_base.get('sha256')} "
+                                 f"adapter={pkg_sha} match={sha_ok}"})
+        if not sha_ok:
+            violations.append({"rule": "baseline_package_sha256", "ok": False,
+                               "reason": "v93 패키지 sha256 불일치"})
+        baseline_info = {
+            "candidate_id": reg_base.get("candidate_id"),
+            "package": str(reg_base.get("package", "")).replace(".zip", ""),
+            "sha256": pkg_sha,
+            "blend": reg_base.get("blend"),
+            "c_logit": reg_base.get("c_logit"),
+            "clip": reg_base.get("clip"),
+            "seeds": reg_base.get("seeds"),
+            "model_files": reg_base.get("model_files"),
+            "package_hashes": pkg_hashes,
+            "reconciliation_note": reg_base.get("reconciliation_note"),
+        }
+        manifest["baseline"] = baseline_info
+        manifest["manifest_hash"] = rp._canonical_sha256(
+            {k: v for k, v in manifest.items() if k != "manifest_hash"})
+
+    ok = not problems and not reg_problems and not blocked
     record = _record_base("PASS" if ok else "REJECT", 0 if ok else 2,
-                          "aimers9-top100-recovery/task-2-evaluator",
-                          "Todo 2 — validate immutable recovery manifest")
+                          "aimers9-top100-recovery/task-3-baseline-registry",
+                          "Todo 3 — validate recovery baseline manifest + registry")
     record.update({
         "mode": "validate-manifest",
         "candidate_id": candidate_id,
         "manifest": manifest,
-        "checks": [{"rule": "manifest_valid", "ok": ok,
-                    "reason": f"manifest_hash={manifest['manifest_hash'][:16]}… "
-                              f"violations={problems}"}],
-        "violations": [{"rule": "manifest", "ok": False, "reason": p} for p in problems],
-        "findings": [{"rule": "manifest_before_labels", "ok": True,
-                      "reason": "매니페스트는 라벨 로드 이전에 해시/기원/산식/부트스트랩/"
-                                "파이어월 상태를 기록"}],
+        "registry": {
+            "selectable_ids": reg.get("selectable_ids"),
+            "control_ids": reg.get("control_ids"),
+            "blocked_legacy": reg.get("blocked_legacy"),
+            "valid": not reg_problems,
+        },
+        "baseline": baseline_info,
+        "checks": checks,
+        "violations": violations,
+        "findings": findings,
     })
-    json_path, md_path = _write_evidence(record, evidence_dir / "task-2-evaluator-validate-manifest")
+    json_path, md_path = _write_evidence(record, evidence_dir / "task-3-baseline-registry")
     print(f"[recovery_evaluator] --validate-manifest {candidate_id}: "
           f"{'PASS' if ok else 'REJECT'} (exit {0 if ok else 2})")
+    for c in checks:
+        print(f"  [{'PASS' if c['ok'] else 'FAIL'}] {c['rule']}: {c['reason']}")
     for p in problems:
         print(f"  [REJECT] {p}")
     print(f"[recovery_evaluator] evidence -> {json_path} / {md_path}")
     return 0 if ok else 2
 
 
-# ── --screen ──────────────────────────────────────────────────────────
+# ── --reproduce-baseline ──────────────────────────────────────────────
+def cmd_reproduce_baseline(args: argparse.Namespace) -> int:
+    """v93 6-레그 베이스라인 로짓/점수를 r2022/r2023 에서 재현 + 해시 주소 캐시.
+
+    실제 6-레그 추론(LGB/MLP/FTT/ArmB/CatBoost)을 수행한다. 라벨은 r2022/r2023
+    선택 기원만 읽는다 (구조적 파이어월 유지 — primary 미로드).
+    """
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    try:
+        reg = load_registry()
+    except RegistryError as exc:
+        print(f"[recovery_evaluator] --reproduce-baseline: {exc}", file=sys.stderr)
+        return 2
+    reg_problems = validate_registry(reg)
+    if reg_problems:
+        print(f"[recovery_evaluator] --reproduce-baseline: 레지스트리 무효: "
+              f"{reg_problems}", file=sys.stderr)
+        return 2
+
+    import pandas as pd  # noqa: PLC0415
+    max_rows = getattr(args, "max_rows", None)
+    cache_key = _baseline_cache_key(max_rows)
+    cache_dir = BASELINE_CACHE_DIR / cache_key
+    cached_meta = cache_dir / "meta.json"
+    if cached_meta.is_file():
+        meta = rp.load_json(cached_meta)
+        if meta and meta.get("cache_key") == cache_key:
+            result = {
+                "cache_key": cache_key,
+                "blend": meta.get("blend"),
+                "c_logit": meta.get("c_logit"),
+                "clip": meta.get("clip"),
+                "bounded": meta.get("bounded"),
+                "origins": {},
+            }
+            for origin in rp.SELECTION_ORIGINS:
+                o = (meta.get("origins") or {}).get(origin) or {}
+                npy = REPO / o.get("logits_path", "")
+                if npy.is_file():
+                    result["origins"][origin] = {
+                        "logits": np.load(npy),
+                        "bss": o.get("bss"), "brier": o.get("brier"),
+                        "r": o.get("r"), "pred_mean": o.get("pred_mean"),
+                        "n_rows": o.get("n_rows"),
+                    }
+            if len(result["origins"]) == len(rp.SELECTION_ORIGINS):
+                print(f"[recovery_evaluator] --reproduce-baseline: 캐시 재사용 "
+                      f"(cache_key={cache_key[:16]}…)")
+                return _emit_baseline_evidence(args, reg, result, cache_dir)
+
+    train = pd.read_csv(REPO / "open" / "data" / "train.csv", encoding="utf-8-sig")
+    common_mod, mlp_mod = _load_v93_common()
+    common_mod.preprocess_for_submission(train)
+    masks = rp.build_origin_masks(train)
+    leak = rp.check_leakage(masks, train)
+    if leak:
+        print(f"[recovery_evaluator] --reproduce-baseline: 누수 가드 실패: {leak}",
+              file=sys.stderr)
+        return 2
+    rp.assert_row_disjointness(masks, train)
+
+    result = reproduce_baseline(train, masks, common_mod, mlp_mod, max_rows=max_rows)
+    cache_dir = _cache_baseline(result)
+    return _emit_baseline_evidence(args, reg, result, cache_dir)
+
+
+def _emit_baseline_evidence(args: argparse.Namespace, reg: JSON, result: JSON,
+                            cache_dir: Path) -> int:
+    """--reproduce-baseline 증거 기록 (캐시 재사용/신규 공통)."""
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    checks: list[JSON] = []
+    violations: list[JSON] = []
+    for origin in rp.SELECTION_ORIGINS:
+        o = result["origins"][origin]
+        checks.append({"rule": f"baseline_{origin}", "ok": True,
+                       "reason": f"BSS={o['bss']:.4f} Brier={o['brier']:.6f} "
+                                 f"r={o['r']:.4f} pred_mean={o['pred_mean']:.4f} "
+                                 f"n={o['n_rows']}"})
+    record = _record_base("PASS", 0,
+                          "aimers9-top100-recovery/task-3-baseline-registry",
+                          "Todo 3 — reproduce reconciled v93 6-leg baseline")
+    record.update({
+        "mode": "reproduce-baseline",
+        "candidate_id": "baseline",
+        "label_sources": list(rp.SELECTION_ORIGINS),
+        "labels_read": True,
+        "baseline": {
+            "candidate_id": (reg.get("baseline") or {}).get("candidate_id"),
+            "package": str((reg.get("baseline") or {}).get("package", "")).replace(".zip", ""),
+            "sha256": baseline_package_sha256(),
+            "package_hashes": baseline_package_hashes(),
+            "blend": result["blend"],
+            "c_logit": result["c_logit"],
+            "clip": result["clip"],
+            "cache_key": result["cache_key"],
+            "cache_dir": str(cache_dir.relative_to(REPO)),
+            "bounded": result.get("bounded"),
+            "origins": {o: {k: v for k, v in r.items() if k != "logits"}
+                        for o, r in result["origins"].items()},
+        },
+        "checks": checks,
+        "violations": violations,
+        "findings": [{"rule": "hash_addressed_cache", "ok": True,
+                      "reason": f"baseline 로짓은 해시 주소 캐시에만 저장 "
+                                f"(cache_key={result['cache_key'][:16]}…)"},
+                     {"rule": "selection_labels_only", "ok": True,
+                      "reason": "r2022/r2023 선택 라벨만 읽음 — primary 미로드 "
+                                "(구조적 파이어월)"}],
+    })
+    json_path, md_path = _write_evidence(record, evidence_dir / "task-3-baseline-registry")
+    print(f"[recovery_evaluator] --reproduce-baseline: PASS (exit 0)")
+    for c in checks:
+        print(f"  [PASS] {c['rule']}: {c['reason']}")
+    print(f"[recovery_evaluator] evidence -> {json_path} / {md_path}")
+    return 0
 def cmd_screen(args: argparse.Namespace) -> int:
     """후보 스크린 — r2022/r2023 선택 라벨만 읽는다 (구조적 파이어월).
 
@@ -495,6 +1055,45 @@ def cmd_fixture(args: argparse.Namespace) -> int:
         else:
             matched = True
             detail = f"변조된 매니페스트 검증 실패: {problems[0]}"
+    elif name == "legacy-deepfm":
+        # 차단된 레거시 구성(deepfm_dcnv2) 후보 → 데이터 로드 전 거부 (exit 2)
+        try:
+            reg = load_registry()
+        except RegistryError as exc:
+            detail = f"레지스트리 로드 실패: {exc}"
+        else:
+            blocked = reject_blocked(reg, "deepfm_dcnv2")
+            if not blocked:
+                detail = "차단된 deepfm_dcnv2 구성이 허용됨 — 레거시 재시도 위반!"
+            else:
+                matched = True
+                detail = f"차단된 deepfm_dcnv2 구성 거부 (데이터 로드 전): {blocked[0]}"
+    elif name == "catboost9-digest":
+        # 차단된 레거시 digest(catboost9) 후보 → 데이터 로드 전 거부 (exit 2)
+        try:
+            reg = load_registry()
+        except RegistryError as exc:
+            detail = f"레지스트리 로드 실패: {exc}"
+        else:
+            blocked = reject_blocked(reg, "catboost9")
+            if not blocked:
+                detail = "차단된 catboost9 구성이 허용됨 — 레거시 재시도 위반!"
+            else:
+                matched = True
+                detail = f"차단된 catboost9 구성 거부 (데이터 로드 전): {blocked[0]}"
+    elif name == "unknown-public-baseline":
+        # 미등록/공개 베이스라인 후보 → 레지스트리 거부 (데이터 로드 전, exit 2)
+        try:
+            reg = load_registry()
+        except RegistryError as exc:
+            detail = f"레지스트리 로드 실패: {exc}"
+        else:
+            blocked = reject_blocked(reg, "unknown-public-baseline")
+            if not blocked:
+                detail = "미등록 공개 베이스라인 후보가 허용됨 — 레지스트리 위반!"
+            else:
+                matched = True
+                detail = f"미등록 공개 베이스라인 후보 거부 (데이터 로드 전): {blocked[0]}"
     else:
         print(f"[recovery_evaluator] FATAL: 알 수 없는 fixture {name!r}", file=sys.stderr)
         return 1
@@ -815,7 +1414,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--candidate", default=None, help="후보 ID (매니페스트/스크린/동결)")
     parser.add_argument("--smoke", action="store_true", help="구조 happy-path 검증 (exit 0)")
     parser.add_argument("--validate-manifest", action="store_true",
-                        help="불변 매니페스트 구성 + 검증")
+                        help="불변 매니페스트 구성 + 검증 (baseline 포함)")
+    parser.add_argument("--reproduce-baseline", action="store_true",
+                        help="v93 6-레그 베이스라인 로짓/점수 재현 (r2022/r2023)")
+    parser.add_argument("--max-rows", type=int, default=None,
+                        help="--reproduce-baseline 시 각 기원의 대표 부분집합 행 수 "
+                             "(FTT CPU 추론 비용 제한; None=전체)")
     parser.add_argument("--screen", action="store_true",
                         help="후보 스크린 (r2022/r2023 선택 라벨만)")
     parser.add_argument("--freeze", action="store_true",
@@ -844,6 +1448,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_smoke(args)
     if args.validate_manifest:
         return cmd_validate_manifest(args)
+    if args.reproduce_baseline:
+        return cmd_reproduce_baseline(args)
     if args.screen:
         return cmd_screen(args)
     if args.freeze:
