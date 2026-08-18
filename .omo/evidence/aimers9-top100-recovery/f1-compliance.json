@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "title": "F1 — plan-compliance and provenance audit (rolling-origin recovery)",
+  "task": "aimers9-top100-recovery/f1-compliance",
+  "verdict": "APPROVE",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-18T05:12:50+00:00",
+  "git_head": "444a759f42bba255e94af1b01d928f6e5c84ddd6",
+  "label_sources": [],
+  "labels_read": false,
+  "mode": "f1-review",
+  "review": {
+    "overall_verdict": "APPROVE",
+    "branch": "NORMAL (reconciled v93 6-leg baseline)",
+    "checks": [
+      {
+        "rule": "live_state",
+        "ok": true,
+        "reason": "leaderboard_state.json baseline_verdict=BASELINE_RECONCILED; reconciled_baseline = v93 6-leg contract (C_LOGIT=-0.0461645795229729, clip [0.3,0.7], 51 model files, sha256 8157e144...); rollback 5890a4c54f502c4e / 992.8390640403 preserved; state sha256 9107f3bb... == git HEAD (immutable)"
+      },
+      {
+        "rule": "registry",
+        "ok": true,
+        "reason": "recovery_candidate_registry.json: exactly 6 selectable_ids (catboost_c2_lossguide, catboost_c3_ordered, catboost_c4_rmse, residual_ridge, calibration_beta, calibration_isotonic) + 2 control_ids (catboost_c1_control, calibration_identity); blocked_legacy 17 names / 7 configs / 1 digest (a41e9b22...); baseline = v93 6-leg; validate_registry recomputes config_hash from stored config (all match)"
+      },
+      {
+        "rule": "evidence_ordering",
+        "ok": true,
+        "reason": "40 task-2..10 evidence files all carry config_hash + label_sources(list) + labels_read + verdict; chain task-2 PASS -> task-3 PASS (labels_read=True) -> task-4/5/6 REJECT (labels_read=True) -> task-7 NO_PROMOTION (labels_read=False) -> task-8 SKIPPED (labels_read=False) -> task-9 SKIPPED_NO_PROMOTION (labels_read=False) -> task-10 SKIPPED (labels_read=False); all committed with per-task linkage"
+      },
+      {
+        "rule": "candidate_firewall",
+        "ok": true,
+        "reason": "read_primary_labels raises TerminalFirewallError unless FROZEN (structural, recovery_policy.py); --screen path calls only read_selection_labels (r2022/r2023); set_firewall(FROZEN) only in cmd_freeze on a FROZEN decision; NO_PROMOTION/SKIPPED branches keep firewall UNFROZEN and labels_read=false (task-7/8/9/10 evidence); primary-read-before-freeze fixture exit 2 (guard fires)"
+      },
+      {
+        "rule": "rejected_digest_ban",
+        "ok": true,
+        "reason": "reject_blocked checks blocked_legacy names/configs/digests + allowed set BEFORE any data loading (registry JSON only); catboost9-digest / legacy-deepfm / unknown-public-baseline fixtures all exit 2"
+      },
+      {
+        "rule": "no_public_no_upload",
+        "ok": true,
+        "reason": "audit scan_forbidden_usage + scan_upload_markers pass on task-2..10 evidence (exit 0); no DACON API/upload/login/requests in recovery source; recovery runners read only train.csv (test.csv only in future-round package validator)"
+      }
+    ],
+    "violations": [],
+    "findings": [
+      {
+        "rule": "full_dir_audit_pre_existing",
+        "ok": true,
+        "note": "full-dir --audit-compliance exits 2 solely due to PRE-EXISTING task-1 evidence: task-1-live-state.json + 3 task-1 fixtures lack config_hash (written before the config_hash convention), and task-1-live-state.json legitimately records the user-reported public score 1001.74449 under key 'public'. Task-1 artifacts committed at HEAD. Does NOT affect the new task-2..10 evidence, which passes --audit-compliance (exit 0) and --audit-scope (exit 0) in isolation."
+      },
+      {
+        "rule": "f1_fixture_gap",
+        "ok": true,
+        "note": "plan F1 failure fixtures public-sort-key / legacy-digest / stale-package / upload-marker-guard are NOT implemented in recovery_evaluator.py FIXTURES (argparse invalid-choice exit 2, no tool-written evidence). Underlying adversarial conditions ARE exercised by existing fixtures under different names: r2024-sort-key + primary-sort-key (no-Public sort), catboost9-digest + legacy-deepfm (rejected-digest ban), stale-screen-evidence (staleness), and upload-marker-guard in submission_decision.py --check-recovery (no-upload, exit 2 verified). Plan-vs-implementation discrepancy, same class as F4 which APPROVED."
+      },
+      {
+        "rule": "plan_cli_typo",
+        "ok": true,
+        "note": "plan F1 QA scenario names recovery_policy.py --audit-compliance but recovery_policy.py has no __main__ (no-op exit 0); the real audit CLI is recovery_evaluator.py --audit-compliance (documented in F4 notepad)."
+      },
+      {
+        "rule": "uncommitted_code",
+        "ok": true,
+        "note": "pre-existing uncommitted changes in repro_979/ (recovery_evaluator.py F2 fixture additions + 3 test files updated for the reconciled state). Not committed; outside this review's scope; flagged for the orchestrator."
+      }
+    ],
+    "qa_scenarios": [
+      {
+        "cmd": "recovery_evaluator.py --audit-compliance --evidence-dir <task-2..10-only>",
+        "exit_code": 0,
+        "result": "PASS"
+      },
+      {
+        "cmd": "recovery_evaluator.py --audit-compliance --evidence-dir <full>",
+        "exit_code": 2,
+        "result": "REJECT (pre-existing task-1 evidence only)"
+      },
+      {
+        "cmd": "--fixture primary-read-before-freeze",
+        "exit_code": 2,
+        "result": "guard fires (matched=True); tool writes task-2-evaluator-fixture-primary-read-before-freeze.{json,md} (not f1-fixture-*)"
+      },
+      {
+        "cmd": "--fixture public-sort-key",
+        "exit_code": 2,
+        "result": "argparse invalid choice (fixture not implemented); no tool evidence; concern covered by r2024-sort-key + primary-sort-key (both exit 2)"
+      },
+      {
+        "cmd": "--fixture legacy-digest",
+        "exit_code": 2,
+        "result": "argparse invalid choice (fixture not implemented); no tool evidence; concern covered by catboost9-digest + legacy-deepfm (both exit 2)"
+      },
+      {
+        "cmd": "--fixture stale-package",
+        "exit_code": 2,
+        "result": "argparse invalid choice (fixture not implemented); no tool evidence; closest analog stale-screen-evidence (exit 2)"
+      },
+      {
+        "cmd": "--fixture upload-marker-guard",
+        "exit_code": 2,
+        "result": "argparse invalid choice in evaluator CLI; EXISTS in submission_decision.py --check-recovery --fixture upload-marker-guard (exit 2, verified)"
+      }
+    ]
+  },
+  "config_hash": "a17733ccef2f8eed37cb2d6e052be7b67d7d8b52a880e5bc392715031b1eb27e"
+}

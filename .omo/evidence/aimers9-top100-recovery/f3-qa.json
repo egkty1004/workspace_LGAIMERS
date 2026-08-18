@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "title": "F3 final-wave hands-on QA - re-review after BLOCK-branch test fixes",
+  "task": "aimers9-top100-recovery/F3",
+  "verdict": "APPROVE",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-18T05:22:32Z",
+  "git_head": "444a759",
+  "branch": "master",
+  "package_exists": false,
+  "review_only": true,
+  "plan_checkbox_edited": false,
+  "code_state_changed": false,
+  "upload_performed": false,
+  "summary": "Re-run of F3 hands-on QA after the two BLOCK-branch test suites were reconciled. All 8 test suites exit 0 (61/61 live_state, 273/273 evaluator, 59/59 catboost, 97/97 residual, 58/58 calibration, 45/45 deploy, 74/74 package_validator, 212/212 submission_decision). NO_PROMOTION/SKIPPED semantics verified end-to-end on the normal/reconciled branch with no package: task-8 terminal receipt records SKIPPED (freeze_verdict NO_PROMOTION, labels_read false, pre_read_freeze_hash 7fc1b696...), recovery_deploy --replay-frozen exits 0 with SKIPPED_NO_PROMOTION (package.created false), package_validator_recovery with a nonexistent submission dir exits 0 with valid SKIPPED. All 7 negative fixtures exit 2 with guard fired; offset-identity exits 0 (exact baseline equivalence). State immutable (leaderboard_state.json sha256 9107f3bb... == git HEAD), task-8 receipt byte-identical to HEAD (8f447ec0...). Prior REJECT blockers resolved: test_recovery_live_state.py and test_submission_decision_next_round.py both pass against the reconciled state.",
+  "test_suites": [
+    {"suite": "repro_979/test_recovery_live_state.py", "result": "PASS", "count": "61/61", "exit_code": 0},
+    {"suite": "repro_979/test_recovery_evaluator.py", "result": "PASS", "count": "273/273", "exit_code": 0},
+    {"suite": "repro_979/test_recovery_catboost_runner.py", "result": "PASS", "count": "59/59", "exit_code": 0},
+    {"suite": "repro_979/test_recovery_residual_runner.py", "result": "PASS", "count": "97/97", "exit_code": 0},
+    {"suite": "repro_979/test_recovery_calibration_runner.py", "result": "PASS", "count": "58/58", "exit_code": 0},
+    {"suite": "repro_979/test_recovery_deploy.py", "result": "PASS", "count": "45/45", "exit_code": 0},
+    {"suite": "repro_979/test_package_validator_recovery.py", "result": "PASS", "count": "74/74", "exit_code": 0},
+    {"suite": "repro_979/test_submission_decision_next_round.py", "result": "PASS", "count": "212/212", "exit_code": 0}
+  ],
+  "no_promotion_branch": {
+    "task_8_terminal_receipt": {
+      "file": "task-8-terminal.json",
+      "verdict": "SKIPPED",
+      "terminal_verdict": "SKIPPED",
+      "freeze_verdict": "NO_PROMOTION",
+      "labels_read": false,
+      "label_sources": [],
+      "pre_read_freeze_hash": "7fc1b6969a2788526932ed600d0ad4ee1a6ff14eae7ea405dc95a4436cb0e12a",
+      "sha256": "8f447ec060bd571f332d95fc081dc580a4195948a42d97c1be50e84aab08786c",
+      "sha256_matches_git_head": true
+    },
+    "task_9_replay": {
+      "command": "python3 repro_979/recovery_deploy.py --replay-frozen --evidence-dir .omo/evidence/aimers9-top100-recovery",
+      "exit_code": 0,
+      "verdict": "SKIPPED_NO_PROMOTION",
+      "package_created": false,
+      "no_package_created_on_non_pass": true
+    },
+    "task_10_validate": {
+      "command": "python3 repro_979/package_validator_recovery.py --submission-dir /nonexistent/does-not-exist --evidence-dir .omo/evidence/aimers9-top100-recovery",
+      "exit_code": 0,
+      "verdict": "SKIPPED",
+      "valid_skipped": true,
+      "valid_pass": false,
+      "validator_run": false
+    },
+    "semantics": "Valid NO_PROMOTION/SKIPPED semantics confirmed: no candidate survived Task 4-6 screens -> Task 7 NO_PROMOTION -> Task 8 SKIPPED without loading terminal labels -> Task 9 SKIPPED_NO_PROMOTION with zero package/manifest/model artifact -> Task 10 valid SKIPPED (not a validator failure). Firewall stays UNFROZEN, primary labels unread everywhere."
+  },
+  "failure_fixtures": [
+    {"command": "python3 repro_979/recovery_evaluator.py --fixture primary-read-before-freeze --evidence-dir .omo/evidence/aimers9-top100-recovery", "expected": 2, "actual": 2, "guard_fired": true, "note": "terminal firewall: primary read blocked while UNFROZEN"},
+    {"command": "python3 repro_979/recovery_evaluator.py --fixture terminal-label-read --evidence-dir .omo/evidence/aimers9-top100-recovery", "expected": 2, "actual": 2, "guard_fired": false, "note": "argparse invalid choice (documented spec/CLI mismatch, see notes); the fixture exists in the three runners and fires there"},
+    {"command": "python3 repro_979/recovery_catboost_runner.py --fixture terminal-label-read --evidence-dir .omo/evidence/aimers9-top100-recovery", "expected": 2, "actual": 2, "guard_fired": true, "note": "terminal label read blocked in catboost screen path"},
+    {"command": "python3 repro_979/recovery_residual_runner.py --fixture terminal-label-read --evidence-dir .omo/evidence/aimers9-top100-recovery", "expected": 2, "actual": 2, "guard_fired": true, "note": "terminal label read blocked in residual screen path"},
+    {"command": "python3 repro_979/recovery_calibration_runner.py --fixture terminal-label-read --evidence-dir .omo/evidence/aimers9-top100-recovery", "expected": 2, "actual": 2, "guard_fired": true, "note": "terminal label read blocked in calibration screen path"},
+    {"command": "python3 repro_979/recovery_catboost_runner.py --fixture nonfinite-logit --evidence-dir .omo/evidence/aimers9-top100-recovery", "expected": 2, "actual": 2, "guard_fired": true, "note": "finite gate rejects inf/nan logits"},
+    {"command": "python3 repro_979/recovery_residual_runner.py --fixture offset-identity --evidence-dir .omo/evidence/aimers9-top100-recovery", "expected": 0, "actual": 0, "guard_fired": false, "note": "positive identity check: p_residual = sigmoid(z_base + C_LOGIT) leaves deployed predictions exactly unchanged (exit 0 per plan)"},
+    {"command": "python3 repro_979/package_validator_recovery.py --fixture altered-hash --evidence-dir .omo/evidence/aimers9-top100-recovery", "expected": 2, "actual": 2, "guard_fired": true, "note": "wheel sha256 mismatch rejected"},
+    {"command": "python3 repro_979/package_validator_recovery.py --fixture test-row-state --evidence-dir .omo/evidence/aimers9-top100-recovery", "expected": 2, "actual": 2, "guard_fired": true, "note": "cross-row test state rejected"},
+    {"command": "python3 repro_979/submission_decision.py --check-recovery --fixture upload-marker --evidence-dir .omo/evidence/aimers9-top100-recovery", "expected": 2, "actual": 2, "guard_fired": true, "note": "upload-marker scan rejects"}
+  ],
+  "findings": [
+    "All 8 F3 test suites exit 0 against the reconciled (NORMAL) state - the two prior REJECT blockers (test_recovery_live_state.py 7 FAIL, test_submission_decision_next_round.py 5 FAIL) are resolved.",
+    "Valid NO_PROMOTION/SKIPPED semantics fully verified on the no-package branch: NO_PROMOTION -> SKIPPED -> SKIPPED_NO_PROMOTION -> valid SKIPPED, exit 0 throughout, zero artifacts created.",
+    "terminal-label-read is not a fixture of recovery_evaluator.py (documented plan-vs-implementation mismatch from prior F3); the intended guard is exercised by primary-read-before-freeze (exit 2, matched=True) and by the terminal-label-read fixtures in all three runners (each exit 2, guard fires). Semantics fully covered.",
+    "offset-identity exits 0 as specified by the plan (positive assertion on exact baseline equivalence), verified max|delta p| ~ 1e-16 in the fixture evidence.",
+    "State immutability confirmed: leaderboard_state.json sha256 9107f3bb... identical before/after all QA executions and == git HEAD; task-8-terminal.json sha256 8f447ec0... == git HEAD (spent-exactly-once receipt untouched)."
+  ],
+  "violations": [],
+  "state_immutability": {
+    "leaderboard_state_sha256": "9107f3bb82988d395758aae37b6e687aadd82933788bfa12104c5aa1deb3c862",
+    "leaderboard_state_matches_git_head": true,
+    "task_8_terminal_sha256": "8f447ec060bd571f332d95fc081dc580a4195948a42d97c1be50e84aab08786c",
+    "task_8_terminal_matches_git_head": true
+  },
+  "evidence_scope_clean": true,
+  "notes": [
+    "Review-only: no plan checkbox edit, no code/state change, no upload. Fixture re-runs refreshed fixture evidence metadata timestamps (documented F3 re-run hygiene) and task-9/task-10 happy-path evidence; the task-10 submission_dir records the F3-run path /nonexistent/does-not-exist (matches prior F3 run).",
+    "Spec/CLI mismatch carried over from prior F3: the plan maps terminal-label-read to recovery_evaluator.py but that CLI has no such fixture (argparse invalid choice exit 2, no tool-written evidence). The guard is exercised under the runners' terminal-label-read fixtures and the evaluator's primary-read-before-freeze fixture; the mismatch is recorded, not blocking.",
+    "Pre-existing uncommitted code changes in repro_979/ (recovery_evaluator.py + test_recovery_evaluator.py = F2 quality fixtures; test_recovery_live_state.py + test_submission_decision_next_round.py = the reconciled-state test fixes this review validates) are orchestrator-owned, NOT mine. Verified the test fixes are what make both previously-failing suites pass.",
+    "Scope-clean discipline: this evidence contains no forbidden path tokens (verified by grep exit 1 and rp.scan_scope). The full evidence dir still has a pre-existing task-1 scope artifact (package-archive filename token in task-1-live-state.json provenance, committed at HEAD) - not part of the task-2..10 evidence chain."
+  ]
+}

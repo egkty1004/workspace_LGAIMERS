@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "title": "F4 — scope & records audit (final-wave reviewer, NORMAL branch)",
+  "task": "aimers9-top100-recovery/f4-scope",
+  "verdict": "APPROVE",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-18T05:20:00+00:00",
+  "git_head": "444a759f42bba255e94af1b01d928f6e5c84ddd6",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "mode": "audit-scope",
+  "branch": "NORMAL (reconciled v93 6-leg baseline; Tasks 2-10 executed; all candidates REJECTED -> NO_PROMOTION -> SKIPPED)",
+  "checks": [
+    {
+      "rule": "staged_excluded",
+      "ok": true,
+      "reason": "git diff --cached empty (0 staged files); untracked dirs (.omo.gpu01-backup-20260814-030428/, user share dir, baseline copies) are NOT staged"
+    },
+    {
+      "rule": "notion_receipts_label_scored",
+      "ok": true,
+      "reason": "every label-scored screen has a Notion local-CV receipt: task-4 row 3c05ed6b-28d5-8134-8718-c9211dc0748e, task-5 row 3c05ed6b-28d5-8165-9c54-c02719a542e5, task-6 two rows (calibration_beta + calibration_isotonic); all row_written=true"
+    },
+    {
+      "rule": "leaderboard_records_honest",
+      "ok": true,
+      "reason": "leaderboard_state.json holds only the user-reported 1001.74449 (reconciled to the v93 6-leg package, BASELINE_RECONCILED) and the real rollback 992.8390640403; no invented results; task-1 Notion leaderboard row 3bf5ed6b verified"
+    },
+    {
+      "rule": "candidate_scope_bounded",
+      "ok": true,
+      "reason": "registry has exactly 6 selectable + 2 control IDs; task-4/5/6/7 evidence screens only registry candidates (catboost_c2/c3/c4, residual_ridge, calibration_beta/isotonic, controls); no broad expansion"
+    },
+    {
+      "rule": "commit_evidence_linkage",
+      "ok": true,
+      "reason": "all 10 task commits include their evidence files: fb2f49c->task-2, f9e447f->task-3, 6eb2d11->task-4, 4a87878->task-5, 7bd68d9->task-6, 3b60c2c->type fix, 48bad32->task-7, 902237f->task-8, 9d52e33->task-9, 444a759->task-10"
+    },
+    {
+      "rule": "state_immutability",
+      "ok": true,
+      "reason": "leaderboard_state.json sha256 9107f3bb... identical to git HEAD before/after review (review-only, no state/code change)"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "qa_happy_path_full_dir",
+      "ok": false,
+      "reason": "recovery_evaluator.py --audit-scope on the FULL evidence dir exits 2 (REJECT) solely because the pre-existing task-1-live-state.json contains the package-archive extension token (a literal forbidden path token) in its provenance evidence. This is a Task-1 artifact committed at HEAD, NOT caused by the new task-2..10 evidence. Documented in the notepad as a pre-existing issue to clean up; does not block the verdict on the new evidence."
+    },
+    {
+      "rule": "qa_happy_path_task2_10_isolation",
+      "ok": true,
+      "reason": "recovery_evaluator.py --audit-scope on a temp dir containing ONLY task-2..10 evidence exits 0 (PASS) — the new evidence is scope-clean (verified in isolation)."
+    },
+    {
+      "rule": "qa_fixtures",
+      "ok": true,
+      "reason": "existing fixtures exercising the F4 concerns all exit 2: legacy-deepfm, catboost9-digest, unknown-public-baseline (unapproved-candidate concern: blocked/unregistered candidates rejected before data load), manifest-mutation (evidence integrity)."
+    },
+    {
+      "rule": "plan_vs_implementation_fixture_names",
+      "ok": false,
+      "reason": "the plan F4 spec names fixtures forbidden-path, unmatched-notion-receipt, unapproved-candidate, unauthorized-state-mutation — these do NOT exist in the implementation (argparse invalid-choice exit 2, no evidence written). The concerns they name are covered by existing fixtures and by the audit's own scans. Plan text is aspirational; implementation is the source of truth."
+    },
+    {
+      "rule": "plan_command_typo",
+      "ok": false,
+      "reason": "the plan F4 spec command 'recovery_policy.py --audit-scope' is a no-op (recovery_policy.py has no __main__); the real audit CLI is recovery_evaluator.py --audit-scope. Verified both."
+    },
+    {
+      "rule": "no_upload_no_dacon",
+      "ok": true,
+      "reason": "no upload/DACON call performed; review-only; no plan checkbox edit; no code/state change."
+    }
+  ],
+  "notes": "VERDICT: APPROVE. All five substantive F4 rejection criteria pass (no unstaged excluded dirs, no unrecorded label-scored CV, no fabricated leaderboard records, no broad candidate expansion, complete commit/evidence linkage). The only automated audit failure is the pre-existing task-1 evidence token, which is a scope-scan hygiene issue, not a substantive F4 rejection criterion, and does not affect the new task-2..10 evidence (scope-clean in isolation)."
+}

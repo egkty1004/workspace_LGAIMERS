@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "title": "F2 audit-quality fixture — test-row-statistic (adversarial, exit 2)",
+  "task": "aimers9-top100-recovery/f2-fixture-test-row-statistic",
+  "verdict": "FIXTURE_REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-18T05:17:06+00:00",
+  "git_head": "444a759f42bba255e94af1b01d928f6e5c84ddd6",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "test-row-statistic",
+  "matched": true,
+  "detail": "test-row-statistic 가드 발동: [POLICY] 테스트 행 통계 파생 피처 금지: 'test_mean_success' (exit 2)",
+  "checks": [
+    {
+      "rule": "fixture_test-row-statistic",
+      "ok": true,
+      "reason": "test-row-statistic 가드 발동: [POLICY] 테스트 행 통계 파생 피처 금지: 'test_mean_success' (exit 2)"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 f2-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'test-row-statistic' 는 반드시 exit 2 — F2 품질 가드가 위반을 차단해야 함."
+}

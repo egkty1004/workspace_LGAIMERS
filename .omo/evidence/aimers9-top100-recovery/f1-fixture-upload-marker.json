@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "title": "F1 fixture record — upload-marker",
+  "task": "aimers9-top100-recovery/f1-fixture-upload-marker",
+  "verdict": "FIXTURE_UNIMPLEMENTED",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-18T05:12:50+00:00",
+  "git_head": "444a759f42bba255e94af1b01d928f6e5c84ddd6",
+  "label_sources": [],
+  "labels_read": false,
+  "mode": "f1-fixture-review",
+  "fixture": "upload-marker-guard",
+  "guard_triggered": false,
+  "tool_written_evidence": false,
+  "detail": "fixture NOT in recovery_evaluator.py FIXTURES -> argparse invalid-choice exit 2, no tool-written evidence. EXISTS in submission_decision.py --check-recovery --fixture upload-marker-guard (exit 2, verified) covering the no-upload condition",
+  "covered_by": "submission_decision.py --check-recovery --fixture upload-marker-guard",
+  "checks": [
+    {
+      "rule": "fixture_upload-marker",
+      "ok": false,
+      "reason": "fixture NOT in recovery_evaluator.py FIXTURES -> argparse invalid-choice exit 2, no tool-written evidence. EXISTS in submission_decision.py --check-recovery --fixture upload-marker-guard (exit 2, verified) covering the no-upload condition"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "fixture_upload-marker",
+      "ok": false,
+      "reason": "fixture NOT in recovery_evaluator.py FIXTURES -> argparse invalid-choice exit 2, no tool-written evidence. EXISTS in submission_decision.py --check-recovery --fixture upload-marker-guard (exit 2, verified) covering the no-upload condition"
+    }
+  ],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "reviewer record only; tool wrote no f1-fixture-* evidence for unimplemented fixtures"
+    }
+  ],
+  "notes": "F1 reviewer record documenting observed CLI behavior. Exit 2 is incidental (argparse invalid choice) for unimplemented fixtures, NOT a guard firing.",
+  "config_hash": "52ff950a86b1bcf124b32ebe9a2bdb1508e54e09b5bff3c0bdd68ddc670007ad"
+}

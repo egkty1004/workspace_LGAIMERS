@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "title": "F1 fixture record — primary-read-before-freeze",
+  "task": "aimers9-top100-recovery/f1-fixture-primary-read-before-freeze",
+  "verdict": "FIXTURE_REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-18T05:12:50+00:00",
+  "git_head": "444a759f42bba255e94af1b01d928f6e5c84ddd6",
+  "label_sources": [],
+  "labels_read": false,
+  "mode": "f1-fixture-review",
+  "fixture": "primary-read-before-freeze-guard",
+  "guard_triggered": true,
+  "tool_written_evidence": true,
+  "detail": "fixture EXISTS in recovery_evaluator.py FIXTURES; guard fires (matched=True): read_primary_labels raises TerminalFirewallError while firewall UNFROZEN; exit 2; tool writes task-2-evaluator-fixture-primary-read-before-freeze.{json,md} (plan asked for f1-fixture-* naming)",
+  "covered_by": "structural firewall (recovery_policy.py read_primary_labels)",
+  "checks": [
+    {
+      "rule": "fixture_primary-read-before-freeze",
+      "ok": true,
+      "reason": "fixture EXISTS in recovery_evaluator.py FIXTURES; guard fires (matched=True): read_primary_labels raises TerminalFirewallError while firewall UNFROZEN; exit 2; tool writes task-2-evaluator-fixture-primary-read-before-freeze.{json,md} (plan asked for f1-fixture-* naming)"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "reviewer record only; tool wrote no f1-fixture-* evidence for unimplemented fixtures"
+    }
+  ],
+  "notes": "F1 reviewer record documenting observed CLI behavior. Exit 2 is incidental (argparse invalid choice) for unimplemented fixtures, NOT a guard firing.",
+  "config_hash": "8db3b87fffd76773aa4d49060aa665fe036262ed8680ab397a372fa26a0c1dcb"
+}

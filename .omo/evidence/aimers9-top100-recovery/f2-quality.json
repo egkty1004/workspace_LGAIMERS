@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "title": "F2 — code-quality, temporal-leakage, data-scope audit",
+  "task": "aimers9-top100-recovery/f2-quality",
+  "verdict": "PASS",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-18T05:17:05+00:00",
+  "git_head": "444a759f42bba255e94af1b01d928f6e5c84ddd6",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "mode": "audit-quality",
+  "checks": [
+    {
+      "rule": "origin_leakage",
+      "ok": true,
+      "reason": "기원 마스크에 2025 시즌 없음 (누수 없음)"
+    },
+    {
+      "rule": "row_disjointness",
+      "ok": true,
+      "reason": "r2022/r2023 disjoint; r2024 overlap 문서화: {\"r2022\": {\"overlap_rows_with_primary\": 0, \"expected\": true, \"reason\": \"row-ID disjoint from primary\"}, \"r2023\": {\"overlap_rows_with_primary\": 0, \"expected\": true, \"reason\": \"row-ID disjoint from primary\"}, \"r2024\": {\"overlap_rows_with_primary\": 133, \"expected\": true, \"reason\": \"r2024 val = (season==2024) & R subset of primary val (overlapping diagnostic origin, branch-inert)\"}}"
+    },
+    {
+      "rule": "deployed_formula",
+      "ok": true,
+      "reason": "scoring=common.score(clip(sigmoid(z+C_LOGIT),.30,.70),y) C_LOGIT=-0.0461645795229729 clip=[0.3,0.7] — 불변"
+    },
+    {
+      "rule": "terminal_firewall",
+      "ok": true,
+      "reason": "read_primary_labels 는 FROZEN 전 TerminalFirewallError — --screen 경로는 read_selection_labels 만 호출"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "origin_masks",
+      "ok": true,
+      "reason": "r2022/r2023/primary/r2024 마스크 정의 검증 (합성 데이터)"
+    },
+    {
+      "rule": "deployed_formula_immutable",
+      "ok": true,
+      "reason": "배포 산식 불변 — raw-logit Brier 는 진단 전용, 선택 키 아님"
+    },
+    {
+      "rule": "no_holdout_misrepresentation",
+      "ok": true,
+      "reason": "primary 는 역사적으로 재사용된 스트레스 체크 — 독립 홀드아웃 아님"
+    }
+  ],
+  "review": {
+    "overall_verdict": "APPROVE",
+    "branch": "NORMAL",
+    "reviewer": "F2 final-wave reviewer (re-run after the 4 plan-named F2 fixtures were implemented)",
+    "reviewed_at_utc": "2026-08-18T05:20:00+00:00",
+    "git_head": "444a759f42bba255e94af1b01d928f6e5c84ddd6",
+    "checks": [
+      {
+        "rule": "origin_masks",
+        "ok": true,
+        "reason": "r2022=(train<=2021,R)->(2022,R); r2023=(train<=2022,R)->(2023,R); primary=(train<=2023,all)->(2024,all); r2024=(train<=2023,R)->(2024,R). Real-data verification: train max season 2024, zero 2025 rows in any val mask; r2022/r2023 row-ID disjoint from primary (0 overlap); r2024 overlap with primary documented branch-inert."
+      },
+      {
+        "rule": "inner_outer_fit_boundary",
+        "ok": true,
+        "reason": "inner selection uses od_type=Iter, od_wait=100, use_best_model=True and records each seed best_iteration+1 before outer labels read; outer refits use origin-specific frozen count with no eval set and use_best_model=False; inner val strictly before outer year; no outer labels leak into inner selection."
+      },
+      {
+        "rule": "residual_causality",
+        "ok": true,
+        "reason": "one-year-ahead OOF (train mask ends t-1), prior-OOF fit only, C selected before outer labels read, assert_inner_outer_disjoint raises on overlap, no target encoding, no terminal labels."
+      },
+      {
+        "rule": "calibration_causality",
+        "ok": true,
+        "reason": "each outer year Y fit solely on OOF years <Y, r2022 cold-start identity documented, z_candidate=logit(p_transform)-C_LOGIT preserves the deployed formula, no standalone outer/Public/test-fitted offset."
+      },
+      {
+        "rule": "trackman_exclusion",
+        "ok": true,
+        "reason": "zero Trackman imports in recovery source; the token appears only inside the _assert_no_trackman_import guard and its fixture."
+      },
+      {
+        "rule": "test_row_exclusion",
+        "ok": true,
+        "reason": "recovery source never reads the test data file (only the official train file); no test-row aggregation/order/sequence features; _assert_no_test_row_statistic guard rejects test-derived feature norms."
+      },
+      {
+        "rule": "deployed_formula",
+        "ok": true,
+        "reason": "common.score(np.clip(common.sigmoid(z + C_LOGIT), .30, .70), y) with C_LOGIT=-0.0461645795229729, clip [.30,.70]; git diff vs HEAD empty for the C_LOGIT/CLIP constants."
+      }
+    ],
+    "qa_results": [
+      {"command": "recovery_evaluator.py --audit-quality", "exit_code": 0, "expected": 0, "ok": true},
+      {"command": "recovery_evaluator.py --fixture outer-label-fit", "exit_code": 2, "expected": 2, "ok": true, "matched": true},
+      {"command": "recovery_evaluator.py --fixture test-row-statistic", "exit_code": 2, "expected": 2, "ok": true, "matched": true},
+      {"command": "recovery_evaluator.py --fixture trackman-import", "exit_code": 2, "expected": 2, "ok": true, "matched": true},
+      {"command": "recovery_evaluator.py --fixture altered-c-logit-clip", "exit_code": 2, "expected": 2, "ok": true, "matched": true},
+      {"command": "recovery_evaluator.py --audit-quality --fixture outer-label-fit (combined)", "exit_code": 2, "expected": 2, "ok": true, "matched": true},
+      {"command": "test_recovery_evaluator.py", "exit_code": 0, "expected": 0, "ok": true, "tests": "273 PASS / 0 FAIL"}
+    ],
+    "violations": [],
+    "notes": "The 4 plan-named F2 fixtures (outer-label-fit, test-row-statistic, trackman-import, altered-c-logit-clip) are now implemented as real guard-firing fixtures (exit 2) writing separate f2-fixture-<name>.{json,md} evidence with matched=True. The previous REJECT (f2_failure_fixtures_missing) is resolved. Review-only: no plan checkbox edit, no code/state change, no upload."
+  }
+}

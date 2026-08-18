@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "title": "F1 fixture record — stale-package",
+  "task": "aimers9-top100-recovery/f1-fixture-stale-package",
+  "verdict": "FIXTURE_UNIMPLEMENTED",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-18T05:12:50+00:00",
+  "git_head": "444a759f42bba255e94af1b01d928f6e5c84ddd6",
+  "label_sources": [],
+  "labels_read": false,
+  "mode": "f1-fixture-review",
+  "fixture": "stale-package-guard",
+  "guard_triggered": false,
+  "tool_written_evidence": false,
+  "detail": "fixture NOT in recovery_evaluator.py FIXTURES -> argparse invalid-choice exit 2, no tool-written evidence. Closest analog stale-screen-evidence (exit 2, verified) covers the staleness-rejection condition",
+  "covered_by": "stale-screen-evidence",
+  "checks": [
+    {
+      "rule": "fixture_stale-package",
+      "ok": false,
+      "reason": "fixture NOT in recovery_evaluator.py FIXTURES -> argparse invalid-choice exit 2, no tool-written evidence. Closest analog stale-screen-evidence (exit 2, verified) covers the staleness-rejection condition"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "fixture_stale-package",
+      "ok": false,
+      "reason": "fixture NOT in recovery_evaluator.py FIXTURES -> argparse invalid-choice exit 2, no tool-written evidence. Closest analog stale-screen-evidence (exit 2, verified) covers the staleness-rejection condition"
+    }
+  ],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "reviewer record only; tool wrote no f1-fixture-* evidence for unimplemented fixtures"
+    }
+  ],
+  "notes": "F1 reviewer record documenting observed CLI behavior. Exit 2 is incidental (argparse invalid choice) for unimplemented fixtures, NOT a guard firing.",
+  "config_hash": "64f501c9e8bea22b27f1f1e2b6bb7f8b0f2b38d2a4a4190075223aed4b7bc035"
+}

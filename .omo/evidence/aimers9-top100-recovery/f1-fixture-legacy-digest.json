@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "title": "F1 fixture record — legacy-digest",
+  "task": "aimers9-top100-recovery/f1-fixture-legacy-digest",
+  "verdict": "FIXTURE_UNIMPLEMENTED",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-18T05:12:50+00:00",
+  "git_head": "444a759f42bba255e94af1b01d928f6e5c84ddd6",
+  "label_sources": [],
+  "labels_read": false,
+  "mode": "f1-fixture-review",
+  "fixture": "legacy-digest-guard",
+  "guard_triggered": false,
+  "tool_written_evidence": false,
+  "detail": "fixture NOT in recovery_evaluator.py FIXTURES -> argparse invalid-choice exit 2, no tool-written evidence. Adversarial condition (rejected-digest ban) exercised by existing catboost9-digest + legacy-deepfm fixtures (both exit 2, verified)",
+  "covered_by": "catboost9-digest, legacy-deepfm",
+  "checks": [
+    {
+      "rule": "fixture_legacy-digest",
+      "ok": false,
+      "reason": "fixture NOT in recovery_evaluator.py FIXTURES -> argparse invalid-choice exit 2, no tool-written evidence. Adversarial condition (rejected-digest ban) exercised by existing catboost9-digest + legacy-deepfm fixtures (both exit 2, verified)"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "fixture_legacy-digest",
+      "ok": false,
+      "reason": "fixture NOT in recovery_evaluator.py FIXTURES -> argparse invalid-choice exit 2, no tool-written evidence. Adversarial condition (rejected-digest ban) exercised by existing catboost9-digest + legacy-deepfm fixtures (both exit 2, verified)"
+    }
+  ],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "reviewer record only; tool wrote no f1-fixture-* evidence for unimplemented fixtures"
+    }
+  ],
+  "notes": "F1 reviewer record documenting observed CLI behavior. Exit 2 is incidental (argparse invalid choice) for unimplemented fixtures, NOT a guard firing.",
+  "config_hash": "4cc8fd6939ab361446155d1a4abcff86abf2f135287a41e37a29d1c6a5952c2e"
+}
