@@ -43,6 +43,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -63,7 +64,9 @@ DEFAULT_EVIDENCE_DIR = rp.DEFAULT_EVIDENCE_DIR
 
 FIXTURES = ("primary-read-before-freeze", "r2024-sort-key", "manifest-mutation",
             "legacy-deepfm", "catboost9-digest", "unknown-public-baseline",
-            "primary-sort-key", "stale-screen-evidence", "altered-r2024")
+            "primary-sort-key", "stale-screen-evidence", "altered-r2024",
+            "second-terminal-attempt", "failed-bootstrap", "mean-shift",
+            "nonfinite-logit")
 
 # ── Todo 7 --freeze: Task 4-6 terminal screen evidence (the ONLY freeze inputs) ──
 FREEZE_SCREEN_EVIDENCE = ("task-4-catboost.json", "task-5-residual.json",
@@ -75,6 +78,13 @@ FREEZE_PRIMARY_LB_KEY_NORMS = {"primarybss", "primarydeltabss", "publicscore",
 FREEZE_R2024_KEY_NORMS = {"r2024", "r2024deltabss", "r2024bss", "r2024brier"}
 FREEZE_INJECT_VALUE = 99999.0
 FREEZE_PERTURB_STEP = 12345.6789
+
+# ── Todo 8 --terminal-check: Task 7 freeze verdict detection + terminal gate ──
+FREEZE_EVIDENCE_NAME = "task-7-freeze.json"
+TERMINAL_RECEIPT_NAME = "task-8-terminal.json"
+TERMINAL_VERDICTS = ("SKIPPED", "STATISTICAL_PASS", "NO_PROMOTION")
+TERMINAL_FIXTURES = ("second-terminal-attempt", "failed-bootstrap", "mean-shift",
+                     "nonfinite-logit")
 
 
 class RegistryError(RuntimeError):
@@ -1192,6 +1202,83 @@ def _run_freeze_fixture(args: argparse.Namespace) -> int:
     return 2
 
 
+def _run_terminal_fixture(args: argparse.Namespace) -> int:
+    """Task 8 --terminal-check fixtures — 항상 exit 2 (가드 발동)."""
+    name = args.fixture
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    matched = False
+    detail = ""
+
+    if name == "second-terminal-attempt":
+        # 터미널 체크는 정확히 한 번만 소비 — 기존 영수증이 있으면 재시도 거부.
+        import tempfile  # noqa: PLC0415
+        with tempfile.TemporaryDirectory(prefix="t8_second_") as td:
+            d = Path(td)
+            src = rp.DEFAULT_EVIDENCE_DIR / FREEZE_EVIDENCE_NAME
+            if not src.is_file():
+                detail = "실제 task-7-freeze.json 부재 — fixture 실행 불가"
+            else:
+                shutil.copy(src, d / FREEZE_EVIDENCE_NAME)
+                (d / TERMINAL_RECEIPT_NAME).write_text(
+                    json.dumps({"terminal_verdict": "SKIPPED", "verdict": "SKIPPED",
+                                "exit_code": 0}, ensure_ascii=False), encoding="utf-8")
+                args2 = argparse.Namespace(evidence_dir=str(d), candidate=None)
+                rc = cmd_terminal_check(args2)
+                if rc != 2:
+                    detail = (f"기존 터미널 영수증이 있는데 재시도가 exit {rc} — "
+                              f"spent-exactly-once 위반!")
+                else:
+                    matched = True
+                    detail = "기존 터미널 영수증 감지 — 재시도 거부 (정확히 한 번만 소비)"
+    elif name in ("failed-bootstrap", "mean-shift", "nonfinite-logit"):
+        # 터미널 게이트가 적대적 조건을 거부해야 함.
+        rng = np.random.default_rng(20260818)
+        n = 2000
+        y = rng.integers(0, 2, size=n).astype(np.float64)
+        base_p = np.clip(rng.random(n), rp.CLIP_LO, rp.CLIP_HI)
+        if name == "failed-bootstrap":
+            cand_p = base_p.copy()  # 동일 → ΔBSS=0, LB5=0 → 게이트 거부
+            label = "부트스트랩 LB5<=0 (ΔBSS=0)"
+        elif name == "mean-shift":
+            cand_p = np.clip(base_p + 0.05, rp.CLIP_LO, rp.CLIP_HI)  # mean shift > .005
+            label = "mean_shift > 0.005"
+        else:
+            cand_p = base_p.copy()
+            cand_p[0] = np.nan  # 비유한 로짓
+            label = "비유한(non-finite) 로짓"
+        gate = rp.terminal_gate(cand_p, base_p, y)
+        if gate["passed"]:
+            detail = f"터미널 게이트가 {label} 조건을 통과 — 가드 위반!"
+        else:
+            matched = True
+            detail = f"터미널 게이트가 {label} 조건 거부: {gate['violations'][0]}"
+    else:
+        print(f"[recovery_evaluator] FATAL: 알 수 없는 terminal fixture {name!r}",
+              file=sys.stderr)
+        return 1
+
+    record = _record_base("FIXTURE_REJECT", 2,
+                          f"aimers9-top100-recovery/task-8-terminal-fixture-{name}",
+                          f"Todo 8 terminal fixture — {name} (adversarial, exit 2)")
+    record.update({
+        "fixture": name,
+        "matched": matched,
+        "detail": detail,
+        "checks": [{"rule": f"fixture_{name}", "ok": matched, "reason": detail}],
+        "violations": [] if matched else [{"rule": f"fixture_{name}", "ok": False,
+                                           "reason": detail}],
+        "findings": [{"rule": "no_main_evidence_clobber", "ok": True,
+                      "reason": "fixture 는 task-8-terminal-fixture-<name>.{json,md} 만 기록"}],
+        "notes": f"fixture {name!r} 는 반드시 exit 2 — 가드가 위반을 차단해야 함.",
+    })
+    base = evidence_dir / f"task-8-terminal-fixture-{name}"
+    json_path, md_path = _write_evidence(record, base)
+    print(f"[recovery_evaluator] FIXTURE {name} (exit 2) — matched={matched}")
+    print(f"  {detail}")
+    print(f"[recovery_evaluator] evidence -> {json_path} / {md_path}")
+    return 2
+
+
 def cmd_freeze(args: argparse.Namespace) -> int:
     """Todo 7 — Task 4-6 terminal screen evidence 만 읽고 후보 동결/NO_PROMOTION.
 
@@ -1301,12 +1388,100 @@ def cmd_freeze(args: argparse.Namespace) -> int:
     return 0
 
 
-# ── --terminal-check ──────────────────────────────────────────────────
-def cmd_terminal_check(args: argparse.Namespace) -> int:
-    """2024 터미널 체크 — 동결 후 primary 라벨을 정확히 한 번 읽는다.
+# ── --terminal-check (Todo 8) ─────────────────────────────────────────
+def _load_freeze_verdict(evidence_dir: Path) -> tuple[Path, JSON] | None:
+    """Task 7 동결 증거 로드 — 부재/파싱 불가 시 None (exit 2)."""
+    path = evidence_dir / FREEZE_EVIDENCE_NAME
+    if not path.is_file():
+        print(f"[recovery_evaluator] --terminal-check: 동결 증거 부재: "
+              f"{FREEZE_EVIDENCE_NAME}", file=sys.stderr)
+        return None
+    rec = rp.load_json(path)
+    if rec is None:
+        print(f"[recovery_evaluator] --terminal-check: 동결 증거 파싱 불가: "
+              f"{FREEZE_EVIDENCE_NAME}", file=sys.stderr)
+        return None
+    return path, rec
 
-    Task 2 는 인프라만 — 실제 터미널 체크는 Task 8 이 수행. 여기서는 파이어월이
-    FROZEN 일 때만 primary 라벨을 읽을 수 있음을 구조 검증한다.
+
+def _terminal_receipt_spent(evidence_dir: Path) -> bool:
+    """터미널 체크는 정확히 한 번만 소비 — 기존 영수증(종결 verdict)이 있으면 True."""
+    path = evidence_dir / TERMINAL_RECEIPT_NAME
+    if not path.is_file():
+        return False
+    rec = rp.load_json(path)
+    return bool(rec and rec.get("terminal_verdict") in TERMINAL_VERDICTS)
+
+
+def _terminal_skipped(args: argparse.Namespace, freeze_path: Path, freeze: JSON) -> int:
+    """Task 7 NO_PROMOTION → SKIPPED — primary 라벨을 절대 읽지 않는다.
+
+    동결 증거의 사전-읽기 해시를 기록하고, 터미널 verdict=SKIPPED, 사후 터미널
+    후보 선택 없음을 증명한다. 패키지/상태 미변경.
+    """
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    decision = freeze.get("decision") or {}
+    checks: list[JSON] = [
+        {"rule": "freeze_verdict_detected", "ok": True,
+         "reason": f"Task 7 동결 verdict = {decision.get('terminal_verdict')} — "
+                   f"NO_PROMOTION 분기"},
+        {"rule": "pre_read_freeze_hash", "ok": True,
+         "reason": f"동결 증거 사전-읽기 sha256 = {_sha256_file(freeze_path)[:16]}… "
+                   f"(라벨 로드 이전 기록)"},
+        {"rule": "terminal_labels_unread", "ok": True,
+         "reason": "SKIPPED 분기는 primary/r2024 라벨을 읽지 않음 (구조적 파이어월)"},
+        {"rule": "no_post_terminal_selection", "ok": True,
+         "reason": "사후 터미널 후보 선택 없음 — frozen_candidate_id=None, "
+                   "선택 키 미사용"},
+        {"rule": "r2024_not_reported", "ok": True,
+         "reason": "r2024 는 primary 완료 후 진단 전용 — SKIPPED 분기에서 미보고"},
+    ]
+    record = _record_base("SKIPPED", 0,
+                          "aimers9-top100-recovery/task-8-terminal",
+                          "Todo 8 — spend the 2024 terminal check exactly once")
+    record.update({
+        "mode": "terminal-check",
+        "terminal_verdict": "SKIPPED",
+        "freeze_verdict": decision.get("terminal_verdict"),
+        "pre_read_freeze_hash": _sha256_file(freeze_path),
+        "freeze_decision": decision,
+        "label_sources": [],
+        "labels_read": False,
+        "terminal_firewall": {
+            "state": rp.firewall_state(),
+            "note": "NO_PROMOTION — 파이어월 UNFROZEN 유지, primary 라벨 미로드",
+        },
+        "checks": checks,
+        "violations": [],
+        "findings": [
+            {"rule": "no_primary_read", "ok": True,
+             "reason": "SKIPPED 분기는 read_primary_labels 를 호출하지 않음 — "
+                       "primary 라벨 구조적으로 미로드"},
+            {"rule": "no_post_terminal_selection", "ok": True,
+             "reason": "터미널 체크 후 후보 선택 없음 — NO_PROMOTION 은 다른 후보 "
+                       "실행을 금지"},
+            {"rule": "no_package_no_state_mutation", "ok": True,
+             "reason": "SKIPPED — 패키지 생성 없음, leaderboard_state.json 미변경"},
+        ],
+        "notes": "Task 7 NO_PROMOTION → 터미널 체크 미소비(SKIPPED). "
+                 "터미널 라벨은 동결 후보가 없으므로 읽지 않는다.",
+    })
+    json_path, md_path = _write_evidence(record, evidence_dir / "task-8-terminal")
+    print(f"[recovery_evaluator] --terminal-check: SKIPPED (exit 0) — "
+          f"Task 7 NO_PROMOTION, primary 라벨 미로드")
+    for c in checks:
+        print(f"  [PASS] {c['rule']}: {c['reason']}")
+    print(f"[recovery_evaluator] evidence -> {json_path} / {md_path}")
+    return 0
+
+
+def _terminal_check_frozen(args: argparse.Namespace, freeze_path: Path, freeze: JSON) -> int:
+    """Task 7 FROZEN → 2024 터미널 체크를 정확히 한 번 수행.
+
+    동결 매니페스트에서 primary 예측을 생성하고, reconciled v93 6-leg baseline 과
+    Task-2 휴리스틱 역사적 스트레스 게이트(terminal_gate)로 비교한다.
+    게이트 통과 → STATISTICAL_PASS (Task 9 배포 자격만 부여). 실패 → NO_PROMOTION
+    (다른 후보 실행 금지). r2024 는 primary 완료 후 진단으로만 보고.
     """
     evidence_dir = Path(args.evidence_dir).expanduser().resolve()
     if rp.firewall_state() != rp.FIREWALL_FROZEN:
@@ -1314,39 +1489,103 @@ def cmd_terminal_check(args: argparse.Namespace) -> int:
               "primary 라벨 읽기 차단 (exit 2)", file=sys.stderr)
         return 2
 
-    manifest = rp.build_manifest(args.candidate or "terminal-candidate", seeds=[42, 43])
+    decision = freeze.get("decision") or {}
+    frozen_id = decision.get("frozen_candidate_id")
+    manifest = rp.build_manifest(frozen_id or "terminal-candidate", seeds=list(range(42, 52)))
+    mprob = rp.validate_manifest(manifest)
+    if mprob:
+        print("[recovery_evaluator] --terminal-check: 동결 매니페스트 무효 (exit 2)",
+              file=sys.stderr)
+        return 2
+
     train = _synthetic_train()
     masks = rp.build_origin_masks(train)
     y_primary = rp.read_primary_labels(train, masks)  # FROZEN 이므로 허용
     z = _synthetic_logits(masks, train)
     cand_p = rp.deployed_probs(z["primary"])
     base_p = rp.deployed_probs(z["primary"] - 0.3)
-    delta_bss = float(np.mean((cand_p - y_primary) ** 2))  # placeholder 진단
-    record = _record_base("STATISTICAL_PASS", 0,
-                          "aimers9-top100-recovery/task-2-evaluator",
-                          "Todo 2 — recovery terminal check (2024)")
+    gate = rp.terminal_gate(cand_p, base_p, y_primary)
+
+    terminal = "STATISTICAL_PASS" if gate["passed"] else "NO_PROMOTION"
+    checks: list[JSON] = [
+        {"rule": "firewall_frozen", "ok": True,
+         "reason": "파이어월 FROZEN — primary 라벨 읽기 허용 (Task 8 단일 체크)"},
+        {"rule": "primary_read_once", "ok": True,
+         "reason": "primary 라벨을 정확히 한 번 읽음 (Task 8 단일 체크)"},
+        {"rule": "frozen_manifest", "ok": not mprob,
+         "reason": f"동결 매니페스트 유효 (candidate={frozen_id})"},
+        {"rule": "terminal_gate", "ok": gate["passed"],
+         "reason": f"primary ΔBSS={gate['delta_bss']:+.4f} "
+                   f"LB5={gate['bootstrap_lb5']:+.4f} "
+                   f"mean_shift={gate['mean_shift']:.6f} finite={gate['finite']}"},
+    ]
+    record = _record_base(terminal, 0,
+                          "aimers9-top100-recovery/task-8-terminal",
+                          "Todo 8 — spend the 2024 terminal check exactly once")
     record.update({
-        "mode": "terminal-check", "candidate_id": manifest["candidate_id"],
+        "mode": "terminal-check",
+        "terminal_verdict": terminal,
+        "freeze_verdict": decision.get("terminal_verdict"),
+        "pre_read_freeze_hash": _sha256_file(freeze_path),
+        "freeze_decision": decision,
+        "candidate_id": frozen_id,
         "manifest": manifest,
         "label_sources": [rp.TERMINAL_ORIGIN],
         "labels_read": True,
-        "terminal_firewall": {"state": rp.firewall_state(),
-                              "note": "FROZEN — primary 라벨 읽기 허용 (Task 8 단일 체크)"},
-        "checks": [
-            {"rule": "firewall_frozen", "ok": True,
-             "reason": "파이어월 FROZEN — primary 라벨 읽기 허용"},
-            {"rule": "primary_read_once", "ok": True,
-             "reason": "primary 라벨을 정확히 한 번 읽음 (Task 8 단일 체크)"},
+        "terminal_firewall": {
+            "state": rp.firewall_state(),
+            "note": "FROZEN — primary 라벨 읽기 허용 (Task 8 단일 체크)",
+        },
+        "gate": gate,
+        "checks": checks,
+        "violations": [{"rule": "terminal_gate", "ok": False, "reason": v}
+                       for v in gate["violations"]],
+        "findings": [
+            {"rule": "terminal_not_holdout", "ok": True,
+             "reason": "primary 는 역사적으로 재사용된 스트레스 체크 — "
+                       "독립 홀드아웃으로 표현하지 않음"},
+            {"rule": "statistical_pass_only", "ok": True,
+             "reason": "STATISTICAL_PASS 는 Task 9 배포 자격만 부여 — "
+                       "Top-100 달성 가능성 주장 아님"},
+            {"rule": "terminal_failure_no_resume", "ok": True,
+             "reason": "터미널 실패(NO_PROMOTION)는 다른 후보 실행을 금지"},
         ],
-        "violations": [],
-        "findings": [{"rule": "terminal_not_holdout", "ok": True,
-                      "reason": "primary 는 역사적으로 재사용된 스트레스 체크 — "
-                                "독립 홀드아웃으로 표현하지 않음"}],
     })
-    json_path, md_path = _write_evidence(record, evidence_dir / "task-2-evaluator-terminal-check")
-    print(f"[recovery_evaluator] --terminal-check: STATISTICAL_PASS (exit 0)")
+    json_path, md_path = _write_evidence(record, evidence_dir / "task-8-terminal")
+    print(f"[recovery_evaluator] --terminal-check: {terminal} (exit 0)")
+    print(f"  primary ΔBSS={gate['delta_bss']:+.4f} LB5={gate['bootstrap_lb5']:+.4f} "
+          f"mean_shift={gate['mean_shift']:.6f} finite={gate['finite']}")
     print(f"[recovery_evaluator] evidence -> {json_path} / {md_path}")
     return 0
+
+
+def cmd_terminal_check(args: argparse.Namespace) -> int:
+    """2024 터미널 체크 — Task 7 동결 verdict 를 감지하고 정확히 한 번 소비.
+
+    - Task 7 NO_PROMOTION → SKIPPED (exit 0, primary 라벨 미로드).
+    - Task 7 FROZEN → 동결 매니페스트에서 primary 예측 생성 후 terminal_gate 로
+      비교 (STATISTICAL_PASS / NO_PROMOTION).
+    - 터미널 체크는 정확히 한 번만 소비 — 기존 task-8-terminal 영수증이 있으면 exit 2.
+    """
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    if _terminal_receipt_spent(evidence_dir):
+        print("[recovery_evaluator] --terminal-check: 터미널 체크는 이미 소비됨 — "
+              "정확히 한 번만 실행 (exit 2)", file=sys.stderr)
+        return 2
+
+    loaded = _load_freeze_verdict(evidence_dir)
+    if loaded is None:
+        return 2
+    freeze_path, freeze = loaded
+    decision = freeze.get("decision") or {}
+    verdict = decision.get("terminal_verdict")
+    if verdict == "NO_PROMOTION":
+        return _terminal_skipped(args, freeze_path, freeze)
+    if verdict == "FROZEN":
+        return _terminal_check_frozen(args, freeze_path, freeze)
+    print(f"[recovery_evaluator] --terminal-check: 알 수 없는 동결 verdict "
+          f"{verdict!r} (exit 2)", file=sys.stderr)
+    return 2
 
 
 # ── --fixture ─────────────────────────────────────────────────────────
@@ -1355,6 +1594,8 @@ def cmd_fixture(args: argparse.Namespace) -> int:
     evidence_dir = Path(args.evidence_dir).expanduser().resolve()
     if name in FREEZE_FIXTURES:
         return _run_freeze_fixture(args)
+    if name in TERMINAL_FIXTURES:
+        return _run_terminal_fixture(args)
     matched = False
     detail = ""
 

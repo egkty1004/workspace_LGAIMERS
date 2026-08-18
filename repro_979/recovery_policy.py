@@ -80,6 +80,14 @@ GATE_MEAN_SHIFT_MAX = 0.005     # max|Δmean| <= 0.005 (deployed clipped 확률)
 BOOTSTRAP_N_RESAMPLES = 10_000
 BOOTSTRAP_SEED_BASE = 20260817  # rng = default_rng(BOOTSTRAP_SEED_BASE + outer_year)
 
+# ── 터미널 스트레스 게이트 (Task 8 단일 2024 체크) ─────────────────────
+# 계획 검증 전략: Task 8 은 primary ΔBSS > 3.0, primary paired row-bootstrap
+# LB5 > 0, mean shift <= .005 일 때만 STATISTICAL_PASS; 그 외 NO_PROMOTION.
+TERMINAL_DELTA_BSS_MIN = 3.0        # primary ΔBSS > 3.0
+TERMINAL_BOOTSTRAP_LB5_MIN = 0.0    # primary paired row-bootstrap LB5(ΔBSS) > 0
+TERMINAL_MEAN_SHIFT_MAX = 0.005     # max|Δmean| <= 0.005 (deployed clipped 확률)
+TERMINAL_OUTER_YEAR = 2024          # primary = (train<=2023, all) -> (2024, all)
+
 # ── 터미널 라벨 파이어월 상태 ─────────────────────────────────────────
 # UNFROZEN: primary 라벨 읽기 차단 (구조적). FROZEN: --freeze 가 후보를 동결한 후에만.
 FIREWALL_UNFROZEN = "UNFROZEN"
@@ -376,6 +384,55 @@ def screen_gate(cand: dict[str, np.ndarray[Any, Any]], base: dict[str, np.ndarra
     passed = not violations
     return {
         "origins": results,
+        "passed": passed,
+        "verdict": "PASS" if passed else "REJECT",
+        "violations": violations,
+    }
+
+
+# ── 터미널 스트레스 게이트 (Task 8) ───────────────────────────────────
+def terminal_gate(cand_p: np.ndarray[Any, Any], base_p: np.ndarray[Any, Any],
+                  y_primary: np.ndarray[Any, Any]) -> JSON:
+    """2024 터미널 스트레스 게이트 — Task 8 단일 체크.
+
+    cand_p/base_p: primary deployed clipped 확률 (배포 산식 적용 후).
+    y_primary: primary 라벨 (파이어월 FROZEN 후에만 읽음).
+    반환: {delta_bss, brier_candidate, brier_baseline, bootstrap_lb5, mean_shift,
+           finite, passed, verdict, violations}.
+    """
+    import repro_979.common as common  # noqa: PLC0415
+    cp = np.asarray(cand_p, dtype=np.float64)
+    bp = np.asarray(base_p, dtype=np.float64)
+    yo = np.asarray(y_primary, dtype=np.float64)
+    delta_bss = float(common.score(cp, yo) - common.score(bp, yo))
+    brier_cand = float(np.mean((cp - yo) ** 2))
+    brier_base = float(np.mean((bp - yo) ** 2))
+    lb5 = paired_row_bootstrap(cp, bp, yo, TERMINAL_OUTER_YEAR)
+    mean_shift = float(np.max(np.abs(cp.mean() - bp.mean())))
+    finite = bool(np.all(np.isfinite(cp)) and np.all(np.isfinite(bp)))
+    checks = {
+        "delta_bss_gt_3": bool(delta_bss > TERMINAL_DELTA_BSS_MIN),
+        "bootstrap_lb5_gt_0": bool(lb5 > TERMINAL_BOOTSTRAP_LB5_MIN),
+        "mean_shift_le_005": bool(mean_shift <= TERMINAL_MEAN_SHIFT_MAX),
+        "finite": bool(finite),
+    }
+    violations: list[str] = []
+    if not all(checks.values()):
+        violations.append(
+            f"primary: ΔBSS={delta_bss:+.4f}(>{TERMINAL_DELTA_BSS_MIN}?"
+            f"{checks['delta_bss_gt_3']}) "
+            f"LB5={lb5:+.4f}(>0?{checks['bootstrap_lb5_gt_0']}) "
+            f"mean_shift={mean_shift:.6f}(<={TERMINAL_MEAN_SHIFT_MAX}?"
+            f"{checks['mean_shift_le_005']}) finite={finite}")
+    passed = not violations
+    return {
+        "delta_bss": delta_bss,
+        "brier_candidate": brier_cand,
+        "brier_baseline": brier_base,
+        "bootstrap_lb5": lb5,
+        "mean_shift": mean_shift,
+        "finite": finite,
+        "checks": checks,
         "passed": passed,
         "verdict": "PASS" if passed else "REJECT",
         "violations": violations,

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "title": "Todo 8 terminal fixture — failed-bootstrap (adversarial, exit 2)",
+  "task": "aimers9-top100-recovery/task-8-terminal-fixture-failed-bootstrap",
+  "verdict": "FIXTURE_REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-18T03:56:00+00:00",
+  "git_head": "48bad325d9423b26b3f6a87756328b6134f9f0cd",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "failed-bootstrap",
+  "matched": true,
+  "detail": "터미널 게이트가 부트스트랩 LB5<=0 (ΔBSS=0) 조건 거부: primary: ΔBSS=+0.0000(>3.0?False) LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True",
+  "checks": [
+    {
+      "rule": "fixture_failed-bootstrap",
+      "ok": true,
+      "reason": "터미널 게이트가 부트스트랩 LB5<=0 (ΔBSS=0) 조건 거부: primary: ΔBSS=+0.0000(>3.0?False) LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-8-terminal-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'failed-bootstrap' 는 반드시 exit 2 — 가드가 위반을 차단해야 함."
+}

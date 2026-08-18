@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "title": "Todo 8 — spend the 2024 terminal check exactly once",
+  "task": "aimers9-top100-recovery/task-8-terminal",
+  "verdict": "SKIPPED",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-18T03:53:24+00:00",
+  "git_head": "48bad325d9423b26b3f6a87756328b6134f9f0cd",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "mode": "terminal-check",
+  "terminal_verdict": "SKIPPED",
+  "freeze_verdict": "NO_PROMOTION",
+  "pre_read_freeze_hash": "7fc1b6969a2788526932ed600d0ad4ee1a6ff14eae7ea405dc95a4436cb0e12a",
+  "freeze_decision": {
+    "terminal_verdict": "NO_PROMOTION",
+    "frozen_candidate_id": null,
+    "mean_delta_bss": null,
+    "selection_key": "mean_selection_delta_bss",
+    "tie_rule": "smallest canonical candidate ID on exact tie",
+    "note": "no candidate passed all Task-2 screen gates"
+  },
+  "terminal_firewall": {
+    "state": "UNFROZEN",
+    "note": "NO_PROMOTION — 파이어월 UNFROZEN 유지, primary 라벨 미로드"
+  },
+  "checks": [
+    {
+      "rule": "freeze_verdict_detected",
+      "ok": true,
+      "reason": "Task 7 동결 verdict = NO_PROMOTION — NO_PROMOTION 분기"
+    },
+    {
+      "rule": "pre_read_freeze_hash",
+      "ok": true,
+      "reason": "동결 증거 사전-읽기 sha256 = 7fc1b6969a278852… (라벨 로드 이전 기록)"
+    },
+    {
+      "rule": "terminal_labels_unread",
+      "ok": true,
+      "reason": "SKIPPED 분기는 primary/r2024 라벨을 읽지 않음 (구조적 파이어월)"
+    },
+    {
+      "rule": "no_post_terminal_selection",
+      "ok": true,
+      "reason": "사후 터미널 후보 선택 없음 — frozen_candidate_id=None, 선택 키 미사용"
+    },
+    {
+      "rule": "r2024_not_reported",
+      "ok": true,
+      "reason": "r2024 는 primary 완료 후 진단 전용 — SKIPPED 분기에서 미보고"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_primary_read",
+      "ok": true,
+      "reason": "SKIPPED 분기는 read_primary_labels 를 호출하지 않음 — primary 라벨 구조적으로 미로드"
+    },
+    {
+      "rule": "no_post_terminal_selection",
+      "ok": true,
+      "reason": "터미널 체크 후 후보 선택 없음 — NO_PROMOTION 은 다른 후보 실행을 금지"
+    },
+    {
+      "rule": "no_package_no_state_mutation",
+      "ok": true,
+      "reason": "SKIPPED — 패키지 생성 없음, leaderboard_state.json 미변경"
+    }
+  ],
+  "notes": "Task 7 NO_PROMOTION → 터미널 체크 미소비(SKIPPED). 터미널 라벨은 동결 후보가 없으므로 읽지 않는다."
+}

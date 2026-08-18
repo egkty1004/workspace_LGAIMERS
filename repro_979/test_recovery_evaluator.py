@@ -32,6 +32,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 REPO = Path(__file__).resolve().parent
 ROOT = REPO.parent
 CLI = REPO / "recovery_evaluator.py"
@@ -116,8 +118,8 @@ def test_fixtures(tmp: Path) -> None:
     if main_ev.is_file():
         main_sha = main_ev.read_bytes()
     for name in sorted(re.FIXTURES):
-        if name in re.FREEZE_FIXTURES:
-            continue  # Task 7 freeze fixtures are covered by test (m)
+        if name in re.FREEZE_FIXTURES or name in re.TERMINAL_FIXTURES:
+            continue  # Task 7/8 fixtures are covered by tests (m)/(r)
         proc = run_cli("--fixture", name, "--evidence-dir", str(tmp))
         check(f"b.{name}.exit2", proc.returncode == 2, f"(rc={proc.returncode})")
         fix = tmp / f"task-2-evaluator-fixture-{name}.json"
@@ -204,7 +206,8 @@ def test_freeze_terminal(tmp: Path) -> None:
     # in-process terminal-check (firewall state is module-level, not cross-process)
     args = argparse.Namespace(evidence_dir=str(tmp), candidate="t")
     check("e.terminal_after_freeze_exit0",
-          re.cmd_terminal_check(args) == 0, "in-process terminal-check exit 0 when FROZEN")
+          re.cmd_terminal_check(args) == 0,
+          "in-process terminal-check exit 0 (SKIPPED on NO_PROMOTION freeze)")
     rp.set_firewall(rp.FIREWALL_UNFROZEN)  # reset for other tests
 
 
@@ -484,6 +487,144 @@ def test_task7_frozen_path(tmp: Path) -> None:
     rp.set_firewall(rp.FIREWALL_UNFROZEN)  # reset
 
 
+# ── (q) Todo 8: SKIPPED path (NO_PROMOTION freeze) ────────────────────
+def test_task8_skipped(tmp: Path) -> None:
+    print("[test] (q) --terminal-check with NO_PROMOTION freeze -> SKIPPED, labels unread")
+    copy_screen_evidence(tmp)
+    proc = run_cli("--freeze", "--evidence-dir", str(tmp))
+    check("q.freeze_exit0", proc.returncode == 0, f"(rc={proc.returncode})")
+    freeze_sha = (tmp / "task-7-freeze.json").read_bytes()
+    proc = run_cli("--terminal-check", "--evidence-dir", str(tmp))
+    check("q.exit0", proc.returncode == 0, f"(rc={proc.returncode})")
+    ev = tmp / "task-8-terminal.json"
+    check("q.evidence", ev.is_file(), str(ev))
+    if not ev.is_file():
+        return
+    rec = load(ev)
+    check("q.verdict", rec.get("verdict") == "SKIPPED", str(rec.get("verdict")))
+    check("q.terminal_verdict", rec.get("terminal_verdict") == "SKIPPED")
+    check("q.freeze_verdict", rec.get("freeze_verdict") == "NO_PROMOTION")
+    check("q.pre_read_freeze_hash", bool(rec.get("pre_read_freeze_hash")))
+    check("q.labels_unread", rec.get("labels_read") is False
+          and rec.get("label_sources") == [])
+    check("q.no_post_selection",
+          rec.get("freeze_decision", {}).get("frozen_candidate_id") is None)
+    check("q.firewall_unfrozen", rec.get("terminal_firewall", {}).get("state")
+          == rp.FIREWALL_UNFROZEN)
+    check("q.freeze_unchanged", (tmp / "task-7-freeze.json").read_bytes() == freeze_sha,
+          "(freeze evidence byte-identical after terminal check)")
+    check("q.scan_clean", not scan_clean(rec), f"{scan_clean(rec)}")
+    check("q.md", (tmp / "task-8-terminal.md").is_file())
+
+
+# ── (r) Todo 8: 4 terminal fixtures exit 2 ────────────────────────────
+def test_task8_fixtures(tmp: Path) -> None:
+    print("[test] (r) 4 Task 8 terminal fixtures exit 2, fixture evidence")
+    main_ev = tmp / "task-8-terminal.json"
+    main_sha = main_ev.read_bytes() if main_ev.is_file() else None
+    for name in re.TERMINAL_FIXTURES:
+        proc = run_cli("--fixture", name, "--evidence-dir", str(tmp))
+        check(f"r.{name}.exit2", proc.returncode == 2, f"(rc={proc.returncode})")
+        fix = tmp / f"task-8-terminal-fixture-{name}.json"
+        check(f"r.{name}.artifact", fix.is_file(), str(fix))
+        if fix.is_file():
+            rec = load(fix)
+            check(f"r.{name}.fixture_field", rec.get("fixture") == name)
+            check(f"r.{name}.matched", rec.get("matched") is True,
+                  f"detail={rec.get('detail')}")
+            check(f"r.{name}.scan_clean", not scan_clean(rec), f"{scan_clean(rec)}")
+    if main_sha is not None:
+        check("r.main_not_clobbered", main_ev.read_bytes() == main_sha,
+              "(main task-8-terminal.json byte-identical)")
+
+
+# ── (s) Todo 8: terminal_gate pass/fail conditions ────────────────────
+def test_task8_terminal_gate(tmp: Path) -> None:
+    print("[test] (s) terminal_gate pass/fail conditions")
+    rng = np.random.default_rng(20260818)
+    n = 500
+    y = rng.integers(0, 2, size=n).astype(np.float64)
+    base_p = np.clip(0.5 + 0.1 * rng.standard_normal(n), rp.CLIP_LO, rp.CLIP_HI)
+    # identical -> fail (delta_bss 0, LB5 0)
+    gate = rp.terminal_gate(base_p.copy(), base_p, y)
+    check("s.identical_reject", gate["passed"] is False, f"{gate['violations']}")
+    # non-finite -> fail
+    bad = base_p.copy()
+    bad[0] = np.nan
+    gate = rp.terminal_gate(bad, base_p, y)
+    check("s.nonfinite_reject", gate["passed"] is False, f"{gate['violations']}")
+    # mean shift -> fail
+    shifted = np.clip(base_p + 0.05, rp.CLIP_LO, rp.CLIP_HI)
+    gate = rp.terminal_gate(shifted, base_p, y)
+    check("s.mean_shift_reject", gate["passed"] is False, f"{gate['violations']}")
+    # better-calibrated candidate with same mean -> pass
+    cand_p = np.clip(0.5 + 0.8 * (y - 0.5) + 0.01 * rng.standard_normal(n),
+                     rp.CLIP_LO, rp.CLIP_HI)
+    gate = rp.terminal_gate(cand_p, base_p, y)
+    check("s.better_pass", gate["passed"] is True, f"{gate['violations']}")
+    for key in ("delta_bss", "brier_candidate", "brier_baseline", "bootstrap_lb5",
+                "mean_shift", "finite", "passed", "verdict", "violations"):
+        check(f"s.key_{key}", key in gate, key)
+
+
+# ── (t) Todo 8: FROZEN path (in-process) ──────────────────────────────
+def test_task8_frozen_path(tmp: Path) -> None:
+    print("[test] (t) FROZEN freeze evidence -> terminal check runs (in-process)")
+    rp.set_firewall(rp.FIREWALL_FROZEN)
+    d = tmp / "frozen_t8"
+    shutil.rmtree(d, ignore_errors=True)
+    d.mkdir(parents=True, exist_ok=True)
+    freeze = {
+        "schema_version": 1,
+        "verdict": "FROZEN",
+        "exit_code": 0,
+        "config_hash": "x",
+        "label_sources": [],
+        "labels_read": False,
+        "decision": {
+            "terminal_verdict": "FROZEN",
+            "frozen_candidate_id": "calibration_beta",
+            "mean_delta_bss": 5.0,
+            "selection_key": "mean_selection_delta_bss",
+            "tie_rule": "smallest canonical candidate ID on exact tie",
+        },
+    }
+    (d / "task-7-freeze.json").write_text(
+        json.dumps(freeze, ensure_ascii=False), encoding="utf-8")
+    args = argparse.Namespace(evidence_dir=str(d), candidate=None)
+    rc = re.cmd_terminal_check(args)
+    check("t.exit0", rc == 0, f"(rc={rc})")
+    ev = d / "task-8-terminal.json"
+    check("t.evidence", ev.is_file(), str(ev))
+    if ev.is_file():
+        rec = load(ev)
+        check("t.terminal_verdict", rec.get("terminal_verdict") == "NO_PROMOTION",
+              str(rec.get("terminal_verdict")))
+        check("t.labels_read", rec.get("labels_read") is True
+              and rec.get("label_sources") == [rp.TERMINAL_ORIGIN])
+        check("t.candidate", rec.get("candidate_id") == "calibration_beta")
+        check("t.gate", isinstance(rec.get("gate"), dict)
+              and rec.get("gate", {}).get("passed") is False)
+        check("t.pre_read_freeze_hash", bool(rec.get("pre_read_freeze_hash")))
+    rp.set_firewall(rp.FIREWALL_UNFROZEN)  # reset
+
+
+# ── (u) Todo 8: spent-exactly-once guard ──────────────────────────────
+def test_task8_spent_once(tmp: Path) -> None:
+    print("[test] (u) terminal check spent exactly once")
+    copy_screen_evidence(tmp)
+    run_cli("--freeze", "--evidence-dir", str(tmp))
+    proc = run_cli("--terminal-check", "--evidence-dir", str(tmp))
+    check("u.first_exit0", proc.returncode == 0, f"(rc={proc.returncode})")
+    proc = run_cli("--terminal-check", "--evidence-dir", str(tmp))
+    check("u.second_exit2", proc.returncode == 2, f"(rc={proc.returncode})")
+    # absent freeze evidence -> exit 2
+    d2 = tmp / "no_freeze"
+    d2.mkdir(parents=True, exist_ok=True)
+    proc = run_cli("--terminal-check", "--evidence-dir", str(d2))
+    check("u.absent_freeze_exit2", proc.returncode == 2, f"(rc={proc.returncode})")
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="t2ev_test_") as td:
         tmp = Path(td)
@@ -503,6 +644,11 @@ def main() -> int:
         test_task7_selection(tmp / "n")
         test_task7_evidence_validation(tmp / "o")
         test_task7_frozen_path(tmp / "p")
+        test_task8_skipped(tmp / "q")
+        test_task8_fixtures(tmp / "r")
+        test_task8_terminal_gate(tmp / "s")
+        test_task8_frozen_path(tmp / "t")
+        test_task8_spent_once(tmp / "u")
 
     n_pass, n_fail = len(PASSED), len(FAILED)
     print(f"\n[test] {n_pass} PASS / {n_fail} FAIL")
