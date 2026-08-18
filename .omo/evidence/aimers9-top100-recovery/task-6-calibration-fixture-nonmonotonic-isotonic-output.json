@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "title": "Todo 6 fixture — nonmonotonic-isotonic-output (adversarial, exit 2)",
+  "task": "aimers9-top100-recovery/task-6-calibration-fixture-nonmonotonic-isotonic-output",
+  "verdict": "FIXTURE_REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-18T01:29:22+00:00",
+  "git_head": "4a87878f13653d483c314bd4daf1f2edba974d3d",
+  "config_hash": "a8d344c7a98fd9571c556c322c9f428dbb6ab940484d8951d08c8c19c96a84e5",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "nonmonotonic-isotonic-output",
+  "matched": true,
+  "detail": "비단조 isotonic 출력 거부: [POLICY] nonmonotonic-isotonic-output: isotonic 출력이 정렬된 x 에 대해 비감소가 아님 — increasing=True 위반 (exit 2)",
+  "checks": [
+    {
+      "rule": "fixture_nonmonotonic-isotonic-output",
+      "ok": true,
+      "reason": "비단조 isotonic 출력 거부: [POLICY] nonmonotonic-isotonic-output: isotonic 출력이 정렬된 x 에 대해 비감소가 아님 — increasing=True 위반 (exit 2)"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-6-calibration-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'nonmonotonic-isotonic-output' 는 반드시 exit 2 — 가드가 위반을 차단해야 함."
+}

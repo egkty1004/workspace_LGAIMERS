@@ -1,0 +1,382 @@
+{
+  "schema_version": 1,
+  "title": "Todo 6 — screen causal Brier calibration transforms",
+  "task": "aimers9-top100-recovery/task-6-calibration",
+  "verdict": "REJECT",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-18T01:22:02+00:00",
+  "git_head": "f9e447fe904adf6c826b459ea160f321725c7fbc",
+  "config_hash": "a8d344c7a98fd9571c556c322c9f428dbb6ab940484d8951d08c8c19c96a84e5",
+  "label_sources": [
+    "r2022",
+    "r2023"
+  ],
+  "labels_read": true,
+  "mode": "screen",
+  "candidates": [
+    "calibration_beta",
+    "calibration_isotonic",
+    "calibration_identity"
+  ],
+  "selectable_candidates": [
+    "calibration_beta",
+    "calibration_isotonic"
+  ],
+  "control_candidates": [
+    "calibration_identity"
+  ],
+  "frozen": {
+    "c_logit": -0.0461645795229729,
+    "clip": [
+      0.3,
+      0.7
+    ],
+    "scoring": "common.score(np.clip(common.sigmoid(z_candidate + C_LOGIT), .30, .70), y)",
+    "z_candidate": "logit(p_transform) - C_LOGIT",
+    "p0": "sigmoid(z + C_LOGIT)",
+    "beta": {
+      "eps": 1e-06,
+      "features": [
+        "log(p0)",
+        "-log1p(-p0)"
+      ],
+      "penalty": "l2",
+      "C": 1.0,
+      "solver": "lbfgs",
+      "tol": 1e-08,
+      "max_iter": 1000,
+      "fit_intercept": true
+    },
+    "isotonic": {
+      "increasing": true,
+      "y_min": 1e-06,
+      "y_max": 0.999999,
+      "out_of_bounds": "clip"
+    },
+    "baseline_cache_key": "ee8ea9579969deaa3284ae6507ad28c1c2859fb507b956e2c0a4a93a28dc903f",
+    "bounded_rows": 30000
+  },
+  "panel": {
+    "2022": {
+      "n_rows": 30000
+    },
+    "2023": {
+      "n_rows": 30000
+    }
+  },
+  "per_candidate": {
+    "calibration_beta": {
+      "candidate_id": "calibration_beta",
+      "selectable": true,
+      "fit": {
+        "r2022": {
+          "outer_year": 2022,
+          "fit_years": [],
+          "cold_start": true,
+          "n_fit_rows": 0
+        },
+        "r2023": {
+          "outer_year": 2023,
+          "fit_years": [
+            2022
+          ],
+          "cold_start": false,
+          "n_fit_rows": 30000
+        }
+      },
+      "gate": {
+        "origins": {
+          "r2022": {
+            "delta_bss": 0.0,
+            "brier_candidate": 0.24517497588392245,
+            "brier_baseline": 0.24517497588392245,
+            "bootstrap_lb5": 0.0,
+            "mean_shift": 0.0,
+            "finite": true,
+            "checks": {
+              "delta_bss_gt_1": false,
+              "brier_reduced": false,
+              "bootstrap_lb5_gt_0": false,
+              "mean_shift_le_005": true,
+              "finite": true
+            }
+          },
+          "r2023": {
+            "delta_bss": 239.44350424919253,
+            "brier_candidate": 0.24434242463254016,
+            "brier_baseline": 0.244940184100356,
+            "bootstrap_lb5": 104.22424417384602,
+            "mean_shift": 0.007101255037326504,
+            "finite": true,
+            "checks": {
+              "delta_bss_gt_1": true,
+              "brier_reduced": true,
+              "bootstrap_lb5_gt_0": true,
+              "mean_shift_le_005": false,
+              "finite": true
+            }
+          }
+        },
+        "passed": false,
+        "verdict": "REJECT",
+        "violations": [
+          "r2022: ΔBSS=+0.0000(>1.0?False) Brier 0.245175<0.245175?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True",
+          "r2023: ΔBSS=+239.4435(>1.0?True) Brier 0.244342<0.244940?True LB5=+104.2242(>0?True) mean_shift=0.007101(<=0.005?False) finite=True"
+        ]
+      }
+    },
+    "calibration_isotonic": {
+      "candidate_id": "calibration_isotonic",
+      "selectable": true,
+      "fit": {
+        "r2022": {
+          "outer_year": 2022,
+          "fit_years": [],
+          "cold_start": true,
+          "n_fit_rows": 0
+        },
+        "r2023": {
+          "outer_year": 2023,
+          "fit_years": [
+            2022
+          ],
+          "cold_start": false,
+          "n_fit_rows": 30000
+        }
+      },
+      "gate": {
+        "origins": {
+          "r2022": {
+            "delta_bss": 0.0,
+            "brier_candidate": 0.24517497588392245,
+            "brier_baseline": 0.24517497588392245,
+            "bootstrap_lb5": 0.0,
+            "mean_shift": 0.0,
+            "finite": true,
+            "checks": {
+              "delta_bss_gt_1": false,
+              "brier_reduced": false,
+              "bootstrap_lb5_gt_0": false,
+              "mean_shift_le_005": true,
+              "finite": true
+            }
+          },
+          "r2023": {
+            "delta_bss": 164.5563382259627,
+            "brier_candidate": 0.24452937692698076,
+            "brier_baseline": 0.244940184100356,
+            "bootstrap_lb5": 29.15024488538929,
+            "mean_shift": 0.006350569200834155,
+            "finite": true,
+            "checks": {
+              "delta_bss_gt_1": true,
+              "brier_reduced": true,
+              "bootstrap_lb5_gt_0": true,
+              "mean_shift_le_005": false,
+              "finite": true
+            }
+          }
+        },
+        "passed": false,
+        "verdict": "REJECT",
+        "violations": [
+          "r2022: ΔBSS=+0.0000(>1.0?False) Brier 0.245175<0.245175?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True",
+          "r2023: ΔBSS=+164.5563(>1.0?True) Brier 0.244529<0.244940?True LB5=+29.1502(>0?True) mean_shift=0.006351(<=0.005?False) finite=True"
+        ]
+      }
+    },
+    "calibration_identity": {
+      "candidate_id": "calibration_identity",
+      "selectable": false,
+      "fit": {
+        "r2022": {
+          "outer_year": 2022,
+          "fit_years": [],
+          "cold_start": true,
+          "n_fit_rows": 0
+        },
+        "r2023": {
+          "outer_year": 2023,
+          "fit_years": [
+            2022
+          ],
+          "cold_start": false,
+          "n_fit_rows": 30000
+        }
+      },
+      "gate": {
+        "origins": {
+          "r2022": {
+            "delta_bss": 0.0,
+            "brier_candidate": 0.24517497588392245,
+            "brier_baseline": 0.24517497588392245,
+            "bootstrap_lb5": 0.0,
+            "mean_shift": 0.0,
+            "finite": true,
+            "checks": {
+              "delta_bss_gt_1": false,
+              "brier_reduced": false,
+              "bootstrap_lb5_gt_0": false,
+              "mean_shift_le_005": true,
+              "finite": true
+            }
+          },
+          "r2023": {
+            "delta_bss": 0.0,
+            "brier_candidate": 0.244940184100356,
+            "brier_baseline": 0.244940184100356,
+            "bootstrap_lb5": 0.0,
+            "mean_shift": 0.0,
+            "finite": true,
+            "checks": {
+              "delta_bss_gt_1": false,
+              "brier_reduced": false,
+              "bootstrap_lb5_gt_0": false,
+              "mean_shift_le_005": true,
+              "finite": true
+            }
+          }
+        },
+        "passed": false,
+        "verdict": "REJECT",
+        "violations": [
+          "r2022: ΔBSS=+0.0000(>1.0?False) Brier 0.245175<0.245175?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True",
+          "r2023: ΔBSS=+0.0000(>1.0?False) Brier 0.244940<0.244940?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True"
+        ]
+      }
+    }
+  },
+  "deployment_refit": {
+    "outer_year": 2025,
+    "fit_years": [
+      2022,
+      2023
+    ],
+    "note": "through-2023 OOF (연도 < 2025) — 진단 스냅샷, 스코어링 아님",
+    "per_candidate": {
+      "calibration_beta": {
+        "fit_years": [
+          2022,
+          2023
+        ],
+        "coef": [
+          1.7143582350795672,
+          1.6894724289005045
+        ],
+        "intercept": 0.03255742561450809
+      },
+      "calibration_isotonic": {
+        "fit_years": [
+          2022,
+          2023
+        ],
+        "n_thresholds": 115
+      }
+    }
+  },
+  "checks": [
+    {
+      "rule": "registry_valid",
+      "ok": true,
+      "reason": "calibration_beta/calibration_isotonic 허용, identity control"
+    },
+    {
+      "rule": "origin_masks",
+      "ok": true,
+      "reason": "r2022/r2023 마스크, 2025 부재, primary 와 row-ID 분리"
+    },
+    {
+      "rule": "selection_labels_only",
+      "ok": true,
+      "reason": "r2022/r2023 선택 라벨만 — primary/터미널 미로드"
+    },
+    {
+      "rule": "frozen_baseline_oof",
+      "ok": true,
+      "reason": "동결 v93 베이스라인 OOF 로짓 로드 (bounded 30000 행/기원, 캐시 키 ee8ea9579969deaa…)"
+    },
+    {
+      "rule": "screen_calibration_beta",
+      "ok": true,
+      "reason": "verdict=REJECT violations=['r2022: ΔBSS=+0.0000(>1.0?False) Brier 0.245175<0.245175?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True', 'r2023: ΔBSS=+239.4435(>1.0?True) Brier 0.244342<0.244940?True LB5=+104.2242(>0?True) mean_shift=0.007101(<=0.005?False) finite=True']"
+    },
+    {
+      "rule": "screen_calibration_isotonic",
+      "ok": true,
+      "reason": "verdict=REJECT violations=['r2022: ΔBSS=+0.0000(>1.0?False) Brier 0.245175<0.245175?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True', 'r2023: ΔBSS=+164.5563(>1.0?True) Brier 0.244529<0.244940?True LB5=+29.1502(>0?True) mean_shift=0.006351(<=0.005?False) finite=True']"
+    },
+    {
+      "rule": "screen_calibration_identity",
+      "ok": true,
+      "reason": "verdict=REJECT violations=['r2022: ΔBSS=+0.0000(>1.0?False) Brier 0.245175<0.245175?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True', 'r2023: ΔBSS=+0.0000(>1.0?False) Brier 0.244940<0.244940?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True']"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "screen_calibration_beta",
+      "ok": false,
+      "reason": "r2022: ΔBSS=+0.0000(>1.0?False) Brier 0.245175<0.245175?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True"
+    },
+    {
+      "rule": "screen_calibration_beta",
+      "ok": false,
+      "reason": "r2023: ΔBSS=+239.4435(>1.0?True) Brier 0.244342<0.244940?True LB5=+104.2242(>0?True) mean_shift=0.007101(<=0.005?False) finite=True"
+    },
+    {
+      "rule": "screen_calibration_isotonic",
+      "ok": false,
+      "reason": "r2022: ΔBSS=+0.0000(>1.0?False) Brier 0.245175<0.245175?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True"
+    },
+    {
+      "rule": "screen_calibration_isotonic",
+      "ok": false,
+      "reason": "r2023: ΔBSS=+164.5563(>1.0?True) Brier 0.244529<0.244940?True LB5=+29.1502(>0?True) mean_shift=0.006351(<=0.005?False) finite=True"
+    },
+    {
+      "rule": "screen_calibration_identity",
+      "ok": false,
+      "reason": "r2022: ΔBSS=+0.0000(>1.0?False) Brier 0.245175<0.245175?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True"
+    },
+    {
+      "rule": "screen_calibration_identity",
+      "ok": false,
+      "reason": "r2023: ΔBSS=+0.0000(>1.0?False) Brier 0.244940<0.244940?False LB5=+0.0000(>0?False) mean_shift=0.000000(<=0.005?True) finite=True"
+    }
+  ],
+  "findings": [
+    {
+      "rule": "time_causal_fitting",
+      "ok": true,
+      "reason": "각 outer year Y 의 변환은 OOF 연도 < Y 에서만 피팅 후 1회 적용; r2022(Y=2022) 는 prior OOF 부재 cold-start identity (문서화)"
+    },
+    {
+      "rule": "frozen_formula_preserved",
+      "ok": true,
+      "reason": "배포 산식 불변 — z_candidate=logit(p_transform)-C_LOGIT, clip(sigmoid(z_candidate+C_LOGIT),.30,.70)"
+    },
+    {
+      "rule": "no_global_offset_retune",
+      "ok": true,
+      "reason": "C_LOGIT/clip 상수 불변 — 전역 오프셋 재튜닝 없음"
+    },
+    {
+      "rule": "no_terminal_read",
+      "ok": true,
+      "reason": "스크린 경로는 r2022/r2023 선택 라벨만 — primary/터미널 미로드"
+    }
+  ],
+  "notion": {
+    "local_cv_table": "3b55ed6b-28d5-8135-9341-fa1109df78af",
+    "rows": [
+      {
+        "candidate": "calibration_beta",
+        "row_block_id": "3c05ed6b-28d5-8159-89f0-e30da10cba9a"
+      },
+      {
+        "candidate": "calibration_isotonic",
+        "row_block_id": "3c05ed6b-28d5-81fc-b80f-fa4c7c703f46"
+      }
+    ],
+    "note": "각 label-scored screen (beta, isotonic) 을 로컬 CV 테이블에 행 추가"
+  }
+}
