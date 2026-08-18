@@ -35,6 +35,10 @@ Commands (every audit takes --evidence-dir and supports --fixture <name>):
                                    primary-read-before-freeze / r2024-sort-key / manifest-mutation
                                    / legacy-deepfm / catboost9-digest / unknown-public-baseline
                                    / primary-sort-key / stale-screen-evidence / altered-r2024
+                                   / second-terminal-attempt / failed-bootstrap / mean-shift
+                                   / nonfinite-logit
+                                   / outer-label-fit / test-row-statistic / trackman-import
+                                   / altered-c-logit-clip (F2 quality guards, f2-fixture-* evidence)
 
 Exit codes: 0 = PASS, 1 = fatal input error, 2 = policy/gate/fixture violation.
 """
@@ -66,7 +70,9 @@ FIXTURES = ("primary-read-before-freeze", "r2024-sort-key", "manifest-mutation",
             "legacy-deepfm", "catboost9-digest", "unknown-public-baseline",
             "primary-sort-key", "stale-screen-evidence", "altered-r2024",
             "second-terminal-attempt", "failed-bootstrap", "mean-shift",
-            "nonfinite-logit")
+            "nonfinite-logit",
+            "outer-label-fit", "test-row-statistic", "trackman-import",
+            "altered-c-logit-clip")
 
 # ── Todo 7 --freeze: Task 4-6 terminal screen evidence (the ONLY freeze inputs) ──
 FREEZE_SCREEN_EVIDENCE = ("task-4-catboost.json", "task-5-residual.json",
@@ -85,6 +91,11 @@ TERMINAL_RECEIPT_NAME = "task-8-terminal.json"
 TERMINAL_VERDICTS = ("SKIPPED", "STATISTICAL_PASS", "NO_PROMOTION")
 TERMINAL_FIXTURES = ("second-terminal-attempt", "failed-bootstrap", "mean-shift",
                      "nonfinite-logit")
+
+# ── F2 --audit-quality fixtures (plan F2 QA scenario) ─────────────────
+# 각 fixture 는 품질 가드가 발동해야 exit 2 + f2-fixture-<name>.{json,md} 증거 기록.
+F2_FIXTURES = ("outer-label-fit", "test-row-statistic", "trackman-import",
+               "altered-c-logit-clip")
 
 
 class RegistryError(RuntimeError):
@@ -1588,6 +1599,125 @@ def cmd_terminal_check(args: argparse.Namespace) -> int:
     return 2
 
 
+# ── F2 quality-audit guards (fixture-triggered, all exit 2) ───────────
+def _assert_inner_fit_outer_labels(inner_train_mask, outer_val_mask) -> None:
+    """내부 피팅 훈련 행이 외부 검증 라벨 행과 겹치면 위반 (temporal leakage)."""
+    inner = np.asarray(inner_train_mask, dtype=bool)
+    outer = np.asarray(outer_val_mask, dtype=bool)
+    if inner.shape != outer.shape:
+        raise rp.PolicyViolation(
+            "[POLICY] 내부 피팅/외부 검증 마스크 길이 불일치 — outer-label-fit 가드")
+    if bool(np.any(inner & outer)):
+        raise rp.PolicyViolation(
+            "[POLICY] 내부 피팅 훈련 행이 외부 검증 라벨 행과 겹침 — "
+            "outer labels leak into inner fit (exit 2)")
+
+
+def _assert_no_test_row_statistic(feature_cols) -> None:
+    """테스트 행 통계/집계/빈도/순서 파생 피처 금지 (test-row leakage)."""
+    forbidden_norms = {"testmean", "testagg", "testaggregate", "testfreq",
+                       "testfrequency", "testrow", "teststat", "teststatistic",
+                       "testorder", "testseq", "testsequence", "testdist",
+                       "testdistribution"}
+    for col in feature_cols:
+        norm = rp._norm_key(str(col))
+        for tok in forbidden_norms:
+            if tok in norm:
+                raise rp.PolicyViolation(
+                    f"[POLICY] 테스트 행 통계 파생 피처 금지: {col!r} (exit 2)")
+
+
+def _assert_no_trackman_import(source_text: str) -> None:
+    """Trackman 데이터/임포트 금지 (외부 데이터 소스)."""
+    norm = rp._norm_key(source_text)
+    for tok in ("trackman", "trackmanimport", "trackmanapi", "trackmanfile"):
+        if tok in norm:
+            raise rp.PolicyViolation(
+                "[POLICY] Trackman 임포트 금지 — 외부 데이터 소스 (exit 2)")
+
+
+def _assert_deployed_formula_immutable(c_logit, clip_lo, clip_hi) -> None:
+    """배포 산식 상수(C_LOGIT/clip) 불변성 — 변경 시 위반."""
+    if not (isinstance(c_logit, (int, float)) and not isinstance(c_logit, bool)):
+        raise rp.PolicyViolation("[POLICY] C_LOGIT 상수 무효 (exit 2)")
+    if float(c_logit) != rp.C_LOGIT:
+        raise rp.PolicyViolation(
+            f"[POLICY] C_LOGIT 변경 감지: {c_logit!r} != {rp.C_LOGIT!r} (exit 2)")
+    if float(clip_lo) != rp.CLIP_LO or float(clip_hi) != rp.CLIP_HI:
+        raise rp.PolicyViolation(
+            f"[POLICY] clip 상수 변경 감지: [{clip_lo},{clip_hi}] != "
+            f"[{rp.CLIP_LO},{rp.CLIP_HI}] (exit 2)")
+
+
+def _run_f2_fixture(args: argparse.Namespace) -> int:
+    """F2 --audit-quality fixtures — 항상 exit 2 (가드 발동)."""
+    name = args.fixture
+    evidence_dir = Path(args.evidence_dir).expanduser().resolve()
+    matched = False
+    detail = ""
+
+    if name == "outer-label-fit":
+        n = 100
+        inner_train = np.zeros(n, dtype=bool)
+        inner_train[:60] = True
+        outer_val = np.zeros(n, dtype=bool)
+        outer_val[50:80] = True  # 50-59 겹침 → outer labels leak into inner fit
+        try:
+            _assert_inner_fit_outer_labels(inner_train, outer_val)
+            detail = "내부 피팅이 외부 검증 라벨 행을 사용 — 가드 미발동!"
+        except rp.PolicyViolation as exc:
+            matched = True
+            detail = f"outer-label-fit 가드 발동: {exc}"
+    elif name == "test-row-statistic":
+        feats = ["balls_before", "strikes_before", "test_mean_success"]
+        try:
+            _assert_no_test_row_statistic(feats)
+            detail = "테스트 행 통계 파생 피처가 허용됨 — 가드 미발동!"
+        except rp.PolicyViolation as exc:
+            matched = True
+            detail = f"test-row-statistic 가드 발동: {exc}"
+    elif name == "trackman-import":
+        src = "import pandas as pd\nimport trackman_loader\n"
+        try:
+            _assert_no_trackman_import(src)
+            detail = "Trackman 임포트가 허용됨 — 가드 미발동!"
+        except rp.PolicyViolation as exc:
+            matched = True
+            detail = f"trackman-import 가드 발동: {exc}"
+    elif name == "altered-c-logit-clip":
+        try:
+            _assert_deployed_formula_immutable(0.0, rp.CLIP_LO, rp.CLIP_HI)
+            detail = "변경된 C_LOGIT 상수가 허용됨 — 가드 미발동!"
+        except rp.PolicyViolation as exc:
+            matched = True
+            detail = f"altered-c-logit-clip 가드 발동: {exc}"
+    else:
+        print(f"[recovery_evaluator] FATAL: 알 수 없는 F2 fixture {name!r}",
+              file=sys.stderr)
+        return 1
+
+    record = _record_base("FIXTURE_REJECT", 2,
+                          f"aimers9-top100-recovery/f2-fixture-{name}",
+                          f"F2 audit-quality fixture — {name} (adversarial, exit 2)")
+    record.update({
+        "fixture": name,
+        "matched": matched,
+        "detail": detail,
+        "checks": [{"rule": f"fixture_{name}", "ok": matched, "reason": detail}],
+        "violations": [] if matched else [{"rule": f"fixture_{name}", "ok": False,
+                                           "reason": detail}],
+        "findings": [{"rule": "no_main_evidence_clobber", "ok": True,
+                      "reason": "fixture 는 f2-fixture-<name>.{json,md} 만 기록"}],
+        "notes": f"fixture {name!r} 는 반드시 exit 2 — F2 품질 가드가 위반을 차단해야 함.",
+    })
+    base = evidence_dir / f"f2-fixture-{name}"
+    json_path, md_path = _write_evidence(record, base)
+    print(f"[recovery_evaluator] FIXTURE {name} (exit 2) — matched={matched}")
+    print(f"  {detail}")
+    print(f"[recovery_evaluator] evidence -> {json_path} / {md_path}")
+    return 2
+
+
 # ── --fixture ─────────────────────────────────────────────────────────
 def cmd_fixture(args: argparse.Namespace) -> int:
     name = args.fixture
@@ -1596,6 +1726,8 @@ def cmd_fixture(args: argparse.Namespace) -> int:
         return _run_freeze_fixture(args)
     if name in TERMINAL_FIXTURES:
         return _run_terminal_fixture(args)
+    if name in F2_FIXTURES:
+        return _run_f2_fixture(args)
     matched = False
     detail = ""
 
@@ -2009,14 +2141,14 @@ def main(argv: list[str] | None = None) -> int:
                         help="adversarial fixture — 항상 exit 2")
     args = parser.parse_args(argv)
 
+    if args.fixture is not None:
+        return cmd_fixture(args)
     if args.audit_compliance:
         return cmd_audit_compliance(args)
     if args.audit_quality:
         return cmd_audit_quality(args)
     if args.audit_scope:
         return cmd_audit_scope(args)
-    if args.fixture is not None:
-        return cmd_fixture(args)
     if args.smoke:
         return cmd_smoke(args)
     if args.validate_manifest:

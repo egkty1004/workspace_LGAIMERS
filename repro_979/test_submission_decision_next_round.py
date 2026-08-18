@@ -21,6 +21,14 @@ Tests:
   (g) naming/provenance compliance of ALL new evidence (EVIDENCE_NAME_RE, git_head /
       recorded_at_utc / config hash / label_sources, no forbidden path tokens, no
       forbidden R-only/leaderboard metric keys as numeric values, no upload markers).
+  (h) Task 11 recovery readiness (aimers9-top100-recovery): (h1/h2) BLOCK-path
+      --check-recovery → SKIPPED_BASELINE_BLOCK exit 0 (label-free, idempotent)
+      with the temp state's baseline_verdict pinned to BASELINE_PROVENANCE_BLOCK
+      (real reconciled state untouched); (h3) 4 recovery fixtures exit 2;
+      (h4) BLOCK-path --register-recovery-qualified → refuse SKIPPED_BASELINE_BLOCK
+      exit 1 (pinned temp state); (h5) naming/provenance/scope compliance;
+      (h6) normal/reconciled path --check-recovery against the REAL state →
+      SKIPPED_NO_PACKAGE exit 0 (terminal readiness dispatch, no task-8 receipt).
 
 Usage: python3 repro_979/test_submission_decision_next_round.py
 Exit:  0 = all tests PASS, 1 = any FAIL.
@@ -34,6 +42,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 REPO = Path(__file__).resolve().parent
 ROOT = REPO.parent
@@ -48,9 +57,10 @@ REAL_PKG = REPO / "submit_champ_cat_20260814-0929"
 CLI = REPO / "submission_decision.py"
 
 sys.path.insert(0, str(REPO))
-import next_round_policy as nrp  # noqa: E402
-import recovery_live_state as rls  # noqa: E402
-import submission_decision as sd  # noqa: E402
+sys.path.insert(0, str(ROOT))  # repro_979.* 패키지 import 용
+import repro_979.next_round_policy as nrp  # noqa: E402
+import repro_979.recovery_live_state as rls  # noqa: E402
+import repro_979.submission_decision as sd  # noqa: E402
 
 PASSED: list[str] = []
 FAILED: list[str] = []
@@ -65,12 +75,12 @@ def check(name: str, cond: bool, detail: str = "") -> None:
         print(f"  FAIL {name} {detail}")
 
 
-def run_cli(cli: Path, *args: str) -> subprocess.CompletedProcess:
+def run_cli(cli: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run([sys.executable, str(cli), *args],
                           capture_output=True, text=True, cwd=str(ROOT))
 
 
-def load(path: Path) -> dict:
+def load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -90,7 +100,7 @@ def head_sha(path: Path) -> str:
     return hashlib.sha256(proc.stdout).hexdigest()
 
 
-def scan_clean(rec: dict, path: Path, forbidden: set[str]) -> list[str]:
+def scan_clean(rec: dict[str, Any], path: Path, forbidden: set[str]) -> list[str]:
     problems: list[str] = []
     problems += nrp.scan_provenance_fields(rec, path)
     problems += nrp.scan_forbidden_usage(rec, forbidden)
@@ -226,9 +236,10 @@ def test_fixtures() -> None:
                   and load(fix_path).get("exit_code") == 2)
             check(f"c.{name}.verdict", fix_path.is_file()
                   and load(fix_path).get("verdict") == "REJECT")
-            check(f"c.{name}.fixture_field", fix_path.is_file()
-                  and load(fix_path).get("fixture") == name)
-            check(f"c.{name}.reason", fix_path.is_file() and load(fix_path).get("reason"))
+            check(f"c.{name}.fixture_field", bool(fix_path.is_file()
+                  and load(fix_path).get("fixture") == name))
+            check(f"c.{name}.reason", bool(fix_path.is_file()
+                  and load(fix_path).get("reason")))
             check(f"c.{name}.config",
                   (tmp / f"task-12-decision-config-fixture-{name}.json").is_file())
             check(f"c.{name}.name_re", fix_path.is_file()
@@ -388,7 +399,7 @@ def test_evidence_compliance() -> None:
     print("[test] (g) naming/provenance compliance of all new task-12 evidence")
     policy = load(REPO / "next_round_policy.json")
     forbidden = set(policy["selection"]["forbidden_sort_keys"])
-    scanned: list[tuple[Path, dict]] = []
+    scanned: list[tuple[Path, dict[str, Any]]] = []
 
     for fname in ("task-12-decision.json", "task-12-decision-config.json",
                   "task-12-decision-check.json"):
@@ -423,7 +434,15 @@ def test_recovery_baseline_block() -> None:
     state_before = sha256_file(STATE)
     tmp = Path(tempfile.mkdtemp(prefix="nr_t11_check_"))
     try:
-        proc = run_cli(CLI, "--check-recovery", "--state", str(STATE),
+        # BLOCK-path 테스트는 temp 상태의 baseline_verdict 를 BLOCK 으로 고정한다
+        # (실제 reconciled 상태는 미변경) — 결정적 레거시 BLOCK 경로.
+        state = load(STATE)
+        state["baseline_verdict"] = "BASELINE_PROVENANCE_BLOCK"
+        state_path = tmp / "state.json"
+        state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2),
+                              encoding="utf-8")
+        state_sha = sha256_file(state_path)
+        proc = run_cli(CLI, "--check-recovery", "--state", str(state_path),
                        "--evidence-dir", str(tmp))
         check("h1.exit0", proc.returncode == 0, f"exit={proc.returncode}")
         ev_path = tmp / "task-11-readiness.json"
@@ -443,12 +462,12 @@ def test_recovery_baseline_block() -> None:
         check("h1.no_notion_row", (ev.get("notion") or {}).get("row_written") is False)
         sm = ev.get("state_mutation") or {}
         check("h1.no_state_mutation", sm.get("mutated") is False
-              and sm.get("sha256_before") == state_before)
+              and sm.get("sha256_before") == state_sha)
         check("h1.git_head", len(str(ev.get("git_head") or "")) >= 7)
         check("h1.recorded_at_utc", bool(ev.get("recorded_at_utc")))
         check("h1.name_re", bool(nrp.EVIDENCE_NAME_RE.match(ev_path.name)))
         sha1 = sha256_file(ev_path)
-        proc2 = run_cli(CLI, "--check-recovery", "--state", str(STATE),
+        proc2 = run_cli(CLI, "--check-recovery", "--state", str(state_path),
                         "--evidence-dir", str(tmp))
         check("h2.exit0", proc2.returncode == 0, f"exit={proc2.returncode}")
         check("h2.not_clobbered", sha256_file(ev_path) == sha1,
@@ -474,7 +493,8 @@ def test_recovery_fixtures() -> None:
                   and load(fix_path).get("verdict") == "REJECT")
             check(f"h3.{name}.fixture_field", fix_path.is_file()
                   and name in load(fix_path).get("fixture", ""))
-            check(f"h3.{name}.reason", fix_path.is_file() and load(fix_path).get("reason"))
+            check(f"h3.{name}.reason", bool(fix_path.is_file()
+                  and load(fix_path).get("reason")))
             check(f"h3.{name}.name_re", fix_path.is_file()
                   and bool(nrp.EVIDENCE_NAME_RE.match(fix_path.name)))
             check(f"h3.{name}.main_not_clobbered",
@@ -489,7 +509,13 @@ def test_recovery_register_blocked() -> None:
     state_before = sha256_file(STATE)
     tmp = Path(tempfile.mkdtemp(prefix="nr_t11_reg_"))
     try:
-        proc = run_cli(CLI, "--register-recovery-qualified", "--state", str(STATE),
+        state = load(STATE)
+        state["baseline_verdict"] = "BASELINE_PROVENANCE_BLOCK"
+        state_path = tmp / "state.json"
+        state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2),
+                              encoding="utf-8")
+        state_sha = sha256_file(state_path)
+        proc = run_cli(CLI, "--register-recovery-qualified", "--state", str(state_path),
                        "--evidence-dir", str(tmp))
         check("h4.exit1", proc.returncode == 1, f"exit={proc.returncode}")
         ev_path = tmp / "task-11-readiness-register-rejected.json"
@@ -500,7 +526,7 @@ def test_recovery_register_blocked() -> None:
         check("h4.exit_recorded", ev.get("exit_code") == 1)
         sm = ev.get("state_mutation") or {}
         check("h4.no_state_mutation", sm.get("mutated") is False
-              and sm.get("sha256_before") == state_before)
+              and sm.get("sha256_before") == state_sha)
         check("h4.mode", ev.get("mode") == "register-recovery-qualified")
         check("h4.name_re", bool(nrp.EVIDENCE_NAME_RE.match(ev_path.name)))
     finally:
@@ -508,10 +534,42 @@ def test_recovery_register_blocked() -> None:
         check("h4.real_state_untouched", sha256_file(STATE) == state_before)
 
 
+def test_recovery_normal_branch() -> None:
+    print("[test] (h6) --check-recovery normal/reconciled path → SKIPPED_NO_PACKAGE exit 0")
+    state_before = sha256_file(STATE)
+    tmp = Path(tempfile.mkdtemp(prefix="nr_t11_normal_"))
+    try:
+        proc = run_cli(CLI, "--check-recovery", "--state", str(STATE),
+                       "--evidence-dir", str(tmp))
+        check("h6.exit0", proc.returncode == 0, f"exit={proc.returncode}")
+        ev_path = tmp / "task-11-readiness.json"
+        check("h6.evidence_written", ev_path.is_file())
+        ev = load(ev_path)
+        check("h6.verdict", ev.get("verdict") == "SKIPPED_NO_PACKAGE",
+              f"verdict={ev.get('verdict')}")
+        check("h6.exit_recorded", ev.get("exit_code") == 0)
+        check("h6.no_labels", ev.get("label_sources") == []
+              and ev.get("labels_read") is False)
+        check("h6.baseline_verdict", ev.get("baseline_verdict") == "BASELINE_RECONCILED",
+              f"baseline_verdict={ev.get('baseline_verdict')}")
+        tr = ev.get("task_routing") or {}
+        check("h6.blocked_tasks", tr.get("blocked_tasks") == [],
+              f"blocked={tr.get('blocked_tasks')}")
+        check("h6.tasks_2_10_absent", tr.get("tasks_2_10_artifacts_present") is False)
+        check("h6.no_notion_row", (ev.get("notion") or {}).get("row_written") is False)
+        sm = ev.get("state_mutation") or {}
+        check("h6.no_state_mutation", sm.get("mutated") is False
+              and sm.get("sha256_before") == state_before)
+        check("h6.name_re", bool(nrp.EVIDENCE_NAME_RE.match(ev_path.name)))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+        check("h6.real_state_untouched", sha256_file(STATE) == state_before)
+
+
 def test_recovery_evidence_compliance() -> None:
     print("[test] (h5) naming/provenance/scope compliance of recovery evidence "
           "(incl. value-level upload-norm scan like --audit-scope-baseline-block)")
-    scanned: list[tuple[Path, dict]] = []
+    scanned: list[tuple[Path, dict[str, Any]]] = []
     for mode in ("check", "register"):
         tmp = Path(tempfile.mkdtemp(prefix=f"nr_t11_comp_{mode}_"))
         try:
@@ -554,6 +612,7 @@ def main() -> int:
     test_recovery_baseline_block()
     test_recovery_fixtures()
     test_recovery_register_blocked()
+    test_recovery_normal_branch()
     test_recovery_evidence_compliance()
     total = len(PASSED) + len(FAILED)
     print(f"\n{len(PASSED)}/{total} PASS, {len(FAILED)} FAIL")

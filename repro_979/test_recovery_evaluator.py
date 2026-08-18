@@ -118,8 +118,9 @@ def test_fixtures(tmp: Path) -> None:
     if main_ev.is_file():
         main_sha = main_ev.read_bytes()
     for name in sorted(re.FIXTURES):
-        if name in re.FREEZE_FIXTURES or name in re.TERMINAL_FIXTURES:
-            continue  # Task 7/8 fixtures are covered by tests (m)/(r)
+        if name in re.FREEZE_FIXTURES or name in re.TERMINAL_FIXTURES \
+                or name in re.F2_FIXTURES:
+            continue  # Task 7/8/F2 fixtures are covered by tests (m)/(r)/(v)
         proc = run_cli("--fixture", name, "--evidence-dir", str(tmp))
         check(f"b.{name}.exit2", proc.returncode == 2, f"(rc={proc.returncode})")
         fix = tmp / f"task-2-evaluator-fixture-{name}.json"
@@ -625,6 +626,60 @@ def test_task8_spent_once(tmp: Path) -> None:
     check("u.absent_freeze_exit2", proc.returncode == 2, f"(rc={proc.returncode})")
 
 
+# ── (v) F2: 4 audit-quality fixtures exit 2 ───────────────────────────
+def test_f2_fixtures(tmp: Path) -> None:
+    print("[test] (v) 4 F2 audit-quality fixtures exit 2, f2-fixture evidence")
+    tmp.mkdir(parents=True, exist_ok=True)
+    run_cli("--audit-quality", "--evidence-dir", str(tmp))
+    main_ev = tmp / "f2-quality.json"
+    main_sha = main_ev.read_bytes() if main_ev.is_file() else None
+    for name in re.F2_FIXTURES:
+        proc = run_cli("--fixture", name, "--evidence-dir", str(tmp))
+        check(f"v.{name}.exit2", proc.returncode == 2, f"(rc={proc.returncode})")
+        fix = tmp / f"f2-fixture-{name}.json"
+        check(f"v.{name}.artifact", fix.is_file(), str(fix))
+        if fix.is_file():
+            rec = load(fix)
+            check(f"v.{name}.fixture_field", rec.get("fixture") == name)
+            check(f"v.{name}.matched", rec.get("matched") is True,
+                  f"detail={rec.get('detail')}")
+            check(f"v.{name}.scan_clean", not scan_clean(rec), f"{scan_clean(rec)}")
+            check(f"v.{name}.md", (tmp / f"f2-fixture-{name}.md").is_file())
+    if main_sha is not None:
+        check("v.main_not_clobbered", main_ev.read_bytes() == main_sha,
+              "(main f2-quality.json byte-identical)")
+
+
+# ── (w) F2: guards do not fire on clean input ─────────────────────────
+def test_f2_guards_clean(tmp: Path) -> None:
+    print("[test] (w) F2 guards do not fire on clean input")
+    n = 100
+    inner = np.zeros(n, dtype=bool)
+    inner[:60] = True
+    outer = np.zeros(n, dtype=bool)
+    outer[60:80] = True  # disjoint from inner
+    try:
+        re._assert_inner_fit_outer_labels(inner, outer)
+        check("w.outer_label_fit_clean", True)
+    except rp.PolicyViolation:
+        check("w.outer_label_fit_clean", False, "guard fired on disjoint masks")
+    try:
+        re._assert_no_test_row_statistic(["balls_before", "strikes_before"])
+        check("w.test_row_stat_clean", True)
+    except rp.PolicyViolation:
+        check("w.test_row_stat_clean", False, "guard fired on clean features")
+    try:
+        re._assert_no_trackman_import("import pandas as pd\nimport numpy as np\n")
+        check("w.trackman_clean", True)
+    except rp.PolicyViolation:
+        check("w.trackman_clean", False, "guard fired on clean source")
+    try:
+        re._assert_deployed_formula_immutable(rp.C_LOGIT, rp.CLIP_LO, rp.CLIP_HI)
+        check("w.formula_clean", True)
+    except rp.PolicyViolation:
+        check("w.formula_clean", False, "guard fired on frozen constants")
+
+
 def main() -> int:
     with tempfile.TemporaryDirectory(prefix="t2ev_test_") as td:
         tmp = Path(td)
@@ -649,6 +704,8 @@ def main() -> int:
         test_task8_terminal_gate(tmp / "s")
         test_task8_frozen_path(tmp / "t")
         test_task8_spent_once(tmp / "u")
+        test_f2_fixtures(tmp / "v")
+        test_f2_guards_clean(tmp / "w")
 
     n_pass, n_fail = len(PASSED), len(FAILED)
     print(f"\n[test] {n_pass} PASS / {n_fail} FAIL")

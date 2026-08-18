@@ -4,11 +4,14 @@
 Tests:
   (a) happy --check on the REAL reconciled leaderboard_state.json → exit 0;
       temp-dir evidence task-1-live-state.json written with verdict
-      BASELINE_PROVENANCE_BLOCK, three fact classes distinguished
-      (user_observed / worker_reported_at / package_proven), rollback
-      5890a4c54f502c4e/992.8390640403 preserved, blocked_tasks 2..10,
-      task_11=SKIPPED_BASELINE_BLOCK; REAL state file sha256 byte-identical
-      before/after.
+      BASELINE_RECONCILED, three fact classes distinguished
+      (user_observed / worker_reported_at / package_proven), all six
+      provenance elements proven (v93 6-leg package), rollback
+      5890a4c54f502c4e/992.8390640403 preserved, blocked_tasks [] (Tasks 2-10
+      proceed), task_11=normal; REAL state file sha256 byte-identical
+      before/after. The reconciled evidence legitimately references the v93
+      package archive filename (submit_v93_r0476.zip) — the ONLY forbidden
+      path token present must be .zip.
   (b) each of the 3 fixtures (missing-reported-at, score-package-mismatch,
       invented-event) exits 2, writes task-1-live-state-fixture-<name>.{json,md}
       with fixture+matched fields, never mutates the real state, never clobbers
@@ -39,6 +42,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from typing import Any
 
 REPO = Path(__file__).resolve().parent
 ROOT = REPO.parent
@@ -47,7 +51,8 @@ EVIDENCE_DIR = ROOT / ".omo" / "evidence" / "aimers9-top100-recovery"
 CLI = REPO / "recovery_live_state.py"
 
 sys.path.insert(0, str(REPO))
-import recovery_live_state as rls  # noqa: E402
+sys.path.insert(0, str(ROOT))  # repro_979.* 패키지 import 용
+import repro_979.recovery_live_state as rls  # noqa: E402
 
 PASSED: list[str] = []
 FAILED: list[str] = []
@@ -62,12 +67,12 @@ def check(name: str, cond: bool, detail: str = "") -> None:
         print(f"  FAIL {name} {detail}")
 
 
-def run_cli(*args: str) -> subprocess.CompletedProcess:
+def run_cli(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run([sys.executable, str(CLI), *args],
                           capture_output=True, text=True, cwd=str(ROOT))
 
 
-def load(path: Path) -> dict:
+def load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -79,11 +84,14 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def scan_clean(rec: dict) -> list[str]:
+def scan_clean(rec: dict[str, Any], allowed_tokens: set[str] | None = None) -> list[str]:
+    """증거 범위 스캔. allowed_tokens 는 정당하게 존재할 수 있는 금지 토큰
+    (예: reconciled 패키지 아카이브 파일명의 .zip) 을 제외한다."""
+    allowed = allowed_tokens or set()
     problems: list[str] = []
     for s in rls._iter_strs(rec):
         for tok in rls.FORBIDDEN_PATH_TOKENS:
-            if tok in s:
+            if tok in s and tok not in allowed:
                 problems.append(f"forbidden path token {tok!r}")
                 break
     for key in rls._iter_strs(rec):
@@ -91,6 +99,11 @@ def scan_clean(rec: dict) -> list[str]:
             problems.append(f"upload marker key {key!r}")
             break
     return problems
+
+
+def forbidden_tokens_present(rec: dict[str, Any]) -> set[str]:
+    return {t for s in rls._iter_strs(rec)
+            for t in rls.FORBIDDEN_PATH_TOKENS if t in s}
 
 
 # ── (a) happy --check (real state, temp evidence) ─────────────────────
@@ -107,8 +120,8 @@ def test_happy_check(tmp: Path) -> None:
     if not ev.is_file():
         return
     rec = load(ev)
-    check("a.verdict", rec.get("verdict") == "BASELINE_PROVENANCE_BLOCK",
-          rec.get("verdict"))
+    check("a.verdict", rec.get("verdict") == "BASELINE_RECONCILED",
+          str(rec.get("verdict")))
     uo = rec["facts"]["user_observed"]
     check("a.user_observed", (uo["rank_100_cutoff"] == 1090.64249
                               and uo["current_best_public_score"] == 1001.74449
@@ -123,22 +136,29 @@ def test_happy_check(tmp: Path) -> None:
           and wr["timezone"] == "Asia/Seoul",
           f"reported_at={wr['reported_at']}")
     pp = rec["facts"]["package_proven"]["elements"]
-    check("a.package_proven_all_unproven",
-          all(pp[e]["proven"] is False for e in rls.PROVENANCE_ELEMENTS),
+    check("a.package_proven_all_proven",
+          all(pp[e]["proven"] is True for e in rls.PROVENANCE_ELEMENTS),
           f"{ {e: pp[e]['proven'] for e in rls.PROVENANCE_ELEMENTS} }")
     rp = rec["rollback_preserved"]
     check("a.rollback",
           (rp["candidate_id"] == "5890a4c54f502c4e"
            and abs(rp["public_score"] - 992.8390640403) < 1e-12
            and rp["submissions_by_date"] == {"2026-08-14": 2}))
-    check("a.blocked_tasks", rec["task_routing"]["blocked_tasks"] == list(map(str, range(2, 11))),
+    check("a.blocked_tasks", rec["task_routing"]["blocked_tasks"] == [],
           f"{rec['task_routing']['blocked_tasks']}")
-    check("a.task11", rec["task_routing"]["task_11"] == "SKIPPED_BASELINE_BLOCK")
+    check("a.task11", rec["task_routing"]["task_11"] == "normal",
+          f"{rec['task_routing']['task_11']}")
     check("a.notion_field", "notion" in rec, f"status={rec.get('notion', {}).get('status')}")
     check("a.checks_all_ok", all(c["ok"] for c in rec["checks"]),
           f"{[c['rule'] for c in rec['checks'] if not c['ok']]}")
     check("a.labels_unread", rec["labels_read"] is False and rec["label_sources"] == [])
-    check("a.scan_clean", not scan_clean(rec), f"{scan_clean(rec)}")
+    # reconciled 증거는 v93 패키지 아카이브 파일명(submit_v93_r0476.zip)을 정당하게
+    # 참조하므로 .zip 토큰만 허용하고, 그 외 금지 토큰/업로드 마커는 없어야 한다.
+    check("a.scan_clean", not scan_clean(rec, allowed_tokens={".zip"}),
+          f"{scan_clean(rec)}")
+    check("a.scan_only_reconciled_zip",
+          forbidden_tokens_present(rec) <= {".zip"},
+          f"tokens={forbidden_tokens_present(rec)}")
     check("a.md_written", (tmp / "task-1-live-state.md").is_file())
 
 
@@ -223,7 +243,21 @@ def _write_audit_dir(root: Path, *,
     d = root / "audit_ev"
     shutil.rmtree(d, ignore_errors=True)
     d.mkdir(parents=True, exist_ok=True)
-    task1 = load(EVIDENCE_DIR / "task-1-live-state.json")
+    # BLOCK-path 감사는 BLOCK verdict 의 task-1 증거를 요구한다. 실제 증거는 이제
+    # BASELINE_RECONCILED 이므로, 결정적 BLOCK 경로를 위해 합성 BLOCK 레코드를 쓴다
+    # (실제 증거/상태는 미변경).
+    task1 = {
+        "schema_version": 1,
+        "title": "Todo 1 — reconcile live leaderboard state & 1001.74449 provenance",
+        "task": "aimers9-top100-recovery/task-1-live-state",
+        "verdict": "BASELINE_PROVENANCE_BLOCK",
+        "baseline_verdict": "BASELINE_PROVENANCE_BLOCK",
+        "exit_code": 0,
+        "recorded_at_utc": "2026-08-17T04:00:00+00:00",
+        "git_head": "c191a5864749aabedd9c3166475c52d59cddd21e",
+        "label_sources": [],
+        "labels_read": False,
+    }
     (d / "task-1-live-state.json").write_text(
         json.dumps(task1, ensure_ascii=False, indent=2), encoding="utf-8")
     if task11_verdict is not None:
