@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "title": "Todo 5 fixture — offset-identity",
+  "task": "aimers9-top100-recovery/task-5-residual-fixture-offset-identity",
+  "verdict": "PASS",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-18T01:25:16+00:00",
+  "git_head": "f9e447fe904adf6c826b459ea160f321725c7fbc",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "offset-identity",
+  "matched": true,
+  "detail": "identity 유지: p_residual=sigmoid(z_base+C_LOGIT) → 배포 예측 정확히 불변 (max|Δp|=1.11e-16)",
+  "checks": [
+    {
+      "rule": "fixture_offset-identity",
+      "ok": true,
+      "reason": "identity 유지: p_residual=sigmoid(z_base+C_LOGIT) → 배포 예측 정확히 불변 (max|Δp|=1.11e-16)"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-5-residual-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'offset-identity' — offset-identity 는 성공 시 exit 0, 나머지는 exit 2."
+}

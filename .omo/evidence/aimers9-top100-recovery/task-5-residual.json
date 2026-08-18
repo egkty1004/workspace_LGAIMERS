@@ -1,0 +1,318 @@
+{
+  "schema_version": 1,
+  "title": "Todo 5 — screen causal OOF residual-ridge correction",
+  "task": "aimers9-top100-recovery/task-5-residual",
+  "verdict": "REJECT",
+  "exit_code": 0,
+  "recorded_at_utc": "2026-08-18T01:25:12+00:00",
+  "git_head": "f9e447fe904adf6c826b459ea160f321725c7fbc",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [
+    "r2022",
+    "r2023"
+  ],
+  "labels_read": true,
+  "mode": "screen",
+  "candidate_id": "residual_ridge",
+  "config": {
+    "c_grid": [
+      0.001,
+      0.01,
+      0.1,
+      1.0
+    ],
+    "c_pre_registered": 0.01,
+    "correction_cap": 0.05,
+    "z_corrected": "z_base + clip(logit(p_residual) - C_LOGIT - z_base, -.05, .05)",
+    "logistic_regression": {
+      "penalty": "l2",
+      "solver": "lbfgs",
+      "fit_intercept": true,
+      "max_iter": 1000,
+      "tol": 1e-08
+    },
+    "standardize": [
+      "base_logit",
+      "balls_before",
+      "strikes_before",
+      "outs_before"
+    ],
+    "one_hot": [
+      "game_type",
+      "platoon",
+      "base_state"
+    ],
+    "base_oof_years": [
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "bounded_rows": 30000,
+    "base_oof_model": "lightweight LightGBM proxy (screen simplification)"
+  },
+  "origins": {
+    "r2022": {
+      "origin": "r2022",
+      "outer_year": 2022,
+      "selected_c": 0.01,
+      "c_selection": {
+        "mode": "pre_registered",
+        "reason": "r2022 는 사전 등록 C=.01 — 이전 forward 검증 연도 없음",
+        "forward_years": []
+      },
+      "fit_years": [
+        2020,
+        2021
+      ],
+      "inner_outer_disjoint": {
+        "outer_year": 2022,
+        "inner_years": [
+          {
+            "year": 2020,
+            "val_mask_hash": "7b4340d1641b5d32b34594ed0e92fd3fab2884e88312ed6bde9c38a6ff8dac9b",
+            "overlap_with_outer": 0
+          },
+          {
+            "year": 2021,
+            "val_mask_hash": "648954756421fb4739b5876f7e770b94f13075076debae1ee6a7fc55982c2a3a",
+            "overlap_with_outer": 0
+          }
+        ],
+        "outer_val_mask_hash": "f3ed93deac4bfeef50efc677a5ed3a0c33aa066b5723864b2dc5d3b3b8f4ac91"
+      },
+      "correction_cap": 0.05,
+      "z_corrected_formula": "z_base + clip(logit(p_residual) - C_LOGIT - z_base, -.05, .05)",
+      "residual_complementarity": 0.02362030226419743,
+      "base_oof_diagnostic": {
+        "base_oof_bss": 0.0,
+        "corrected_bss": 0.0,
+        "base_oof_brier": 0.2614059966412656,
+        "corrected_brier": 0.258995659008863,
+        "correction_delta_bss": 0.0
+      },
+      "n_rows": 30000
+    },
+    "r2023": {
+      "origin": "r2023",
+      "outer_year": 2023,
+      "selected_c": 0.001,
+      "c_selection": {
+        "mode": "rolling_forward",
+        "forward_years": [
+          2021
+        ],
+        "grid": [
+          0.001,
+          0.01,
+          0.1,
+          1.0
+        ],
+        "objective": "unweighted mean of completed forward-year deployed Brier",
+        "tie": "smallest C on exact tie",
+        "per_c": {
+          "0.001": {
+            "mean_brier": 0.25330419307930807,
+            "per_year": {
+              "2021": 0.25330419307930807
+            }
+          },
+          "0.01": {
+            "mean_brier": 0.25330419307930807,
+            "per_year": {
+              "2021": 0.25330419307930807
+            }
+          },
+          "0.1": {
+            "mean_brier": 0.25330419307930807,
+            "per_year": {
+              "2021": 0.25330419307930807
+            }
+          },
+          "1.0": {
+            "mean_brier": 0.25330419307930807,
+            "per_year": {
+              "2021": 0.25330419307930807
+            }
+          }
+        }
+      },
+      "fit_years": [
+        2020,
+        2021,
+        2022
+      ],
+      "inner_outer_disjoint": {
+        "outer_year": 2023,
+        "inner_years": [
+          {
+            "year": 2020,
+            "val_mask_hash": "7b4340d1641b5d32b34594ed0e92fd3fab2884e88312ed6bde9c38a6ff8dac9b",
+            "overlap_with_outer": 0
+          },
+          {
+            "year": 2021,
+            "val_mask_hash": "648954756421fb4739b5876f7e770b94f13075076debae1ee6a7fc55982c2a3a",
+            "overlap_with_outer": 0
+          },
+          {
+            "year": 2022,
+            "val_mask_hash": "f3ed93deac4bfeef50efc677a5ed3a0c33aa066b5723864b2dc5d3b3b8f4ac91",
+            "overlap_with_outer": 0
+          }
+        ],
+        "outer_val_mask_hash": "283c819a72fc0e591c1739facddbbdebf9d2862eb4180f38753542729028f628"
+      },
+      "correction_cap": 0.05,
+      "z_corrected_formula": "z_base + clip(logit(p_residual) - C_LOGIT - z_base, -.05, .05)",
+      "residual_complementarity": 0.03079822890281317,
+      "base_oof_diagnostic": {
+        "base_oof_bss": 0.0,
+        "corrected_bss": 0.0,
+        "base_oof_brier": 0.2656843019111779,
+        "corrected_brier": 0.2628097216358717,
+        "correction_delta_bss": 0.0
+      },
+      "n_rows": 30000
+    }
+  },
+  "gate": {
+    "origins": {
+      "r2022": {
+        "delta_bss": -1929.779072444926,
+        "brier_candidate": 0.258995659008863,
+        "brier_baseline": 0.24517497588392245,
+        "bootstrap_lb5": -2086.4444947233937,
+        "mean_shift": 0.09701733049097172,
+        "finite": true,
+        "checks": {
+          "delta_bss_gt_1": false,
+          "brier_reduced": false,
+          "bootstrap_lb5_gt_0": false,
+          "mean_shift_le_005": false,
+          "finite": true
+        }
+      },
+      "r2023": {
+        "delta_bss": -1884.7225846001181,
+        "brier_candidate": 0.2628097216358717,
+        "brier_baseline": 0.244940184100356,
+        "bootstrap_lb5": -2060.19100781346,
+        "mean_shift": 0.1089987732555594,
+        "finite": true,
+        "checks": {
+          "delta_bss_gt_1": false,
+          "brier_reduced": false,
+          "bootstrap_lb5_gt_0": false,
+          "mean_shift_le_005": false,
+          "finite": true
+        }
+      }
+    },
+    "passed": false,
+    "verdict": "REJECT",
+    "violations": [
+      "r2022: ΔBSS=-1929.7791(>1.0?False) Brier 0.258996<0.245175?False LB5=-2086.4445(>0?False) mean_shift=0.097017(<=0.005?False) finite=True",
+      "r2023: ΔBSS=-1884.7226(>1.0?False) Brier 0.262810<0.244940?False LB5=-2060.1910(>0?False) mean_shift=0.108999(<=0.005?False) finite=True"
+    ]
+  },
+  "checks": [
+    {
+      "rule": "origin_masks",
+      "ok": true,
+      "reason": "r2022/r2023/primary/r2024 마스크 + row-ID 분리 검증"
+    },
+    {
+      "rule": "base_oof_causal",
+      "ok": true,
+      "reason": "one-year-ahead base OOF (train mask ends t-1), R-only, bounded 30000 rows/year, 경량 LGB 프록시 (스크린 단순화)"
+    },
+    {
+      "rule": "correction_config_before_outer_labels_r2022",
+      "ok": true,
+      "reason": "C=0.01 선택은 outer(r2022) 라벨 로드 이전에 완료 (fit_years=[2020, 2021])"
+    },
+    {
+      "rule": "inner_outer_disjoint_r2022",
+      "ok": true,
+      "reason": "inner-OOF/outer 마스크 분리 + 해시 (outer_year=2022)"
+    },
+    {
+      "rule": "correction_cap_r2022",
+      "ok": true,
+      "reason": "correction cap = ±0.05 (z_corrected clip)"
+    },
+    {
+      "rule": "residual_complementarity_r2022",
+      "ok": true,
+      "reason": "corr(correction, base_residual) = +0.0236"
+    },
+    {
+      "rule": "correction_config_before_outer_labels_r2023",
+      "ok": true,
+      "reason": "C=0.001 선택은 outer(r2023) 라벨 로드 이전에 완료 (fit_years=[2020, 2021, 2022])"
+    },
+    {
+      "rule": "inner_outer_disjoint_r2023",
+      "ok": true,
+      "reason": "inner-OOF/outer 마스크 분리 + 해시 (outer_year=2023)"
+    },
+    {
+      "rule": "correction_cap_r2023",
+      "ok": true,
+      "reason": "correction cap = ±0.05 (z_corrected clip)"
+    },
+    {
+      "rule": "residual_complementarity_r2023",
+      "ok": true,
+      "reason": "corr(correction, base_residual) = +0.0308"
+    }
+  ],
+  "violations": [
+    {
+      "rule": "screen_gate",
+      "ok": false,
+      "reason": "r2022: ΔBSS=-1929.7791(>1.0?False) Brier 0.258996<0.245175?False LB5=-2086.4445(>0?False) mean_shift=0.097017(<=0.005?False) finite=True"
+    },
+    {
+      "rule": "screen_gate",
+      "ok": false,
+      "reason": "r2023: ΔBSS=-1884.7226(>1.0?False) Brier 0.262810<0.244940?False LB5=-2060.1910(>0?False) mean_shift=0.108999(<=0.005?False) finite=True"
+    }
+  ],
+  "findings": [
+    {
+      "rule": "no_primary_read",
+      "ok": true,
+      "reason": "--screen 경로는 read_selection_labels 만 호출 — primary 라벨 구조적으로 미로드 (파이어월)"
+    },
+    {
+      "rule": "no_target_encoding",
+      "ok": true,
+      "reason": "보정 피처는 [base_logit,balls_before,strikes_before,outs_before] 표준화 + [game_type,platoon,base_state] one-hot 만 — target encoding/타깃 파생 그룹/터미널 라벨 미사용"
+    },
+    {
+      "rule": "bounded_subset_consistency",
+      "ok": true,
+      "reason": "Task 3 과 동일 bounded 30000 행 부분집합 사용 (문서화된 편차)"
+    }
+  ],
+  "notes": "스크린은 경량 LGB base OOF 프록시로 보정 메커니즘을 검증 — per-year 6-leg 재학습은 계산상 불가. 후보/베이스라인은 동일 bounded 행 비교.",
+  "notion_receipt": {
+    "table": "local-CV (Aimers9 실험 기록)",
+    "table_block_id": "3b55ed6b-28d5-8135-9341-fa1109df78af",
+    "row_block_id": "3c05ed6b-28d5-8165-9c54-c02719a542e5",
+    "row_written": true,
+    "fields": [
+      "date",
+      "model/config_hash",
+      "validation_origins",
+      "BSS",
+      "Brier",
+      "r",
+      "verdict"
+    ],
+    "note": "real label-scored screen (r2022/r2023) — Notion local-CV SSOT row appended"
+  }
+}

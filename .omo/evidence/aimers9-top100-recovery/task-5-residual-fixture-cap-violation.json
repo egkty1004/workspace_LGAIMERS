@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "title": "Todo 5 fixture — cap-violation",
+  "task": "aimers9-top100-recovery/task-5-residual-fixture-cap-violation",
+  "verdict": "FIXTURE_REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-18T01:25:14+00:00",
+  "git_head": "f9e447fe904adf6c826b459ea160f321725c7fbc",
+  "config_hash": "158be42401fc5ce3fec78af960900a4d7c040fa08d960a4849113608eeb4b420",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "cap-violation",
+  "matched": true,
+  "detail": "cap 미적용 시 z_corrected 가 cap 범위를 벗어남 (max|Δ|=1.254172 > 0) — cap 필수",
+  "checks": [
+    {
+      "rule": "fixture_cap-violation",
+      "ok": true,
+      "reason": "cap 미적용 시 z_corrected 가 cap 범위를 벗어남 (max|Δ|=1.254172 > 0) — cap 필수"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-5-residual-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'cap-violation' — offset-identity 는 성공 시 exit 0, 나머지는 exit 2."
+}
