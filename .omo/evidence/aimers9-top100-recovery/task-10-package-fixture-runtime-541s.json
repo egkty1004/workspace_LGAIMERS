@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "title": "Todo 10 package fixture — runtime-541s (adversarial, exit 2)",
+  "task": "aimers9-top100-recovery/task-10-package-fixture-runtime-541s",
+  "verdict": "FIXTURE_REJECT",
+  "exit_code": 2,
+  "recorded_at_utc": "2026-08-18T04:29:48+00:00",
+  "git_head": "9d52e33d0449d8707bbb80074b14459bba8a7c27",
+  "config_hash": "77e473b7bc1f62afdbbd9231f3de12ba52205b5ff3cbef7b5dfb5484fb8db063",
+  "label_sources": [],
+  "labels_read": false,
+  "fixture": "runtime-541s",
+  "matched": true,
+  "detail": "541s 런타임 거부: 추론 런타임 541.0s ≥ 540s (exit 2)",
+  "checks": [
+    {
+      "rule": "fixture_runtime-541s",
+      "ok": true,
+      "reason": "541s 런타임 거부: 추론 런타임 541.0s ≥ 540s (exit 2)"
+    }
+  ],
+  "violations": [],
+  "findings": [
+    {
+      "rule": "no_main_evidence_clobber",
+      "ok": true,
+      "reason": "fixture 는 task-10-package-fixture-<name>.{json,md} 만 기록"
+    }
+  ],
+  "notes": "fixture 'runtime-541s' 는 반드시 exit 2 — 가드가 위반을 차단해야 함."
+}
