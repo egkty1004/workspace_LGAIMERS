@@ -1,82 +1,51 @@
-# workspace_LGAIMERS — Aimers9 해커톤 작업 워크스페이스
+# workspace_LGAIMERS operating policy
 
-> 이 AGENTS.md는 이 폴더에서 열리는 **모든 세션에 자동 로드**됩니다.
-> 세션마다 반복 설명할 필요 없이, 아래 지침을 항상 따른다.
+This repository supports the LG Aimers 9 pitch-control probability-prediction competition.
 
----
+## Sources of truth
 
-## 프로젝트 개요
+- The GitHub repository is the technical source of truth.
+- The actual default branch is `master`.
+- For nontrivial changes, do not work directly on `master`. Use a scoped task branch such as `exp/...`, `fix/...`, or `chore/...` unless the user explicitly requests otherwise.
+- `AI_CONTEXT.md` contains stable technical context.
+- `PROJECT_STATUS.md` contains mutable current project state.
+- The current core implementation lives primarily under `repro_979/`.
+- `baseline/` and `experiments/` contain official-baseline and older/historical work.
+- Notion, when available, is a human-readable mirror rather than a technical SSOT.
 
-- **대회**: DACON Aimers 9기 — 투구 제구 성공 확률 예측 AI 해커톤 (Phase 2)
-- **문서**: `docs/dacon_aimers9_pitching_control_hackathon.md` (상세 규칙·일정·평가)
-- **평가지표**: Brier Skill Score (BSS) — 수료 기준 Public Score ≥ 549.51
-- **제출**: `submit.zip` 구조(`model/`, `script.py`, `requirements.txt`) 엄수
+## Git and artifact safety
 
-## 폴더 구조
+- Never blindly run `git add -A`. Inspect `git status` and the intended diff before staging.
+- Never commit or push without explicit user approval.
+- Never commit raw data, model binaries, caches, large outputs, or submission zip artifacts unless explicitly required and verified.
+- Existing tracked `.omo/evidence` files are historical evidence; do not assume that all of `.omo/` is untracked.
+- Preserve unrelated user changes and do not rewrite history or delete artifacts without explicit authorization.
 
-| 폴더 | 용도 | git 추적 |
-|---|---|---|
-| `데이터/` | 원본 데이터 (852MB) | ❌ 제외 |
-| `베이스라인/` | 공식 베이스라인 코드 (RF) | ✅ |
-| `베이스라인 실험용/` | 실험용 사본 (data/model/output 제외) | ✅ (코드만) |
-| `docs/` | 대회 문서 | ✅ |
+## Competition and ML safety
 
-## ⚠️ 필수 상시 규칙
+- Use official competition data only. The final solution must not depend on external data or external APIs.
+- Treat each test row independently: do not use information from other test rows or apply test-distribution-based correction.
+- Probability quality, measured through Brier Score/Brier Skill Score, is the primary evaluation concern.
+- Leakage is a blocker. This includes target, temporal, split, preprocessing, terminal-label, and test-distribution leakage.
+- Never change a validation protocol, scoring form, fold role, calibration rule, or promotion gate silently. Document and obtain agreement for the change.
 
-1. **git은 이 저장소에서만** — 데이터·강의자료·실험물(model/output/*.zip)은 절대 커밋하지 않는다 (`.gitignore`가 처리하지만 변경 시 검증).
-2. **실험은 반드시 git 추적** — 새 실험 코드/스크립트를 만들면 커밋한다.
-3. **커밋 메시지 규칙** — `type: 설명` 형식 (`feat:`, `exp:`, `fix:`, `docs:`, `refactor:`).
-4. **브랜치 규칙** — 기본 `main` 유지. 대규모 실험은 `exp/` 브랜치 사용.
+## Execution-cost policy
 
-## 📊 실험/제출 기록 의무 (까먹지 말 것)
+- **CHEAP**: static inspection, syntax/type checks, and small unit tests.
+- **MEDIUM**: smoke tests, small fixtures, and tiny-subset runs.
+- **EXPENSIVE**: full CV, multi-seed training, 10,000-resample bootstrap, full deployment training, and full-size package inference/validation.
+- EXPENSIVE commands require explicit user approval before execution.
+- Do not run expensive legacy scripts merely because they exist. Confirm that the runner belongs to the active policy first.
 
-로컬 CV ↔ 리더보드 매칭의 **단일 진실 원천(SSOT)**은 Notion **"🧪 Aimers9 실험 기록 — 로컬 CV & 리더보드"** 페이지
-(페이지 ID: `3b55ed6b-28d5-81a0-80da-fe91eec240c6`). docs/*.md는 참조일 뿐.
+## GPU and environment policy
 
-1. **로컬 CV 실행 후** → 📊 로컬 CV 테이블에 행 추가: 날짜·모델·검증 세트·BSS·Brier·r·비고
-2. **DACON 제출 후** (사용자가 점수 알려주면) → 🏆 리더보드 테이블에 행 추가: 제출일·파일/모델·Public·Private·비고 (δ/C_LOGIT 포함)
-3. 제출 결과가 나오면 **즉시** 기록한다 — "나중에"로 미루지 않는다.
+- Never assume GPU 0 is free; inspect GPU availability before GPU work.
+- School-server GPU performance is development evidence, not a substitute for the competition evaluation environment.
+- Prefer the progression: smoke test, limited validation, then an explicitly approved full run.
+- Final submission checks should reproduce the official CPU, memory, GPU, Python, offline, row-count, and time constraints as closely as practical.
 
----
+## Working discipline
 
-## 🔄 세션 종료 루틴 (가장 중요)
-
-사용자가 **"끝", "종료", "꺼도 돼", "재시작할게", "마무리"** 등 세션 종료 의사를 밝히면,
-또는 `/end-session` 명령을 실행하면, **반드시 아래 순서대로 수행**한다:
-
-### Step 1 — Git 커밋
-```bash
-cd ~/workspace_LGAIMERS
-git add -A
-git status          # 변경/추가된 파일 확인
-```
-- 커밋할 내용이 있으면: `git commit -m "feat: 작업 요약"` (요약은 이번 세션에서 한 일을 반영)
-- 커밋할 내용이 없으면: 스킵하고 Step 2로
-
-### Step 2 — Notion 작업 로그 기록
-Notion MCP를 이용해 **"Aimers9 해커톤 작업로그" 페이지에 세션 요약을 append**한다:
-- 페이지 ID: `3b55ed6b-28d5-818c-95ef-d0794d8500b6`
-- 도구: `notion_API-patch-block-children` (block_id = 페이지 ID)
-- 형식 (heading_3 + bulleted_list_item):
-  - `#### YYYY-MM-DD 세션` (오늘 날짜)
-  - **한 일**: 이번 세션에서 완료한 작업 (구체적으로)
-  - **실험/결과**: 실험한 내용과 성과 (점수 변화 등)
-  - **다음 할 일**: 다음 세션에서 할 작업
-- 기존 로그와 섞이지 않도록, 항상 **마지막에 append**한다 (after 파라미터 또는 자연스럽게 끝에 추가)
-- ⚠️ **이번 세션에 CV 실행/제출이 있었는지 확인**하고, 있었다면 "🧪 Aimers9 실험 기록" 페이지의 해당 테이블(로컬 CV / 리더보드)에 반영됐는지 검증. 미반영 시 먼저 기록 후 로그 작성.
-
-### Step 3 — 종료 요약 보고
-사용자에게 마지막 요약을 짧게 보고한다:
-- 커밋 여부 + 커밋 메시지
-- Notion 로그 기록 완료
-- 다음 세션에서 이어서 할 일 1줄
-
----
-
-## 대회 핵심 제약 (작업 중 항상 유지)
-
-- 외부 데이터/API 사용 금지 (공식 데이터만)
-- 추론 제한: 10분 / 245,789행 — 코드 작성 시 고려
-- 평가 환경: 6 vCPU, 28GB RAM, L4 GPU — 로컬에서도 비슷하게 테스트
-- 인터넷 불가 환경에서 동작해야 함 (외부 다운로드 코드 금지)
-- 1일 제출 5회 한도 — 제출 전 신중하게
+- For read/review tasks, do not modify files or external systems.
+- For implementation tasks, modify only the authorized scope and verify proportionally to risk and cost.
+- Before selecting or running an experiment, read `AI_CONTEXT.md`, `PROJECT_STATUS.md`, and the active policy/state files referenced there.
