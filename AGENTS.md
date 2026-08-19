@@ -49,3 +49,11 @@ This repository supports the LG Aimers 9 pitch-control probability-prediction co
 - For read/review tasks, do not modify files or external systems.
 - For implementation tasks, modify only the authorized scope and verify proportionally to risk and cost.
 - Before selecting or running an experiment, read `AI_CONTEXT.md`, `PROJECT_STATUS.md`, and the active policy/state files referenced there.
+
+## Delegation policy
+
+- The parent/orchestrator owns analysis, planning, task decomposition, project and ML policy interpretation, and final integration.
+- Use the named `implementation_worker` only for concrete, bounded implementation and proportionate testing within the user-authorized scope.
+- The implementation worker must not choose or change experiment, validation, scoring, calibration, recovery, promotion, leakage, or champion policy.
+- The parent must review the worker's changes and test evidence before accepting or integrating them.
+- Delegation does not weaken Git safety, leakage controls, execution-cost classifications, GPU policy, or user-approval requirements.
