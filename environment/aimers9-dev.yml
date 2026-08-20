@@ -1,0 +1,6 @@
+name: aimers9-dev
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11.15
+  - pip

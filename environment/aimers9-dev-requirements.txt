@@ -1,0 +1,16 @@
+# Direct development dependencies verified on the school GPU node.
+#
+# Torch is intentionally installed by scripts/bootstrap_gpu.py with:
+#   --index-url https://download.pytorch.org/whl/cu128
+#   --extra-index-url https://pypi.org/simple
+#   torch==2.7.1+cu128
+# This avoids resolving an ambiguous generic PyPI Torch build.
+numpy==1.26.4
+pandas==2.0.3
+scipy==1.15.3
+scikit-learn==1.8.0
+joblib==1.5.3
+threadpoolctl==3.6.0
+lightgbm==4.7.0
+catboost==1.2.10
+xgboost==3.2.0  # development-only; not a submission dependency
