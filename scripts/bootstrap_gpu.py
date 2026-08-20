@@ -31,6 +31,7 @@ TORCH_VERSION = "2.7.1+cu128"
 TORCH_CUDA_VERSION = "12.8"
 TORCH_INDEX_URL = "https://download.pytorch.org/whl/cu128"
 PYPI_INDEX_URL = "https://pypi.org/simple"
+CONDA_SOLVER = "libmamba"
 
 DATA_FILES = ("train.csv", "test.csv", "sample_submission.csv")
 PACKAGE_SOURCE_FILES = ("script.py", "common.py", "mlp_model.py", "requirements.txt")
@@ -388,14 +389,28 @@ def apply_links(repo_root: Path, specs: Sequence[LinkSpec]) -> dict[str, str]:
 
 
 def _run(
-    command: Sequence[str], *, check: bool = True
+    command: Sequence[str], *, check: bool = True, stage: str = "command"
 ) -> subprocess.CompletedProcess[str]:
+    rendered_command = " ".join(command)
     try:
         return subprocess.run(
             list(command), check=check, capture_output=True, text=True, timeout=600
         )
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise BootstrapError(f"command failed: {' '.join(command)}: {exc}") from exc
+    except subprocess.TimeoutExpired as exc:
+        raise BootstrapError(
+            f"{stage} timed out after {exc.timeout} seconds: {rendered_command}"
+        ) from exc
+    except subprocess.CalledProcessError as exc:
+        detail = (exc.stderr or exc.stdout or "").strip()
+        detail_suffix = f"; output: {detail[-2000:]}" if detail else ""
+        raise BootstrapError(
+            f"{stage} failed with exit code {exc.returncode}: "
+            f"{rendered_command}{detail_suffix}"
+        ) from exc
+    except OSError as exc:
+        raise BootstrapError(
+            f"{stage} could not start: {rendered_command}: {exc}"
+        ) from exc
 
 
 def conda_executable() -> str:
@@ -493,9 +508,25 @@ def ensure_environment(repo_root: Path, env_name: str) -> dict[str, Any]:
 
     manifest = repo_root / "environment" / "aimers9-dev.yml"
     requirements = repo_root / "environment" / "aimers9-dev-requirements.txt"
-    _run((conda, "env", "create", "--name", env_name, "--file", str(manifest)))
+    _run(
+        (
+            conda,
+            "env",
+            "create",
+            "--solver",
+            CONDA_SOLVER,
+            "--name",
+            env_name,
+            "--file",
+            str(manifest),
+        ),
+        stage=f"fresh Conda environment creation (solver={CONDA_SOLVER})",
+    )
     python = (conda, "run", "-n", env_name, "python", "-m", "pip", "install")
-    _run((*python, "-r", str(requirements)))
+    _run(
+        (*python, "-r", str(requirements)),
+        stage="pinned development dependency installation",
+    )
     _run(
         (
             *python,
@@ -504,7 +535,8 @@ def ensure_environment(repo_root: Path, env_name: str) -> dict[str, Any]:
             "--extra-index-url",
             PYPI_INDEX_URL,
             f"torch=={TORCH_VERSION}",
-        )
+        ),
+        stage="CUDA 12.8 Torch installation",
     )
     return audit_environment(conda, env_name)
 
