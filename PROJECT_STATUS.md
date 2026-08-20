@@ -1,8 +1,8 @@
 # Project Status
 
-Updated: 2026-08-19 (repository-evidence snapshot)
+Updated: 2026-08-20 (repository-evidence snapshot)
 
-Evidence base: `master` at `5b2a620` before the documentation bootstrap.
+Evidence base: `master` at `26879a392996ad878ed330da858f49fdb9abab78`.
 
 Update this document whenever the active ML policy, champion, leaderboard state, or recovery decision materially changes.
 
@@ -57,6 +57,24 @@ Important policy/state records:
 
 These files have different roles: policy code defines active behavior, JSON records structured configuration/state, and evidence records historical executions and audits. Do not mutate state merely to make documentation agree with it.
 
+## GPU bootstrap operational status
+
+The reproducible school-GPU development bootstrap is now present in the repository. The fresh-environment correction that explicitly uses the supported libmamba solver was merged via PR #4.
+
+Final school-GPU MEDIUM acceptance completed successfully:
+
+- Fresh `apply`: rc=0, elapsed 203 seconds.
+- Subsequent `check`: rc=0.
+- Second `apply`: rc=0, elapsed 4 seconds, confirming the tested idempotent path.
+- Direct environment audit: rc=0; `pip check`: rc=0.
+- Environment identity: Python 3.11.15, Torch 2.7.1+cu128, CUDA build 12.8, and `torch.cuda.is_available()` true.
+- Bridges: exactly `repro_979/open/data/train.csv`, `repro_979/open/data/test.csv`, `repro_979/open/data/sample_submission.csv`, and `repro_979/cache/v93_extract_verify` were present; no `trackman_history.csv` bridge was created.
+- The main repository was clean after acceptance.
+
+Two earlier fresh-bootstrap attempts timed out at 600 seconds during Conda environment creation. Later direct shell creation, Python-subprocess creation, and the full acceptance run all succeeded. The available evidence does not establish a definitive root cause for the earlier timeouts.
+
+This acceptance validates the current school-GPU development bootstrap under the tested, cache-warmed environment. It does **not** establish cold-cache fresh-machine reproducibility or official submission/package readiness.
+
 ## Known blockers and technical debt
 
 - The v93 full retraining/reproduction path is not fully self-contained from the Git repository alone. Repository evidence reconciles package hashes, configuration, and methodology, but external share-package provenance/materials were involved.
@@ -69,8 +87,8 @@ These files have different roles: policy code defines active behavior, JSON reco
 
 ## Next Actions
 
-1. Finish the GPT/Codex documentation and workflow bootstrap without changing ML policy or state.
-2. Verify the available GPU allocation, Python environment, and competition-environment compatibility using cheap inspection before planning compute work.
+1. Keep the repository context and status documentation synchronized without changing ML policy or state.
+2. Before future GPU compute, inspect live GPU occupancy and explicitly choose an available device; the completed bootstrap acceptance does not reserve or select a GPU.
 3. Choose the next experiment only after external strategy review; do not infer a new ML experiment from the recovery `NO_PROMOTION` result alone.
 
 ## Do Not Use As Current Selection Policy
