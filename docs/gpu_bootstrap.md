@@ -11,7 +11,8 @@ extract assets, or handle credentials.
 
 ## External prerequisites
 
-- A Conda-compatible **conda** command on PATH.
+- A Conda-compatible **conda** command on PATH with the **libmamba** solver
+  installed and supported by `conda env create --solver libmamba`.
 - Initial network access for package installation.
 - An NVIDIA driver compatible with the CUDA 12.8 Torch build.
 - Official competition data extracted outside Git. The canonical default is
@@ -66,8 +67,19 @@ archive provenance is not proven.
 
 **apply** validates every external source and every destination before creating
 links. If **aimers9-dev** is absent, it creates Python 3.11.15, installs the
-pinned direct development dependencies, and installs Torch with this explicit
-source:
+pinned direct development dependencies, and installs Torch. Fresh environment
+creation explicitly uses the server-verified solver command:
+
+~~~text
+conda env create --solver libmamba --name aimers9-dev \
+  --file environment/aimers9-dev.yml
+~~~
+
+If libmamba is missing or unsupported, bootstrap fails at the named environment
+creation stage; it does not silently retry with the classic solver. Package and
+environment subprocesses retain the 600-second fail-closed timeout.
+
+Torch uses this explicit source:
 
 ~~~text
 python -m pip install \

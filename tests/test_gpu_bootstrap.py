@@ -391,6 +391,139 @@ class EnvironmentAuditTests(unittest.TestCase):
         )
 
 
+class EnvironmentCreationTests(unittest.TestCase):
+    def test_fresh_environment_uses_libmamba_solver(self) -> None:
+        repo = Path("/test/repo")
+        report = {"ready": True}
+        completed = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout="", stderr=""
+        )
+        with (
+            mock.patch.object(
+                bootstrap_gpu, "conda_executable", return_value="/test/conda"
+            ),
+            mock.patch.object(
+                bootstrap_gpu, "conda_env_exists", return_value=False
+            ),
+            mock.patch.object(
+                bootstrap_gpu, "_run", return_value=completed
+            ) as run,
+            mock.patch.object(
+                bootstrap_gpu, "audit_environment", return_value=report
+            ) as audit,
+        ):
+            self.assertIs(
+                bootstrap_gpu.ensure_environment(repo, "smoke-env"), report
+            )
+
+        self.assertEqual(
+            run.call_args_list[0],
+            mock.call(
+                (
+                    "/test/conda",
+                    "env",
+                    "create",
+                    "--solver",
+                    "libmamba",
+                    "--name",
+                    "smoke-env",
+                    "--file",
+                    "/test/repo/environment/aimers9-dev.yml",
+                ),
+                stage="fresh Conda environment creation (solver=libmamba)",
+            ),
+        )
+        self.assertEqual(len(run.call_args_list), 3)
+        self.assertNotIn("classic", str(run.call_args_list))
+        audit.assert_called_once_with("/test/conda", "smoke-env")
+
+    def test_unavailable_libmamba_fails_without_fallback(self) -> None:
+        failure = bootstrap_gpu.BootstrapError(
+            "fresh Conda environment creation (solver=libmamba) failed"
+        )
+        with (
+            mock.patch.object(
+                bootstrap_gpu, "conda_executable", return_value="/test/conda"
+            ),
+            mock.patch.object(
+                bootstrap_gpu, "conda_env_exists", return_value=False
+            ),
+            mock.patch.object(
+                bootstrap_gpu, "_run", side_effect=failure
+            ) as run,
+            mock.patch.object(
+                bootstrap_gpu, "audit_environment"
+            ) as audit,
+        ):
+            with self.assertRaisesRegex(
+                bootstrap_gpu.BootstrapError,
+                "fresh Conda environment creation.*libmamba",
+            ):
+                bootstrap_gpu.ensure_environment(Path("/test/repo"), "smoke-env")
+
+        self.assertEqual(run.call_count, 1)
+        self.assertNotIn("classic", str(run.call_args_list))
+        audit.assert_not_called()
+
+    def test_subprocess_timeout_reports_bootstrap_stage(self) -> None:
+        with mock.patch.object(
+            bootstrap_gpu.subprocess,
+            "run",
+            side_effect=subprocess.TimeoutExpired(["conda", "env"], 600),
+        ):
+            with self.assertRaisesRegex(
+                bootstrap_gpu.BootstrapError,
+                "fresh Conda environment creation.*timed out after 600 seconds",
+            ):
+                bootstrap_gpu._run(
+                    ("conda", "env"),
+                    stage="fresh Conda environment creation (solver=libmamba)",
+                )
+
+    def test_subprocess_failure_reports_solver_detail(self) -> None:
+        failure = subprocess.CalledProcessError(
+            2,
+            ["conda", "env", "create"],
+            stderr="unrecognized arguments: --solver libmamba",
+        )
+        with mock.patch.object(
+            bootstrap_gpu.subprocess, "run", side_effect=failure
+        ):
+            with self.assertRaisesRegex(
+                bootstrap_gpu.BootstrapError,
+                "fresh Conda environment creation.*exit code 2.*"
+                "unrecognized arguments: --solver libmamba",
+            ):
+                bootstrap_gpu._run(
+                    ("conda", "env", "create"),
+                    stage="fresh Conda environment creation (solver=libmamba)",
+                )
+
+    def test_existing_environment_audit_path_is_unchanged(self) -> None:
+        report = {"ready": True}
+        with (
+            mock.patch.object(
+                bootstrap_gpu, "conda_executable", return_value="/test/conda"
+            ),
+            mock.patch.object(
+                bootstrap_gpu, "conda_env_exists", return_value=True
+            ),
+            mock.patch.object(
+                bootstrap_gpu, "audit_environment", return_value=report
+            ) as audit,
+            mock.patch.object(bootstrap_gpu, "_run") as run,
+        ):
+            self.assertIs(
+                bootstrap_gpu.ensure_environment(
+                    Path("/test/repo"), "aimers9-dev"
+                ),
+                report,
+            )
+
+        run.assert_not_called()
+        audit.assert_called_once_with("/test/conda", "aimers9-dev")
+
+
 class GpuInspectionTests(unittest.TestCase):
     def test_missing_nvidia_smi_is_not_ready(self) -> None:
         with mock.patch.object(
