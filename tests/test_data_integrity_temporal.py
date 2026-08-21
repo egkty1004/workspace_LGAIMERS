@@ -379,6 +379,271 @@ class TotalVariationTests(unittest.TestCase):
         self.assertEqual(len(set(outputs)), 1)
 
 
+class AbsMetricContractTests(unittest.TestCase):
+    @staticmethod
+    def frame():
+        import pandas as pd
+
+        rows = []
+        for year in range(2019, 2025):
+            row: dict[str, object] = {"season": year}
+            for column in audit.AUDIT_NUMERIC_COLUMNS:
+                row[column] = float(year)
+            for column in audit.ABS_CATEGORICAL_COLUMNS:
+                row[column] = "A" if year % 2 else "B"
+            for column in audit.AUDIT_COVERAGE_COLUMNS:
+                row[column] = f"{column}-{year}"
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    def test_all_five_families_exact_columns_and_transitions_are_emitted(self) -> None:
+        diagnostics = audit.abs_boundary_diagnostics(self.frame())
+        expected_families = {
+            "numeric_smd", "quantile_change", "categorical_total_variation",
+            "missing_rate_delta_pp", "entity_coverage_change",
+        }
+        self.assertEqual(
+            expected_families,
+            set(diagnostics) & expected_families,
+        )
+        expected_transitions = {
+            "2019_to_2020", "2020_to_2021", "2021_to_2022",
+            "2022_to_2023", "2023_to_2024",
+        }
+        for family in expected_families:
+            columns = (
+                audit.AUDIT_NUMERIC_COLUMNS
+                if family in {"numeric_smd", "quantile_change", "missing_rate_delta_pp"}
+                else audit.ABS_CATEGORICAL_COLUMNS
+                if family == "categorical_total_variation"
+                else audit.AUDIT_COVERAGE_COLUMNS
+            )
+            for column in columns:
+                self.assertEqual(
+                    set(diagnostics[family][column]["transitions"]),
+                    expected_transitions,
+                )
+
+    def test_numeric_smd_is_signed_pooled_population_sd_and_finite(self) -> None:
+        import pandas as pd
+
+        frame = self.frame()
+        frame.loc[frame["season"] == 2019, "inning"] = [1.0]
+        frame.loc[frame["season"] == 2020, "inning"] = [3.0]
+        frame = pd.concat([frame, frame.iloc[[0]].assign(season=2019, inning=3.0)])
+        frame = pd.concat([frame, frame.iloc[[1]].assign(season=2020, inning=5.0)])
+        result = audit.abs_boundary_diagnostics(frame)["numeric_smd"]["inning"]
+        self.assertEqual(result["transitions"]["2019_to_2020"]["value"], 2.0)
+        self.assertIsNone(result["transitions"]["2019_to_2020"]["reason"])
+
+    def test_zero_pooled_variance_and_empty_invalid_numeric_fail_closed(self) -> None:
+        import pandas as pd
+
+        frame = self.frame()
+        frame["inning"] = frame["inning"].astype(object)
+        frame.loc[frame["season"] == 2019, "inning"] = [2.0]
+        frame.loc[frame["season"] == 2020, "inning"] = [2.0]
+        frame = pd.concat([frame, frame.iloc[[0]].assign(season=2019, inning=2.0)])
+        frame = pd.concat([frame, frame.iloc[[1]].assign(season=2020, inning=2.0)])
+        result = audit.abs_boundary_diagnostics(frame)["numeric_smd"]["inning"]
+        self.assertEqual(result["transitions"]["2019_to_2020"]["value"], 0.0)
+
+        unequal = frame.copy()
+        unequal.loc[unequal["season"] == 2020, "inning"] = 3.0
+        unequal_result = audit.abs_boundary_diagnostics(unequal)["numeric_smd"]["inning"]
+        self.assertIsNone(unequal_result["transitions"]["2019_to_2020"]["value"])
+        self.assertEqual(
+            unequal_result["transitions"]["2019_to_2020"]["reason"],
+            "degenerate_pooled_variance_unequal_means",
+        )
+
+        frame.loc[frame["season"] == 2020, "inning"] = "bad"
+        invalid = audit.abs_boundary_diagnostics(frame)["numeric_smd"]["inning"]
+        self.assertIsNone(invalid["transitions"]["2019_to_2020"]["value"])
+        self.assertEqual(
+            invalid["transitions"]["2019_to_2020"]["reason"],
+            "no_valid_numeric_values_in_later_year",
+        )
+
+    def test_quantile_grid_linear_interpolation_and_missing_rate_semantics(self) -> None:
+        frame = self.frame()
+        frame.loc[frame["season"] == 2019, "inning"] = 10.0
+        frame.loc[frame["season"] == 2020, "inning"] = 12.0
+        diagnostics = audit.abs_boundary_diagnostics(frame)
+        quantiles = diagnostics["quantile_change"]["inning"]["transitions"]["2019_to_2020"]
+        self.assertEqual(
+            set(quantiles["quantiles"]), {"0.10", "0.50", "0.90"}
+        )
+        self.assertEqual(
+            [quantiles["quantiles"][key]["value"] for key in ("0.10", "0.50", "0.90")],
+            [2.0, 2.0, 2.0],
+        )
+        self.assertEqual(audit.ABS_QUANTILE_INTERPOLATION, "linear")
+
+        frame.loc[frame["season"] == 2019, "inning"] = None
+        frame.loc[frame["season"] == 2020, "inning"] = 12.0
+        missing = audit.abs_boundary_diagnostics(frame)["missing_rate_delta_pp"]["inning"]
+        self.assertEqual(
+            missing["transitions"]["2019_to_2020"]["value"], -100.0
+        )
+
+        frame = self.frame()
+        frame["inning"] = frame["inning"].astype(object)
+        frame.loc[frame["season"] == 2021, "inning"] = "bad"
+        invalid_quantiles = audit.abs_boundary_diagnostics(frame)[
+            "quantile_change"
+        ]["inning"]
+        transition = invalid_quantiles["transitions"]["2021_to_2022"]
+        for item in transition["quantiles"].values():
+            self.assertIsNone(item["value"])
+            self.assertEqual(item["reason"], "no_valid_numeric_values_in_earlier_year")
+        self.assertIsNone(invalid_quantiles["historical_abs_max_by_quantile"]["0.10"])
+        self.assertIsNone(
+            invalid_quantiles["boundary_exceeds_historical_abs_max_by_quantile"]["0.10"]
+        )
+        self.assertEqual(
+            invalid_quantiles["comparison_reason_by_quantile"]["0.10"],
+            "historical_transition_invalid:2020_to_2021:no_valid_numeric_values_in_later_year",
+        )
+
+    def test_absent_categorical_level_and_entity_prior_zero_are_explicit(self) -> None:
+        frame = self.frame()
+        frame.loc[frame["season"] == 2019, "game_type"] = "A"
+        frame.loc[frame["season"] == 2020, "game_type"] = "B"
+        categorical = audit.abs_boundary_diagnostics(frame)[
+            "categorical_total_variation"
+        ]["game_type"]["transitions"]["2019_to_2020"]
+        self.assertEqual(categorical["value"], 1.0)
+
+        frame.loc[frame["season"] == 2019, "pitcher_id"] = None
+        coverage = audit.abs_boundary_diagnostics(frame)["entity_coverage_change"][
+            "pitcher_id"
+        ]["transitions"]["2019_to_2020"]
+        self.assertEqual(coverage["prior_unique_count"], 0)
+        self.assertIsNone(coverage["relative_unique_count_change"]["value"])
+        self.assertEqual(
+            coverage["relative_unique_count_change"]["reason"],
+            "prior_unique_count_zero",
+        )
+        coverage_family = audit.abs_boundary_diagnostics(frame)["entity_coverage_change"][
+            "pitcher_id"
+        ]
+        self.assertIsNone(coverage_family["historical_abs_max_relative_change"])
+        self.assertIsNone(
+            coverage_family["boundary_exceeds_historical_abs_max_relative_change"]
+        )
+        self.assertEqual(
+            coverage_family["comparison_reason"],
+            "historical_transition_invalid:2019_to_2020:prior_unique_count_zero",
+        )
+
+    def test_partial_historical_metric_history_fails_closed(self) -> None:
+        frame = self.frame()
+        partial = frame.loc[frame["season"] != 2020].copy()
+        numeric = audit.abs_boundary_diagnostics(partial)["numeric_smd"]["inning"]
+        self.assertIsNone(numeric["historical_abs_max"])
+        self.assertIsNone(numeric["boundary_exceeds_historical_abs_max"])
+        self.assertEqual(
+            numeric["comparison_reason"],
+            "historical_transition_invalid:2019_to_2020:no_valid_numeric_values_in_later_year",
+        )
+
+    def test_contract_provenance_and_explicit_negative_scope_fields(self) -> None:
+        contract = audit.abs_feature_only_contract()
+        self.assertEqual(
+            contract["metric_contract_version"],
+            audit.ABS_METRIC_CONTRACT_VERSION,
+        )
+        self.assertEqual(tuple(contract["quantile_grid"]), audit.ABS_QUANTILE_GRID)
+        self.assertEqual(
+            tuple(contract["transitions"]),
+            tuple(f"{a}_to_{b}" for a, b in audit.ABS_TRANSITIONS),
+        )
+
+    def test_annual_cache_prepares_each_numeric_column_once_and_preserves_contract(self) -> None:
+        frame = self.frame()
+        groups = audit._abs_year_groups(frame)
+        with mock.patch.object(
+            audit,
+            "_abs_numeric_values",
+            wraps=audit._abs_numeric_values,
+        ) as numeric_values, mock.patch.object(
+            audit,
+            "_abs_category_distribution",
+            wraps=audit._abs_category_distribution,
+        ) as category_distribution, mock.patch.object(
+            audit,
+            "_abs_entity_values",
+            wraps=audit._abs_entity_values,
+        ) as entity_values:
+            diagnostics = audit.abs_boundary_diagnostics(frame)
+        self.assertEqual(
+            numeric_values.call_count,
+            len(groups) * len(audit.AUDIT_NUMERIC_COLUMNS),
+        )
+        self.assertEqual(
+            category_distribution.call_count,
+            len(groups) * len(audit.ABS_CATEGORICAL_COLUMNS),
+        )
+        self.assertEqual(
+            entity_values.call_count,
+            len(groups) * len(audit.AUDIT_COVERAGE_COLUMNS),
+        )
+
+        summaries = audit._abs_prepare_annual_numeric_summaries(groups)
+        self.assertEqual(set(summaries), set(range(2019, 2025)))
+        inning_2019 = summaries[2019]["inning"]
+        self.assertEqual(inning_2019["count"], 1)
+        self.assertEqual(inning_2019["mean"], 2019.0)
+        self.assertEqual(inning_2019["variance"], 0.0)
+        self.assertEqual(inning_2019["quantiles"]["0.50"], 2019.0)
+
+        numeric_transitions = diagnostics["numeric_smd"]["inning"]["transitions"]
+        self.assertTrue(all(
+            result == {
+                "value": None,
+                "reason": "degenerate_pooled_variance_unequal_means",
+            }
+            for result in numeric_transitions.values()
+        ))
+        quantile_boundary = diagnostics["quantile_change"]["inning"][
+            "transitions"
+        ]["2023_to_2024"]
+        self.assertEqual(
+            [quantile_boundary["quantiles"][key]["value"]
+             for key in ("0.10", "0.50", "0.90")],
+            [1.0, 1.0, 1.0],
+        )
+        transition_keys = [f"{a}_to_{b}" for a, b in audit.ABS_TRANSITIONS]
+        expected_tv = {
+            key: {"value": 1.0, "reason": None} for key in transition_keys
+        }
+        self.assertEqual(
+            diagnostics["categorical_total_variation"]["game_month"]["transitions"],
+            expected_tv,
+        )
+        expected_missing = {
+            key: {"value": 0.0, "reason": None} for key in transition_keys
+        }
+        self.assertEqual(
+            diagnostics["missing_rate_delta_pp"]["inning"]["transitions"],
+            expected_missing,
+        )
+        expected_entity = {
+            key: {
+                "prior_unique_count": 1,
+                "later_unique_count": 1,
+                "unique_count_delta": 0,
+                "relative_unique_count_change": {"value": 0.0, "reason": None},
+            }
+            for key in transition_keys
+        }
+        self.assertEqual(
+            diagnostics["entity_coverage_change"]["pitcher_id"]["transitions"],
+            expected_entity,
+        )
+
+
 class PipelineGeometryTests(unittest.TestCase):
     def setUp(self) -> None:
         self.records = []
@@ -931,17 +1196,55 @@ class MediumSyntheticOrchestrationTests(unittest.TestCase):
             audit.canonical_report_hash(first), audit.canonical_report_hash(with_runtime)
         )
 
+    def test_synthetic_abs_report_hash_is_deterministic(self) -> None:
+        first, _ = audit.run_abs_2024_feature_audit(
+            self.train, self.root / "abs-first", SCRIPT.parents[1]
+        )
+        second, _ = audit.run_abs_2024_feature_audit(
+            self.train, self.root / "abs-second", SCRIPT.parents[1]
+        )
+        self.assertEqual(
+            first["canonical_report_sha256"], second["canonical_report_sha256"]
+        )
+
     def test_separate_abs_feature_only_runner_is_branch_inert(self) -> None:
         report, paths = audit.run_abs_2024_feature_audit(
             self.train, self.root / "abs-output", SCRIPT.parents[1]
         )
         self.assertEqual(report["label_access_ledger"], [])
+        self.assertEqual(
+            report["abs_metric_contract_version"],
+            audit.ABS_METRIC_CONTRACT_VERSION,
+        )
         self.assertTrue(report["scope"]["branch_inert"])
         self.assertFalse(report["scope"]["target_access"])
+        self.assertFalse(report["scope"]["test_distribution_access"])
+        self.assertFalse(report["scope"]["public_leaderboard_evidence"])
+        self.assertFalse(report["scope"]["external_information_access"])
+        self.assertFalse(report["scope"]["model_training_or_scoring"])
         self.assertFalse(report["scope"]["may_select_features"])
         self.assertIn(
             "boundary_diagnostics_all_prespecified_features", report["sections"]
         )
+        self.assertNotIn("selected_features", report)
+        self.assertNotIn("adopted_features", report)
+        self.assertNotIn("policy_action", report)
+        forbidden_adoption_keys = {
+            "selected_features", "adopted_features", "chosen_feature_set",
+            "selected_model", "adopted_model", "model_selection",
+            "recovery_policy_update", "threshold_update", "calibration_update",
+        }
+
+        def assert_no_adoption_keys(value: object) -> None:
+            if isinstance(value, dict):
+                self.assertTrue(forbidden_adoption_keys.isdisjoint(value))
+                for item in value.values():
+                    assert_no_adoption_keys(item)
+            elif isinstance(value, list):
+                for item in value:
+                    assert_no_adoption_keys(item)
+
+        assert_no_adoption_keys(report)
         serialized = paths[0].read_text(encoding="utf-8")
         self.assertNotIn("FORBIDDEN-2024-TARGET", serialized)
         self.assertNotIn("SENTINEL-PRIVATE-ROW-ID", serialized)
@@ -968,6 +1271,50 @@ class MediumSyntheticOrchestrationTests(unittest.TestCase):
                 SCRIPT.parents[1] / "forbidden-audit-output",
                 SCRIPT.parents[1],
             )
+
+
+class AbsDeterminismTests(unittest.TestCase):
+    def test_boundary_diagnostics_ignore_irrelevant_column_insertion_order(self) -> None:
+        base = AbsMetricContractTests.frame()
+        with_extra = base.copy()
+        with_extra.insert(0, "irrelevant_extra", list(range(len(with_extra))))
+        reordered = with_extra.loc[:, list(reversed(with_extra.columns))]
+        self.assertEqual(
+            audit.abs_boundary_diagnostics(base),
+            audit.abs_boundary_diagnostics(reordered),
+        )
+
+    def test_abs_boundary_payload_is_hash_seed_invariant_in_subprocesses(self) -> None:
+        code = (
+            "import sys\n"
+            f"sys.path.insert(0, {str(SCRIPT.parent)!r})\n"
+            "import pandas as pd\n"
+            "import audit_data_integrity_temporal as audit\n"
+            "frame = pd.DataFrame({\n"
+            "  'season': [2019, 2020, 2021, 2022, 2023, 2024],\n"
+            "  'inning': [1, 2, 3, 4, 5, 6],\n"
+            "  'game_month': ['May', 'June', 'May', 'June', 'May', 'June'],\n"
+            "  'pitcher_id': ['p19', 'p20', 'p21', 'p22', 'p23', 'p24'],\n"
+            "  'batter_id': ['b19', 'b20', 'b21', 'b22', 'b23', 'b24'],\n"
+            "  'pitcher_team_id': ['t19', 't20', 't21', 't22', 't23', 't24'],\n"
+            "  'batter_team_id': ['u19', 'u20', 'u21', 'u22', 'u23', 'u24'],\n"
+            "})\n"
+            "print(audit.canonical_hash(audit.abs_boundary_diagnostics(frame)))\n"
+        )
+        outputs = []
+        for seed in ("1", "2", "3", "4"):
+            environment = os.environ.copy()
+            environment["PYTHONHASHSEED"] = seed
+            completed = subprocess.run(
+                [sys.executable, "-c", code],
+                check=True,
+                capture_output=True,
+                text=True,
+                env=environment,
+            )
+            outputs.append(completed.stdout.strip())
+        self.assertTrue(outputs[0])
+        self.assertEqual(len(set(outputs)), 1)
 
 
 if __name__ == "__main__":

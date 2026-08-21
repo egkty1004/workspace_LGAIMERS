@@ -27,6 +27,75 @@ break but may not tune a threshold, select a feature, choose a transformation, o
 change recovery policy. A later ABS modeling hypothesis requires a separate
 Experiment Brief.
 
+## Frozen ABS-2024 metric contract
+
+The isolated feature-only diagnostic uses metric-contract version
+`aimers9-abs-2024-metric-contract-v1`. The contract is fixed before any official
+2024 run and compares exactly these transitions:
+
+```text
+2019_to_2020, 2020_to_2021, 2021_to_2022, 2022_to_2023, 2023_to_2024
+```
+
+The numeric columns are `AUDIT_NUMERIC_COLUMNS`:
+`inning`, `run_total_before`, `score_diff_pitcher_team`, `home_win_expectancy`,
+`li`, `asof_pitcher_n`, `asof_batter_n`, `asof_pitcher_success_rate`,
+`asof_batter_success_rate`, `asof_pitcher_pitchmix_n`,
+`asof_pitcher_fastball_rate`, `asof_pitcher_breaking_rate`, and
+`asof_pitcher_offspeed_rate`. The categorical columns are `game_month`,
+`game_type`, `balls_before`, `strikes_before`, `outs_before`, `base_state`,
+`pitcher_hand`, and `batter_hand`. Entity coverage is restricted exactly to
+`pitcher_id`, `batter_id`, `pitcher_team_id`, and `batter_team_id`.
+
+The five pre-registered metric families are:
+
+- `numeric_smd`: signed later-minus-earlier mean divided by the pooled population
+  standard deviation `sqrt((var_earlier + var_later) / 2)`. Missing and numeric-
+  coercion-invalid values are excluded. If either side has no valid values, the
+  result is `null` with a deterministic reason. A zero pooled standard deviation
+  yields `0` for equal means and otherwise `null` with reason
+  `degenerate_pooled_variance_unequal_means`.
+- `quantile_change`: signed later-minus-earlier deltas at the fixed grid
+  `[0.10, 0.50, 0.90]`. Quantiles use explicit `linear` interpolation. Empty or
+  invalid numeric sides produce per-quantile `null` values with deterministic
+  reasons. Boundary absolute deltas are compared with the historical absolute
+  maximum separately for each quantile.
+- `categorical_total_variation`:
+  `0.5 * sum_k(abs(p_k - q_k))`, using shared missing-value labels, sorted keys,
+  and `math.fsum` for deterministic aggregation. Absent levels are treated as
+  zero probability.
+- `missing_rate_delta_pp`: signed percentage-point change
+  `100 * (missing_rate_later - missing_rate_earlier)`, using the shared scalar
+  missing-value predicate on `AUDIT_NUMERIC_COLUMNS`. Empty years produce a
+  documented `null` reason.
+- `entity_coverage_change`: per transition, prior and later unique counts,
+  signed count delta, and signed relative change `(later - prior) / prior` for
+  the four coverage columns above. A prior unique count of zero is fail-closed
+  as `null` with reason `prior_unique_count_zero`; the corresponding historical
+  comparison and boundary verdict also fail closed with a deterministic
+  comparison reason.
+
+All numeric metric values are finite JSON numbers or documented `null` results;
+NaN and infinity are never serialized. For each feature, the 2023-to-2024
+boundary is compared with the maximum absolute value over the four historical
+transitions only when all four required historical transitions are valid. If any
+required historical transition is unavailable or null, the historical maximum
+and boundary verdict are both `null` with a deterministic comparison-level
+reason such as
+`historical_transition_invalid:2019_to_2020:prior_unique_count_zero`.
+If the historical transitions are valid but the 2023-to-2024 boundary is null,
+the boundary verdict is null with a corresponding `boundary_transition_invalid:...`
+reason. These comparisons are descriptive only. No feature, threshold,
+transformation, model, calibration, or recovery-policy adoption is emitted or
+authorized by the ABS report.
+
+Implementation note: the runner prepares annual numeric summaries (finite values,
+population moments, sorted values, fixed quantiles, and raw missing rates), annual
+categorical distributions, and annual entity sets once per year/column, then
+derives all transition metrics from those caches. This is an execution-efficiency
+detail only; it does not change the frozen metric formulas, output contract, or
+information boundary.
+
 ## CHEAP commands
 
 Static source and policy guards:
@@ -146,6 +215,10 @@ or submissions. The MEDIUM phase covers the 2019–2023 structural scan, per-pip
 bounded-versus-full comparisons, real-data preprocessing provenance, Trackman
 schema/coverage/usability, optional isolated 2024 feature-only diagnostics, and a
 deterministic rerun check. No EXPENSIVE work belongs to this audit.
+
+The ABS report explicitly records `test_distribution_access = false`,
+`public_leaderboard_evidence = false`, `external_information_access = false`, and
+`model_training_or_scoring = false`, alongside an empty label-access ledger.
 
 The main train reader first projects only `season` to discover allowed source-row
 positions. It then uses the same `skiprows` firewall for the full non-target feature
