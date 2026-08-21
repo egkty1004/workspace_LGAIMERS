@@ -1,8 +1,8 @@
 # Project Status
 
-Updated: 2026-08-20 (repository-evidence snapshot)
+Updated: 2026-08-21 (repository-evidence snapshot)
 
-Evidence base: `master` at `26879a392996ad878ed330da858f49fdb9abab78`.
+Evidence base: `master` at `ab13a7862b7f985adb0a9b5e87cc71d0203e675e`.
 
 Update this document whenever the active ML policy, champion, leaderboard state, or recovery decision materially changes.
 
@@ -34,6 +34,40 @@ The latest bounded recovery round reproduced the reconciled baseline on its sele
 - Current champion remains v93 6-leg
 
 This result must not be reinterpreted as a validator failure or permission to try an unregistered fallback candidate.
+
+## Data-integrity and temporal audit status
+
+PR #6 merged the reviewed audit implementation into `master`:
+
+- `scripts/audit_data_integrity_temporal.py`
+- `tests/test_data_integrity_temporal.py`
+- `docs/data_integrity_temporal_audit.md`
+
+The final committed-head official MEDIUM audit was generated from PR head `7c40e2994e077fa01ebc8bdc1878a15496274a09`, not from the later merge commit. Its `canonical_report_sha256` is `bd3ea2f7bd8a720ca4de32d998742f81991f25b60384ba5b169a07fc68234b0c`, and the audit-script SHA-256 is `7e22b8ff96e5b435bdceddf5fddb9897b9c61cb91f14023f6ab5fcdc4720e2e2`. Substantive results were deterministically reproduced before commit; the committed-head rerun differed only in `git_sha` and the resulting canonical report hash.
+
+Main-data conclusions:
+
+- The 2019-2023 structural row and target-integrity checks passed.
+- Exact intra-month chronology remains `NOT_PROVEN`.
+- Exact as-of reconstruction and feature-generation provenance remain `NOT_PROVEN`.
+- No audited as-of count/rate domain violations were observed, and cold-start missingness behavior is consistent with the documented zero-count semantics.
+
+First-30k recovery evidence limitation:
+
+- Current bounded selectors take the first 30,000 true positions in DataFrame/source order. The audit found substantial composition distortion relative to the full rolling-origin panels.
+- The bounded-minus-full validation target-rate difference is approximately `-0.02195` (-2.20 percentage points) for r2023 and `-0.00292` (-0.29 percentage points) for r2022. `game_month` total variation is very large on multiple bounded panels.
+- The current recovery `NO_PROMOTION` remains the recorded policy result, but first-30k evidence must not be treated as a representative proxy for full-origin model quality.
+- Do not silently change the validation protocol. Any redesign of bounded validation requires a separate Experiment Brief, plan review, and explicit policy change.
+
+Trackman conclusions:
+
+- The original 622,737 `invalid_game_dates` result was an audit-parser artifact. In the audited official 2019-2023 Trackman data, `game_date` values were empirically observed in two valid formats: `MM/DD/YYYY` (including variable-width month/day) and `YYYY-MM-DD`.
+- The corrected audit reports `invalid_game_dates = 0`, `game_date_season_mismatches = 0`, and `trackman_structural_contract = BENIGN`. The `trackman_id` missing and duplicate checks pass.
+- `(trackman_game_id, pitch_no)` has two observed duplicates and remains `UNKNOWN` because official uniqueness is not documented.
+- Raw main/Trackman player IDs do not establish a crosswalk. Exact main-row joining and safe Trackman feature-usage levels remain `NOT_PROVEN`.
+- Do not infer Trackman unusability or authorize Trackman modeling from this audit alone.
+
+The isolated `abs-2024-features` audit has **not** been run, so no ABS causal claim exists. Any later 2024 feature-only structural result must remain branch-inert and cannot directly tune or select features, thresholds, transformations, models, calibration, or recovery policy.
 
 ## Active recovery pipeline
 
@@ -87,9 +121,11 @@ This acceptance validates the current school-GPU development bootstrap under the
 
 ## Next Actions
 
-1. Keep the repository context and status documentation synchronized without changing ML policy or state.
-2. Before future GPU compute, inspect live GPU occupancy and explicitly choose an available device; the completed bootstrap acceptance does not reserve or select a GPU.
-3. Choose the next experiment only after external strategy review; do not infer a new ML experiment from the recovery `NO_PROMOTION` result alone.
+1. Consider the isolated 2024 feature-only ABS audit under its branch-inert information boundary.
+2. Separately prepare an Experiment Brief and plan review for any validation-protocol experiment addressing first-30k representativeness.
+3. Do not resume ordinary model-selection experiments under a silently altered validation protocol.
+4. Before future GPU compute, inspect live GPU occupancy and explicitly choose an available device; the completed bootstrap acceptance does not reserve or select a GPU.
+5. Choose the next experiment only after external strategy review; do not infer a new ML experiment from the recovery `NO_PROMOTION` result alone.
 
 ## Do Not Use As Current Selection Policy
 
