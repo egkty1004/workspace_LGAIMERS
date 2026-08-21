@@ -2,7 +2,7 @@
 
 Updated: 2026-08-21 (repository-evidence snapshot)
 
-Evidence base: `master` at `ab13a7862b7f985adb0a9b5e87cc71d0203e675e`.
+Evidence base: `master` at `d1b7f7fd735e748c0b24e5e4d48e6317fbc9d865`.
 
 Update this document whenever the active ML policy, champion, leaderboard state, or recovery decision materially changes.
 
@@ -67,7 +67,27 @@ Trackman conclusions:
 - Raw main/Trackman player IDs do not establish a crosswalk. Exact main-row joining and safe Trackman feature-usage levels remain `NOT_PROVEN`.
 - Do not infer Trackman unusability or authorize Trackman modeling from this audit alone.
 
-The isolated `abs-2024-features` audit has **not** been run, so no ABS causal claim exists. Any later 2024 feature-only structural result must remain branch-inert and cannot directly tune or select features, thresholds, transformations, models, calibration, or recovery policy.
+The isolated `abs-2024-features` feature-only structural audit was completed from
+reviewed runner commit `c70c69a90d4796348700febc9137a2d6478994ed` and integrated by
+PR #8 merge commit `d1b7f7fd735e748c0b24e5e4d48e6317fbc9d865`. The audit script
+SHA-256 was
+`e773674cb7df4bbe532c9fedba339ab0770f0e7817da4ddfbeb2d46b57a2c8b9`, the
+canonical report SHA-256 was
+`ca474d97ad83790763f6f8c7455754b8a4a94c640e594c3c42cdd6ce940d2c9d`, and the
+projected 2019-2024 feature-frame SHA-256 was
+`0b7485c7f6e50cdd0599f059aaef063f2b8a4af7db8229654200fbcd22e01f10` over
+`1,475,092` rows. Four of 13 numeric SMD comparisons, six of 39 q10/q50/q90
+feature×quantile comparisons, and one of eight categorical total-variation
+comparisons exceeded the four-transition historical absolute maximum; zero of
+13 missing-rate-delta comparisons and zero of four entity-coverage comparisons
+did so. There were zero null or fail-closed comparisons.
+
+The result records localized structural shifts, not a broad 2024 data-structure
+collapse. ABS causality and predictive value remain `NOT_PROVEN`; no feature was
+selected or adopted, and no threshold, transformation, calibration, model, or
+recovery-policy change is authorized by this result. Trackman 2024 was outside
+the audit, 2024 `control_success` was not accessed, and test, Public/leaderboard,
+and external information were not accessed. The result remains branch-inert.
 
 ## Active recovery pipeline
 
@@ -121,9 +141,9 @@ This acceptance validates the current school-GPU development bootstrap under the
 
 ## Next Actions
 
-1. Consider the isolated 2024 feature-only ABS audit under its branch-inert information boundary.
-2. Separately prepare an Experiment Brief and plan review for any validation-protocol experiment addressing first-30k representativeness.
-3. Do not resume ordinary model-selection experiments under a silently altered validation protocol.
+1. Prepare a separate Experiment Brief and plan review for a validation-protocol experiment addressing first-30k representativeness.
+2. Do not resume ordinary model-selection experiments under a silently altered validation protocol; any bounded-validation redesign is a separate methodology experiment.
+3. Any ABS-related modeling, feature adoption, or regime-aware modeling requires a separate Experiment Brief and must not be inferred directly from the 2024 structural audit.
 4. Before future GPU compute, inspect live GPU occupancy and explicitly choose an available device; the completed bootstrap acceptance does not reserve or select a GPU.
 5. Choose the next experiment only after external strategy review; do not infer a new ML experiment from the recovery `NO_PROMOTION` result alone.
 
