@@ -95,6 +95,16 @@ AUDIT_NUMERIC_COLUMNS = (
 AUDIT_COVERAGE_COLUMNS = (
     "pitcher_id", "batter_id", "pitcher_team_id", "batter_team_id",
 )
+ABS_CATEGORICAL_COLUMNS = (
+    "game_month", "game_type", "balls_before", "strikes_before",
+    "outs_before", "base_state", "pitcher_hand", "batter_hand",
+)
+ABS_QUANTILE_GRID = (0.10, 0.50, 0.90)
+ABS_QUANTILE_INTERPOLATION = "linear"
+ABS_METRIC_CONTRACT_VERSION = "aimers9-abs-2024-metric-contract-v1"
+ABS_TRANSITIONS = tuple((year - 1, year) for year in range(2020, 2025))
+ABS_HISTORICAL_TRANSITIONS = ABS_TRANSITIONS[:-1]
+ABS_BOUNDARY_TRANSITION = ABS_TRANSITIONS[-1]
 TRACKMAN_MEASUREMENT_COLUMNS = (
     "rel_speed", "spin_rate", "induced_vert_break", "horz_break",
     "extension", "rel_height", "rel_side", "zone_speed",
@@ -995,6 +1005,13 @@ def classify_project_status_sha(status_text: str, current_sha: str) -> Finding:
 
 def abs_feature_only_contract() -> dict[str, Any]:
     result = {
+        "metric_contract_version": ABS_METRIC_CONTRACT_VERSION,
+        "numeric_columns": AUDIT_NUMERIC_COLUMNS,
+        "categorical_columns": ABS_CATEGORICAL_COLUMNS,
+        "coverage_columns": AUDIT_COVERAGE_COLUMNS,
+        "quantile_grid": ABS_QUANTILE_GRID,
+        "quantile_interpolation": ABS_QUANTILE_INTERPOLATION,
+        "transitions": tuple(_abs_transition_key(*item) for item in ABS_TRANSITIONS),
         "branch_inert": True,
         "target_column_in_projection": False,
         "may_tune_thresholds": False,
@@ -2158,67 +2175,531 @@ def structural_pretrend_2019_2023(frame) -> dict[str, Any]:
     }
 
 
-def abs_boundary_diagnostics(feature_frame) -> dict[str, Any]:
-    """Report all pre-specified boundary deltas without selecting features."""
+def _abs_transition_key(earlier: int, later: int) -> str:
+    return f"{earlier}_to_{later}"
+
+
+def _abs_metric_result(value: Any = None, reason: str | None = None) -> dict[str, Any]:
+    """Return a JSON-safe scalar metric and its deterministic null reason."""
+    if value is None:
+        return {"value": None, "reason": reason}
+    numeric = float(value)
+    if not math.isfinite(numeric):
+        return {"value": None, "reason": "non_finite_metric_result"}
+    return {"value": numeric, "reason": reason}
+
+
+def _abs_year_groups(feature_frame) -> dict[int, Any]:
+    """Group only the feature frame by the five pre-registered years."""
     import pandas as pd
 
-    numeric: dict[str, Any] = {}
-    for column in AUDIT_NUMERIC_COLUMNS:
-        values = pd.to_numeric(feature_frame[column], errors="coerce")
-        means = values.groupby(feature_frame["season"].astype(int)).mean()
-        prior_deltas = {
-            f"{year - 1}_to_{year}": float(means.get(year) - means.get(year - 1))
-            for year in range(2020, 2024)
-            if year in means.index and year - 1 in means.index
-        }
-        boundary = (
-            float(means.get(2024) - means.get(2023))
-            if 2023 in means.index and 2024 in means.index else None
-        )
-        prior_abs_max = max((abs(value) for value in prior_deltas.values()), default=None)
-        numeric[column] = {
-            "prior_year_deltas": prior_deltas,
-            "boundary_2023_to_2024": boundary,
-            "boundary_exceeds_prior_abs_max": (
-                abs(boundary) > prior_abs_max
-                if boundary is not None and prior_abs_max is not None else None
-            ),
-            "usage": "structural-break candidate only; not feature selection",
-        }
-    categorical: dict[str, Any] = {}
-    for column in (
-        "game_month", "game_type", "balls_before", "strikes_before",
-        "outs_before", "base_state", "pitcher_hand", "batter_hand",
-    ):
-        distributions: dict[int, dict[str, float]] = {}
-        for year, group in feature_frame.groupby("season", sort=True):
-            distributions[int(year)] = group[column].map(
-                lambda value: "__MISSING__" if is_missing(value) else str(value)
-            ).value_counts(normalize=True).to_dict()
-        prior_tv = {
-            f"{year - 1}_to_{year}": _total_variation(
-                distributions[year - 1], distributions[year]
+    if "season" not in feature_frame.columns:
+        return {}
+    seasons = pd.to_numeric(feature_frame["season"], errors="coerce")
+    return {
+        year: feature_frame.loc[seasons.eq(year).fillna(False)]
+        for year in range(2019, 2025)
+    }
+
+
+def _abs_numeric_values(group, column: str) -> list[float]:
+    """Return finite numeric values after shared missing/coercion handling."""
+    import pandas as pd
+
+    if column not in group.columns:
+        return []
+    converted = pd.to_numeric(group[column], errors="coerce")
+    values: list[float] = []
+    for value in converted.tolist():
+        if is_missing(value):
+            continue
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(numeric):
+            values.append(numeric)
+    return values
+
+
+def _abs_numeric_moments(values: Sequence[float]) -> tuple[float | None, float | None]:
+    if not values:
+        return None, None
+    mean = math.fsum(values) / len(values)
+    variance = math.fsum((value - mean) ** 2 for value in values) / len(values)
+    return mean, variance
+
+
+def _abs_linear_quantile_sorted(values: Sequence[float], quantile: float) -> float:
+    if len(values) == 1:
+        return values[0]
+    position = (len(values) - 1) * quantile
+    lower = math.floor(position)
+    upper = math.ceil(position)
+    fraction = position - lower
+    return values[lower] + fraction * (values[upper] - values[lower])
+
+
+def _abs_prepare_annual_numeric_summaries(
+    groups: Mapping[int, Any],
+) -> dict[int, dict[str, dict[str, Any]]]:
+    """Prepare each annual numeric feature once for all ABS metrics."""
+    summaries: dict[int, dict[str, dict[str, Any]]] = {}
+    for year, group in groups.items():
+        summaries[year] = {}
+        for column in AUDIT_NUMERIC_COLUMNS:
+            if column not in group.columns:
+                summaries[year][column] = {
+                    "column_present": False,
+                    "row_count": len(group),
+                    "numeric_values": (),
+                    "sorted_numeric_values": (),
+                    "count": 0,
+                    "mean": None,
+                    "variance": None,
+                    "quantiles": {
+                        f"{quantile:.2f}": None for quantile in ABS_QUANTILE_GRID
+                    },
+                    "missing_rate": None,
+                }
+                continue
+            raw_values = group[column].tolist()
+            numeric_values = tuple(_abs_numeric_values(group, column))
+            sorted_numeric_values = tuple(sorted(numeric_values))
+            mean, variance = _abs_numeric_moments(numeric_values)
+            quantiles = {
+                f"{quantile:.2f}": (
+                    _abs_linear_quantile_sorted(sorted_numeric_values, quantile)
+                    if sorted_numeric_values else None
+                )
+                for quantile in ABS_QUANTILE_GRID
+            }
+            missing_rate = (
+                sum(is_missing(value) for value in raw_values) / len(raw_values)
+                if raw_values else None
             )
-            for year in range(2020, 2024)
-            if year in distributions and year - 1 in distributions
+            summaries[year][column] = {
+                "column_present": True,
+                "row_count": len(raw_values),
+                "numeric_values": numeric_values,
+                "sorted_numeric_values": sorted_numeric_values,
+                "count": len(numeric_values),
+                "mean": mean,
+                "variance": variance,
+                "quantiles": quantiles,
+                "missing_rate": missing_rate,
+            }
+    return summaries
+
+
+def _abs_numeric_smd_transition(
+    groups: Mapping[int, Any], column: str, earlier: int, later: int,
+    *, summaries: Mapping[int, Mapping[str, Mapping[str, Any]]] | None = None,
+) -> dict[str, Any]:
+    if earlier not in groups or later not in groups:
+        return _abs_metric_result(reason="missing_year_data")
+    if summaries is None:
+        summaries = _abs_prepare_annual_numeric_summaries(groups)
+    left = summaries.get(earlier, {}).get(column)
+    right = summaries.get(later, {}).get(column)
+    if left is None or right is None:
+        return _abs_metric_result(reason="column_missing")
+    if not left["column_present"] or not right["column_present"]:
+        return _abs_metric_result(reason="column_missing")
+    if not left["count"]:
+        return _abs_metric_result(reason="no_valid_numeric_values_in_earlier_year")
+    if not right["count"]:
+        return _abs_metric_result(reason="no_valid_numeric_values_in_later_year")
+    left_mean, left_variance = left["mean"], left["variance"]
+    right_mean, right_variance = right["mean"], right["variance"]
+    assert left_mean is not None and left_variance is not None
+    assert right_mean is not None and right_variance is not None
+    pooled_sd = math.sqrt((left_variance + right_variance) / 2.0)
+    if pooled_sd == 0.0:
+        if left_mean == right_mean:
+            return _abs_metric_result(0.0)
+        return _abs_metric_result(reason="degenerate_pooled_variance_unequal_means")
+    return _abs_metric_result((right_mean - left_mean) / pooled_sd)
+
+
+def _abs_linear_quantile(values: Sequence[float], quantile: float) -> float:
+    """Calculate the fixed linear-interpolation quantile without pandas defaults."""
+    return _abs_linear_quantile_sorted(sorted(values), quantile)
+
+
+def _abs_quantile_change_transition(
+    groups: Mapping[int, Any], column: str, earlier: int, later: int,
+    *, summaries: Mapping[int, Mapping[str, Mapping[str, Any]]] | None = None,
+) -> dict[str, Any]:
+    if earlier not in groups or later not in groups:
+        return {
+            "quantiles": {
+                f"{quantile:.2f}": _abs_metric_result(reason="missing_year_data")
+                for quantile in ABS_QUANTILE_GRID
+            },
+            "reason": "missing_year_data",
         }
-        boundary_tv = (
-            _total_variation(distributions[2023], distributions[2024])
-            if 2023 in distributions and 2024 in distributions else None
-        )
-        prior_max = max(prior_tv.values(), default=None)
-        categorical[column] = {
-            "prior_year_total_variation": prior_tv,
-            "boundary_2023_to_2024_total_variation": boundary_tv,
-            "boundary_exceeds_prior_max": (
-                boundary_tv > prior_max
-                if boundary_tv is not None and prior_max is not None else None
-            ),
-            "usage": "structural-break candidate only; not feature selection",
+    if summaries is None:
+        summaries = _abs_prepare_annual_numeric_summaries(groups)
+    left = summaries.get(earlier, {}).get(column)
+    right = summaries.get(later, {}).get(column)
+    reason = (
+        "column_missing"
+        if left is None or right is None
+        or not left["column_present"] or not right["column_present"]
+        else None
+    )
+    if reason is not None:
+        return {
+            "quantiles": {
+                f"{quantile:.2f}": _abs_metric_result(reason=reason)
+                for quantile in ABS_QUANTILE_GRID
+            },
+            "reason": reason,
+        }
+    if not left["count"]:
+        reason = "no_valid_numeric_values_in_earlier_year"
+    elif not right["count"]:
+        reason = "no_valid_numeric_values_in_later_year"
+    if reason is not None:
+        return {
+            "quantiles": {
+                f"{quantile:.2f}": _abs_metric_result(reason=reason)
+                for quantile in ABS_QUANTILE_GRID
+            },
+            "reason": reason,
         }
     return {
-        "numeric": numeric,
-        "categorical": categorical,
+        "quantiles": {
+            f"{quantile:.2f}": _abs_metric_result(
+                right["quantiles"][f"{quantile:.2f}"]
+                - left["quantiles"][f"{quantile:.2f}"]
+            )
+            for quantile in ABS_QUANTILE_GRID
+        },
+        "reason": None,
+    }
+
+
+def _abs_category_distribution(group, column: str) -> dict[str, float] | None:
+    if column not in group.columns:
+        return None
+    values = [
+        "__MISSING__" if is_missing(value) else str(value)
+        for value in group[column].tolist()
+    ]
+    if not values:
+        return {}
+    counts = Counter(values)
+    total = len(values)
+    return {
+        key: count / total for key, count in sorted(counts.items())
+    }
+
+
+def _abs_prepare_annual_categorical_distributions(
+    groups: Mapping[int, Any],
+) -> dict[int, dict[str, dict[str, float] | None]]:
+    """Prepare each annual ABS categorical distribution once."""
+    return {
+        year: {
+            column: _abs_category_distribution(group, column)
+            for column in ABS_CATEGORICAL_COLUMNS
+        }
+        for year, group in groups.items()
+    }
+
+
+def _abs_categorical_tv_transition(
+    groups: Mapping[int, Any], column: str, earlier: int, later: int,
+    *, distributions: Mapping[int, Mapping[str, dict[str, float] | None]] | None = None,
+) -> dict[str, Any]:
+    if earlier not in groups or later not in groups:
+        return _abs_metric_result(reason="missing_year_data")
+    if distributions is None:
+        distributions = _abs_prepare_annual_categorical_distributions(groups)
+    left = distributions.get(earlier, {}).get(column)
+    right = distributions.get(later, {}).get(column)
+    if left is None or right is None:
+        return _abs_metric_result(reason="column_missing")
+    if not left:
+        return _abs_metric_result(reason="no_rows_in_earlier_year")
+    if not right:
+        return _abs_metric_result(reason="no_rows_in_later_year")
+    return _abs_metric_result(_total_variation(left, right))
+
+
+def _abs_missing_rate_transition(
+    groups: Mapping[int, Any], column: str, earlier: int, later: int,
+    *, summaries: Mapping[int, Mapping[str, Mapping[str, Any]]] | None = None,
+) -> dict[str, Any]:
+    if earlier not in groups or later not in groups:
+        return _abs_metric_result(reason="missing_year_data")
+    if summaries is None:
+        summaries = _abs_prepare_annual_numeric_summaries(groups)
+    left = summaries.get(earlier, {}).get(column)
+    right = summaries.get(later, {}).get(column)
+    if left is None or right is None:
+        return _abs_metric_result(reason="column_missing")
+    if not left["column_present"] or not right["column_present"]:
+        return _abs_metric_result(reason="column_missing")
+    if not left["row_count"]:
+        return _abs_metric_result(reason="no_rows_in_earlier_year")
+    if not right["row_count"]:
+        return _abs_metric_result(reason="no_rows_in_later_year")
+    left_rate = left["missing_rate"]
+    right_rate = right["missing_rate"]
+    assert left_rate is not None and right_rate is not None
+    return _abs_metric_result(100.0 * (right_rate - left_rate))
+
+
+def _abs_entity_values(group, column: str) -> set[str] | None:
+    if column not in group.columns:
+        return None
+    return {
+        str(value) for value in group[column].tolist() if not is_missing(value)
+    }
+
+
+def _abs_prepare_annual_entity_values(
+    groups: Mapping[int, Any],
+) -> dict[int, dict[str, set[str] | None]]:
+    """Prepare each annual entity set once for coverage comparisons."""
+    return {
+        year: {
+            column: _abs_entity_values(group, column)
+            for column in AUDIT_COVERAGE_COLUMNS
+        }
+        for year, group in groups.items()
+    }
+
+
+def _abs_entity_coverage_transition(
+    groups: Mapping[int, Any], column: str, earlier: int, later: int,
+    *, entity_values: Mapping[int, Mapping[str, set[str] | None]] | None = None,
+) -> dict[str, Any]:
+    if earlier not in groups or later not in groups:
+        return {
+            "prior_unique_count": None,
+            "later_unique_count": None,
+            "unique_count_delta": None,
+            "relative_unique_count_change": _abs_metric_result(reason="missing_year_data"),
+        }
+    if entity_values is None:
+        entity_values = _abs_prepare_annual_entity_values(groups)
+    left = entity_values.get(earlier, {}).get(column)
+    right = entity_values.get(later, {}).get(column)
+    if left is None or right is None:
+        return {
+            "prior_unique_count": None,
+            "later_unique_count": None,
+            "unique_count_delta": None,
+            "relative_unique_count_change": _abs_metric_result(reason="column_missing"),
+        }
+    prior_count = len(left)
+    later_count = len(right)
+    delta = later_count - prior_count
+    if prior_count == 0:
+        relative = _abs_metric_result(reason="prior_unique_count_zero")
+    else:
+        relative = _abs_metric_result(delta / prior_count)
+    return {
+        "prior_unique_count": prior_count,
+        "later_unique_count": later_count,
+        "unique_count_delta": delta,
+        "relative_unique_count_change": relative,
+    }
+
+
+def _abs_comparison(
+    transitions: Mapping[str, Mapping[str, Any]],
+) -> tuple[float | None, bool | None, str | None]:
+    historical_values: list[float] = []
+    for transition in ABS_HISTORICAL_TRANSITIONS:
+        key = _abs_transition_key(*transition)
+        result = transitions.get(key)
+        if result is None:
+            return None, None, f"historical_transition_unavailable:{key}"
+        value = result.get("value")
+        if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+            reason = result.get("reason") or "null_metric_value"
+            return None, None, f"historical_transition_invalid:{key}:{reason}"
+        historical_values.append(abs(float(value)))
+    historical_abs_max = max(historical_values)
+    boundary_key = _abs_transition_key(*ABS_BOUNDARY_TRANSITION)
+    boundary = transitions.get(boundary_key)
+    if boundary is None:
+        return historical_abs_max, None, f"boundary_transition_unavailable:{boundary_key}"
+    boundary_value = boundary.get("value")
+    if not isinstance(boundary_value, (int, float)) or not math.isfinite(float(boundary_value)):
+        reason = boundary.get("reason") or "null_metric_value"
+        return historical_abs_max, None, f"boundary_transition_invalid:{boundary_key}:{reason}"
+    return historical_abs_max, abs(float(boundary_value)) > historical_abs_max, None
+
+
+def _abs_quantile_comparison(
+    transitions: Mapping[str, Mapping[str, Any]],
+) -> tuple[dict[str, float | None], dict[str, bool | None], dict[str, str | None]]:
+    historical_max: dict[str, float | None] = {}
+    exceeds: dict[str, bool | None] = {}
+    reasons: dict[str, str | None] = {}
+    boundary_key = _abs_transition_key(*ABS_BOUNDARY_TRANSITION)
+    boundary = transitions.get(boundary_key)
+    boundary_quantiles = (
+        boundary.get("quantiles", {}) if isinstance(boundary, Mapping) else {}
+    )
+    for quantile in ABS_QUANTILE_GRID:
+        key = f"{quantile:.2f}"
+        values: list[float] = []
+        comparison_reason: str | None = None
+        for transition in ABS_HISTORICAL_TRANSITIONS:
+            transition_key = _abs_transition_key(*transition)
+            result = transitions.get(transition_key)
+            if result is None:
+                comparison_reason = f"historical_transition_unavailable:{transition_key}"
+                break
+            item = result.get("quantiles", {}).get(key)
+            if item is None:
+                comparison_reason = f"historical_transition_unavailable:{transition_key}"
+                break
+            value = item.get("value")
+            if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+                reason = item.get("reason") or result.get("reason") or "null_metric_value"
+                comparison_reason = (
+                    f"historical_transition_invalid:{transition_key}:{reason}"
+                )
+                break
+            values.append(abs(float(value)))
+        maximum = max(values) if comparison_reason is None else None
+        boundary_item = boundary_quantiles.get(key, {})
+        boundary_value = boundary_item.get("value")
+        historical_max[key] = maximum
+        if comparison_reason is not None:
+            exceeds[key] = None
+            reasons[key] = comparison_reason
+        elif boundary is None:
+            exceeds[key] = None
+            reasons[key] = f"boundary_transition_unavailable:{boundary_key}"
+        elif not isinstance(boundary_value, (int, float)) or not math.isfinite(float(boundary_value)):
+            reason = boundary_item.get("reason") or "null_metric_value"
+            exceeds[key] = None
+            reasons[key] = (
+                f"boundary_transition_invalid:{boundary_key}:{reason}"
+            )
+        else:
+            exceeds[key] = abs(float(boundary_value)) > maximum
+            reasons[key] = None
+    return historical_max, exceeds, reasons
+
+
+def abs_boundary_diagnostics(feature_frame) -> dict[str, Any]:
+    """Report frozen five-family boundary metrics without selecting features."""
+    groups = _abs_year_groups(feature_frame)
+    numeric_summaries = _abs_prepare_annual_numeric_summaries(groups)
+    categorical_distributions = _abs_prepare_annual_categorical_distributions(groups)
+    entity_values = _abs_prepare_annual_entity_values(groups)
+    transition_keys = [_abs_transition_key(*item) for item in ABS_TRANSITIONS]
+
+    numeric_smd: dict[str, Any] = {}
+    quantile_change: dict[str, Any] = {}
+    missing_rate_delta: dict[str, Any] = {}
+    for column in AUDIT_NUMERIC_COLUMNS:
+        smd_transitions = {
+            key: _abs_numeric_smd_transition(
+                groups, column, *transition, summaries=numeric_summaries
+            )
+            for key, transition in zip(transition_keys, ABS_TRANSITIONS)
+        }
+        quantile_transitions = {
+            key: _abs_quantile_change_transition(
+                groups, column, *transition, summaries=numeric_summaries
+            )
+            for key, transition in zip(transition_keys, ABS_TRANSITIONS)
+        }
+        missing_transitions = {
+            key: _abs_missing_rate_transition(
+                groups, column, *transition, summaries=numeric_summaries
+            )
+            for key, transition in zip(transition_keys, ABS_TRANSITIONS)
+        }
+        smd_max, smd_exceeds, smd_reason = _abs_comparison(smd_transitions)
+        quantile_max, quantile_exceeds, quantile_reasons = _abs_quantile_comparison(
+            quantile_transitions
+        )
+        missing_max, missing_exceeds, missing_reason = _abs_comparison(
+            missing_transitions
+        )
+        usage = "structural-break candidate only; not feature selection"
+        numeric_smd[column] = {
+            "transitions": smd_transitions,
+            "historical_abs_max": smd_max,
+            "boundary_exceeds_historical_abs_max": smd_exceeds,
+            "comparison_reason": smd_reason,
+            "usage": usage,
+        }
+        quantile_change[column] = {
+            "transitions": quantile_transitions,
+            "historical_abs_max_by_quantile": quantile_max,
+            "boundary_exceeds_historical_abs_max_by_quantile": quantile_exceeds,
+            "comparison_reason_by_quantile": quantile_reasons,
+            "usage": usage,
+        }
+        missing_rate_delta[column] = {
+            "transitions": missing_transitions,
+            "historical_abs_max": missing_max,
+            "boundary_exceeds_historical_abs_max": missing_exceeds,
+            "comparison_reason": missing_reason,
+            "usage": usage,
+        }
+
+    categorical_total_variation: dict[str, Any] = {}
+    for column in ABS_CATEGORICAL_COLUMNS:
+        transitions = {
+            key: _abs_categorical_tv_transition(
+                groups, column, *transition, distributions=categorical_distributions
+            )
+            for key, transition in zip(transition_keys, ABS_TRANSITIONS)
+        }
+        historical_max, boundary_exceeds, comparison_reason = _abs_comparison(transitions)
+        categorical_total_variation[column] = {
+            "transitions": transitions,
+            "historical_abs_max": historical_max,
+            "boundary_exceeds_historical_abs_max": boundary_exceeds,
+            "comparison_reason": comparison_reason,
+            "usage": "structural-break candidate only; not feature selection",
+        }
+
+    entity_coverage_change: dict[str, Any] = {}
+    for column in AUDIT_COVERAGE_COLUMNS:
+        transitions = {
+            key: _abs_entity_coverage_transition(
+                groups, column, *transition, entity_values=entity_values
+            )
+            for key, transition in zip(transition_keys, ABS_TRANSITIONS)
+        }
+        relative_transitions = {
+            key: value["relative_unique_count_change"]
+            for key, value in transitions.items()
+        }
+        historical_max, boundary_exceeds, comparison_reason = _abs_comparison(
+            relative_transitions
+        )
+        entity_coverage_change[column] = {
+            "transitions": transitions,
+            "historical_abs_max_relative_change": historical_max,
+            "boundary_exceeds_historical_abs_max_relative_change": boundary_exceeds,
+            "comparison_reason": comparison_reason,
+            "usage": "structural-break candidate only; not feature selection",
+        }
+
+    return {
+        "metric_contract_version": ABS_METRIC_CONTRACT_VERSION,
+        "transition_order": transition_keys,
+        "numeric_smd": numeric_smd,
+        "quantile_change": quantile_change,
+        "categorical_total_variation": categorical_total_variation,
+        "missing_rate_delta_pp": missing_rate_delta,
+        "entity_coverage_change": entity_coverage_change,
         "abrupt_vs_gradual_interpretation": (
             "Compare the complete boundary metrics with prior-year deltas; no automatic "
             "feature, threshold, transformation, or causal decision is made."
@@ -2451,11 +2932,16 @@ def run_abs_2024_feature_audit(
     comparison = structural_pretrend_2019_2023(current)["annual"]["2024"]
     report: dict[str, Any] = {
         "schema_version": REPORT_SCHEMA_VERSION,
+        "abs_metric_contract_version": ABS_METRIC_CONTRACT_VERSION,
         "audit_kind": "Isolated 2024 feature-only ABS structural diagnostic",
         "git_sha": _git_sha(repo_root),
         "scope": {
             "target_column_in_projection": False,
             "target_access": False,
+            "test_distribution_access": False,
+            "public_leaderboard_evidence": False,
+            "external_information_access": False,
+            "model_training_or_scoring": False,
             "branch_inert": True,
             "may_tune_thresholds": False,
             "may_select_features": False,
@@ -2474,6 +2960,17 @@ def run_abs_2024_feature_audit(
                 "path": "scripts/audit_data_integrity_temporal.py",
                 "sha256": _sha256_file(Path(__file__).resolve()),
             },
+            "abs_metric_contract": {
+                "version": ABS_METRIC_CONTRACT_VERSION,
+                "numeric_columns": list(AUDIT_NUMERIC_COLUMNS),
+                "categorical_columns": list(ABS_CATEGORICAL_COLUMNS),
+                "coverage_columns": list(AUDIT_COVERAGE_COLUMNS),
+                "quantile_grid": list(ABS_QUANTILE_GRID),
+                "quantile_interpolation": ABS_QUANTILE_INTERPOLATION,
+                "transitions": [
+                    _abs_transition_key(*item) for item in ABS_TRANSITIONS
+                ],
+            },
         },
         "label_access_ledger": [],
         "findings": [Finding(
@@ -2486,6 +2983,7 @@ def run_abs_2024_feature_audit(
             "pretrend_2019_2023": pretrend,
             "feature_only_2024": comparison,
             "boundary_diagnostics_all_prespecified_features": abs_boundary_diagnostics(scoped),
+            "abs_metric_contract": abs_feature_only_contract(),
             "interpretation": {
                 "structural_break_candidates_only": True,
                 "causal_claim": "NOT_PROVEN",
