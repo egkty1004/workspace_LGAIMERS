@@ -9,8 +9,9 @@ data MEDIUM run still requires separate authorization.
 
 - Structural analysis is limited to official `train.csv` seasons 2019–2023.
 - Target-aware exploratory analysis is limited to 2019–2021.
-- Target use for the bounded representativeness diagnostic is limited to the
-  pre-registered r2022/r2023 origin being checked.
+- Existing target-aware bounded diagnostics are limited to the pre-registered
+  r2022/r2023 origin being checked. The Phase 1 geometry diagnostic is strictly
+  feature-only and does not read targets.
 - No test-distribution, Public/leaderboard, web, API, or external-data evidence is
   permitted.
 - Trackman is inspected only as officially supplied historical data. Identifier
@@ -142,6 +143,118 @@ All real-data helpers share one scalar missing-value rule covering `None`, the e
 string, NaN, and pandas NA-like values. Missing numeric values are excluded from
 mean/std/SMD calculations and included in missing-rate calculations. Missing as-of
 rates, including cold starts, are not by themselves domain violations.
+
+## Bounded-validation geometry Phase 1
+
+The isolated model-free methodology diagnostic uses contract version
+`aimers9-bounded-validation-geometry-v1`. It evaluates only the regular-season
+outer-validation panels for `r2022` (`season == 2022`, `game_type == R`) and
+`r2023` (`season == 2023`, `game_type == R`). It does not construct or inspect
+inner-train, inner-validation, outer-train, primary, r2024, calibration, or
+correction panels, and it does not alter any active runner or policy.
+
+For each origin, the budget is exactly `min(30,000, full-panel row count)` and
+the selected positions are unique members of the full eligible mask. The current
+reference is the first 30,000 true positions in DataFrame/source order.
+
+Candidate A is the only promotion-eligible geometry in this experiment:
+
+```text
+game_month × count_state
+```
+
+`count_state` uses the established mapping
+`balls_before * 3 + strikes_before` over the raw pre-pitch values. Missing or
+invalid count components use the deterministic token `__MISSING__`. `game_month`
+is normalized as an integer from 1 through 12; missing, non-integral, or
+out-of-range month values use the same token. For each stratum, the ideal quota
+is `n_stratum * budget / n_full`; exact floor and
+remainder are obtained with `divmod(n_stratum * budget, n_full)`, then remaining
+units are assigned by descending integer remainder and lexicographic stringified
+stratum key. If a stratum is exhausted, unused units are redistributed by the
+same deterministic order until the budget is filled. Within each stratum,
+rank `j` selects
+`floor((2*j + 1) * n_stratum / (2 * quota))`, for `j = 0 .. quota-1`. Quota zero,
+quota one, and a full-stratum quota are explicit edge cases. This is source-rank
+coverage only; it is not a claim about fine-grained chronology.
+
+Candidate B is a sensitivity-only systematic spread over the full mask using the
+same fixed midpoint-rank formula. Candidate C is a sensitivity-only sample of
+the lowest SHA-256 digests of the exact byte payload
+`UTF8(namespace) + b'\x00' + UTF8(str(row_id))`, where the immutable namespace is
+`aimers9-bounded-validation-geometry-v1/candidate-c/row-id`. Digests are sorted
+by digest, normalized row ID, then source position. Row IDs are normalized as
+`UTF8(str(value))` with no trimming; missing or duplicate normalized IDs fail
+Candidate C closed. There are no seeds or alternate namespaces. Neither B nor C
+is promotion-eligible, and neither can rescue a failed Candidate A; selecting
+either after seeing results requires a new reviewed Experiment Brief.
+
+The feature-only reader discovers eligible source positions with a season-only
+projection first, then materializes only the explicit non-target geometry/metric
+columns for r2022/r2023 using the same scoped `skiprows` mechanism. It never
+materializes `control_success`, 2024 feature rows, test data, Trackman, Public or
+leaderboard evidence, or external information. No target-rate appendix is part
+of Phase 1.
+
+Each candidate is compared with the full panel using aggregate-only diagnostics:
+
+- categorical TV for the established categorical audit columns, including
+  `game_month`, day of week, inning state, hands, and team IDs;
+- bounded-minus-full numeric SMD using the full-panel population standard
+  deviation, with invalid/empty numeric values excluded and deterministic nulls;
+- signed q10/q50/q90 bounded-minus-full deltas with fixed linear interpolation,
+  plus absolute deltas standardized by full-panel population standard deviation;
+- signed missing-rate delta in percentage points, treating raw missing and
+  coercion-invalid numeric values as missing for this diagnostic; and
+- exact pitcher, batter, pitcher-team, and batter-team unique coverage ratios and
+  shortfalls.
+
+Source-rank coverage uses exactly 20 equal-frequency ordinal bins with
+`min(19, floor(rank * 20 / n_full))`. Reports include full/selected counts,
+occupied supported bins, source-position range, and TV against proportional
+full-bin mass. These bins describe rank coverage, never chronology.
+
+The frozen Candidate-A acceptance gate is conjunctive across r2022 and r2023:
+
+1. `game_month` TV is at least 25% lower than current first-30k;
+2. source-rank-bin TV is at least 50% lower;
+3. every supported source-rank bin is represented;
+4. each of the five family medians (categorical TV, absolute SMD, standardized
+   quantile discrepancy, absolute missing-rate delta, and entity-coverage
+   shortfall) is no worse than current within `1e-12`;
+5. at least three family medians strictly improve at each origin; and
+6. 95th-percentile regressions stay within `+0.005` categorical TV, `+0.02`
+   absolute SMD, `+0.02` standardized quantile discrepancy, `+0.05` missing-rate
+   percentage points, and `+0.01` entity shortfall.
+
+If the current comparison is finite but Candidate A is null, the comparison fails
+closed. A baseline `<= 1e-12` is treated as numerical zero; the relative-reduction
+requirement is undefined there and therefore fails closed deterministically. A
+baseline `> 1e-12` uses the ordinary relative-reduction rule. The only Phase 1 outcomes are
+`PRIMARY_PASS`, `PRIMARY_FAIL`, and `FAIL_CLOSED`. A pass permits only a later
+policy-change proposal; it does not activate the selector or change validation
+geometry.
+
+The Phase 1 command, when separately authorized, is:
+
+```bash
+python scripts/audit_data_integrity_temporal.py bounded-validation-geometry \
+  --train-csv /path/to/official/train.csv \
+  --output-dir /tmp/aimers9-bounded-validation-geometry \
+  --repo-root .
+```
+
+It writes `bounded_geometry_report.json` and `bounded_geometry_report.md` outside
+Git. Reports contain contract, Git/script, source-frame, selected-position, and
+row-ID hashes, but no raw rows, row-ID lists, labels, predictions, or models.
+The report explicitly records `target_access = false`, `target_2024_access = false`,
+`target_column_in_projection = false`, `test_distribution_access = false`,
+`public_leaderboard_evidence = false`, `external_information_access = false`,
+`trackman_access = false`, `model_training_or_scoring = false`,
+`active_policy_modified = false`, and `branch_inert = true`.
+
+Any future active adoption would require a separate reviewed change covering
+selector alignment across all recovery runners and cache provenance/versioning.
 
 ## Evidence and verdicts
 

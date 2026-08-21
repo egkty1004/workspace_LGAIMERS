@@ -105,6 +105,31 @@ ABS_METRIC_CONTRACT_VERSION = "aimers9-abs-2024-metric-contract-v1"
 ABS_TRANSITIONS = tuple((year - 1, year) for year in range(2020, 2025))
 ABS_HISTORICAL_TRANSITIONS = ABS_TRANSITIONS[:-1]
 ABS_BOUNDARY_TRANSITION = ABS_TRANSITIONS[-1]
+BOUNDED_GEOMETRY_CONTRACT_VERSION = "aimers9-bounded-validation-geometry-v1"
+BOUNDED_GEOMETRY_PRIMARY = "candidate_a"
+BOUNDED_GEOMETRY_SENSITIVITIES = ("candidate_b", "candidate_c")
+BOUNDED_GEOMETRY_CANDIDATES = (
+    BOUNDED_GEOMETRY_PRIMARY, *BOUNDED_GEOMETRY_SENSITIVITIES,
+)
+BOUNDED_GEOMETRY_SOURCE_BIN_COUNT = 20
+BOUNDED_GEOMETRY_MEDIAN_TOLERANCE = 1e-12
+BOUNDED_GEOMETRY_HASH_NAMESPACE = (
+    "aimers9-bounded-validation-geometry-v1/candidate-c/row-id"
+)
+BOUNDED_GEOMETRY_CATEGORICAL_COLUMNS = (
+    "season", "game_month", "game_dayofweek", "top_bottom", "game_type",
+    "balls_before", "strikes_before", "outs_before", "base_state",
+    "pitcher_hand", "batter_hand", "pitcher_team_id", "batter_team_id",
+)
+BOUNDED_GEOMETRY_STRATUM_COLUMNS = (
+    "game_month", "count_state",
+)
+BOUNDED_GEOMETRY_PROJECTION_COLUMNS = tuple(dict.fromkeys((
+    ROW_ID,
+    *BOUNDED_GEOMETRY_CATEGORICAL_COLUMNS,
+    *AUDIT_NUMERIC_COLUMNS,
+    *AUDIT_COVERAGE_COLUMNS,
+)))
 TRACKMAN_MEASUREMENT_COLUMNS = (
     "rel_speed", "spin_rate", "induced_vert_break", "horz_break",
     "extension", "rel_height", "rel_side", "zone_speed",
@@ -193,6 +218,17 @@ class MaskSelection:
             "source_position_min": min(self.selected_positions, default=None),
             "source_position_max": max(self.selected_positions, default=None),
         }
+
+
+@dataclass(frozen=True)
+class BoundedGeometrySelection:
+    """One feature-only bounded geometry for one approved outer origin."""
+
+    origin: str
+    geometry: str
+    full_positions: tuple[int, ...]
+    selected_positions: tuple[int, ...]
+    parameters: Mapping[str, Any]
 
 
 def canonical_hash(value: Any) -> str:
@@ -900,6 +936,57 @@ def audit_medium_reader_semantics(source: str) -> list[str]:
     return sorted(set(problems))
 
 
+def audit_bounded_geometry_reader_semantics(source: str) -> list[str]:
+    """Verify the Phase 1 geometry reader is scoped and target-free."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError as exc:
+        return [f"source cannot be parsed: {exc}"]
+    functions = [
+        node for node in ast.walk(tree)
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.name == "read_bounded_validation_features"
+    ]
+    if len(functions) != 1:
+        return ["exactly one bounded geometry reader is required"]
+    function = functions[0]
+    problems: list[str] = []
+    read_calls = [
+        node for node in ast.walk(function)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "read_csv"
+    ]
+    if len(read_calls) != 1:
+        problems.append("bounded geometry reader requires exactly one read_csv call")
+    else:
+        keywords = {keyword.arg: keyword.value for keyword in read_calls[0].keywords}
+        projection = keywords.get("usecols")
+        expected = ast.dump(ast.parse(
+            "list(BOUNDED_GEOMETRY_PROJECTION_COLUMNS)", mode="eval"
+        ).body)
+        if projection is None or ast.dump(projection) != expected:
+            problems.append("bounded geometry reader must use its explicit projection")
+        skiprows = keywords.get("skiprows")
+        if not isinstance(skiprows, ast.Name) or skiprows.id != "skiprows":
+            problems.append("bounded geometry reader requires scoped skiprows")
+    invokes_discovery = any(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "_discover_scoped_source_rows"
+        for node in ast.walk(function)
+    )
+    if not invokes_discovery:
+        problems.append("bounded geometry reader must discover source rows by season first")
+    target_tokens = [
+        node for node in ast.walk(function)
+        if isinstance(node, ast.Name) and node.id == "TARGET"
+    ]
+    if target_tokens:
+        problems.append("bounded geometry reader contains target token")
+    return sorted(set(problems))
+
+
 PIPELINE_SOURCES: dict[str, tuple[str, tuple[str, ...]]] = {
     "common_legacy_lgb": (
         "repro_979/common.py",
@@ -1180,8 +1267,16 @@ def _git_sha(repo_root: Path) -> str:
     return "unknown"
 
 
-def _discover_scoped_source_rows(csv_path: Path, *, source_name: str):
-    """Materialize season only, returning allowed-line flags and source positions."""
+def _discover_scoped_source_rows(
+    csv_path: Path, *, source_name: str,
+    allowed_seasons: Iterable[int] | None = None,
+):
+    """Materialize season only, returning allowed-line flags and source positions.
+
+    ``allowed_seasons`` is used by isolated feature-only diagnostics to avoid
+    materializing feature values outside their explicitly approved season
+    scope. The default remains the reviewed 2019-2023 scope for the main audit.
+    """
     import numpy as np
     import pandas as pd
 
@@ -1189,9 +1284,12 @@ def _discover_scoped_source_rows(csv_path: Path, *, source_name: str):
     numeric = pd.to_numeric(seasons["season"], errors="coerce")
     if _missing_mask(numeric).any():
         raise AuditError(f"{source_name} has invalid season values")
-    allowed = numeric.isin(ALLOWED_SEASONS).to_numpy(dtype=bool)
+    season_scope = frozenset(
+        ALLOWED_SEASONS if allowed_seasons is None else allowed_seasons
+    )
+    allowed = numeric.isin(season_scope).to_numpy(dtype=bool)
     if not allowed.any():
-        raise AuditError(f"{source_name} has no 2019-2023 rows")
+        raise AuditError(f"{source_name} has no rows in the requested season scope")
     return bytearray(int(value) for value in allowed), np.flatnonzero(allowed)
 
 
@@ -1252,6 +1350,36 @@ def read_scoped_train_2019_2023(train_csv: Path):
     features.reset_index(drop=True, inplace=True)
     targets.reset_index(drop=True, inplace=True)
     return _attach_aligned_targets(features, targets)
+
+
+def read_bounded_validation_features(train_csv: Path):
+    """Read only the approved r2022/r2023 outer-validation feature panels.
+
+    The season-only discovery pass establishes source positions first. The
+    subsequent projection uses a skiprows firewall and a minimal, explicit
+    non-target column list. Neither ``control_success`` nor any 2019-2021 or
+    2024 feature row is materialized into the returned frame.
+    """
+    import pandas as pd
+
+    validate_header(train_csv, TRAIN_COLUMNS)
+    allowed_lines, source_positions = _discover_scoped_source_rows(
+        train_csv,
+        source_name="bounded validation train",
+        allowed_seasons=SELECTION_TARGET_SEASONS,
+    )
+    skiprows = _scoped_skiprows(allowed_lines)
+    frame = pd.read_csv(
+        train_csv,
+        encoding="utf-8-sig",
+        usecols=list(BOUNDED_GEOMETRY_PROJECTION_COLUMNS),
+        skiprows=skiprows,
+    )
+    if len(frame) != len(source_positions):
+        raise AuditError("bounded geometry projection row count mismatch")
+    frame["__source_position"] = source_positions
+    frame.reset_index(drop=True, inplace=True)
+    return frame
 
 
 def read_scoped_trackman_2019_2023(trackman_csv: Path):
@@ -1467,6 +1595,950 @@ def compare_all_bounded_geometries(
             "shared_geometry_profile_hash": key,
         })
     return reports
+
+
+def _geometry_category_token(value: Any) -> str:
+    """Canonical category token used by strata and aggregate diagnostics."""
+    if is_missing(value):
+        return "__MISSING__"
+    try:
+        if isinstance(value, float) and not math.isfinite(value):
+            return "__MISSING__"
+    except TypeError:
+        pass
+    return str(value)
+
+
+def _geometry_column_values(frame, column: str) -> list[Any]:
+    if hasattr(frame, "columns") and column in frame.columns:
+        return frame[column].tolist()
+    return [record.get(column) for record in frame]
+
+
+def _geometry_stratum_component(column: str, value: Any) -> str:
+    """Normalize the two pre-pitch count components and month for Candidate A."""
+    token = _geometry_category_token(value)
+    if token == "__MISSING__":
+        return token
+    bounds = {
+        "game_month": (1, 12),
+        "balls_before": (0, 3),
+        "strikes_before": (0, 2),
+    }
+    if column not in bounds:
+        return token
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return "__MISSING__"
+    lower, upper = bounds[column]
+    if not math.isfinite(numeric) or not numeric.is_integer():
+        return "__MISSING__"
+    integer = int(numeric)
+    if not lower <= integer <= upper:
+        return "__MISSING__"
+    return str(integer)
+
+
+def _geometry_origin_positions(frame, origin: str) -> tuple[int, ...]:
+    if origin not in {"r2022", "r2023"}:
+        raise AuditError("bounded geometry requires origin r2022 or r2023")
+    required_year = int(origin[1:])
+    seasons = _geometry_column_values(frame, "season")
+    game_types = _geometry_column_values(frame, "game_type")
+    positions: list[int] = []
+    for position, (season, game_type) in enumerate(zip(seasons, game_types)):
+        try:
+            season_value = int(season)
+        except (TypeError, ValueError):
+            continue
+        if season_value == required_year and _geometry_category_token(game_type) == "R":
+            positions.append(position)
+    return tuple(positions)
+
+
+def _geometry_strata(frame, full_positions: Sequence[int]) -> dict[tuple[str, ...], tuple[int, ...]]:
+    month_values = _geometry_column_values(frame, "game_month")
+    balls_values = _geometry_column_values(frame, "balls_before")
+    strikes_values = _geometry_column_values(frame, "strikes_before")
+    grouped: dict[tuple[str, ...], list[int]] = {}
+    for position in full_positions:
+        month = _geometry_stratum_component("game_month", month_values[position])
+        balls = _geometry_stratum_component("balls_before", balls_values[position])
+        strikes = _geometry_stratum_component("strikes_before", strikes_values[position])
+        count_state = (
+            "__MISSING__" if "__MISSING__" in {balls, strikes}
+            else str(int(balls) * 3 + int(strikes))
+        )
+        key = (month, count_state)
+        grouped.setdefault(key, []).append(int(position))
+    return {
+        key: tuple(grouped[key])
+        for key in sorted(grouped, key=lambda item: tuple(str(part) for part in item))
+    }
+
+
+def _geometry_allocate_quotas(
+    strata: Mapping[tuple[str, ...], Sequence[int]], budget: int,
+) -> dict[tuple[str, ...], int]:
+    """Allocate a proportional integer budget with deterministic redistribution.
+
+    Each ideal quota is ``n_stratum * budget / n_full``. Exact integer floors
+    and remainders come from ``divmod(n_stratum * budget, n_full)``. Remaining
+    units go by descending integer remainder and lexicographic stratum-key order.
+    A second deterministic pass redistributes units if a capped stratum is
+    exhausted.
+    """
+    total = sum(len(positions) for positions in strata.values())
+    if budget < 0 or budget > total:
+        raise AuditError("bounded geometry budget is outside full-panel bounds")
+    if not total or not budget:
+        return {key: 0 for key in strata}
+    floor_quotas: dict[tuple[str, ...], int] = {}
+    remainders: dict[tuple[str, ...], int] = {}
+    for key, positions in strata.items():
+        floor_quotas[key], remainders[key] = divmod(len(positions) * budget, total)
+    quotas = {
+        key: min(len(strata[key]), floor_quotas[key])
+        for key in strata
+    }
+    remaining = budget - sum(quotas.values())
+    while remaining:
+        candidates = [
+            key for key in strata
+            if quotas[key] < len(strata[key])
+        ]
+        if not candidates:
+            raise AuditError("bounded geometry quota redistribution exhausted capacity")
+        candidates.sort(
+            key=lambda key: (
+                -remainders[key],
+                tuple(str(part) for part in key),
+            )
+        )
+        progressed = False
+        for key in candidates:
+            if remaining <= 0:
+                break
+            if quotas[key] >= len(strata[key]):
+                continue
+            quotas[key] += 1
+            remaining -= 1
+            progressed = True
+        if not progressed:
+            raise AuditError("bounded geometry quota redistribution made no progress")
+    return quotas
+
+
+def _geometry_spread_positions(
+    positions: Sequence[int], quota: int,
+) -> tuple[int, ...]:
+    """Select rank ``floor((j + 0.5) * n / q)`` for j=0..q-1."""
+    n = len(positions)
+    if quota < 0 or quota > n:
+        raise AuditError("within-stratum quota is outside stratum bounds")
+    if quota == 0:
+        return ()
+    selected = tuple(
+        positions[min(n - 1, ((2 * index + 1) * n) // (2 * quota))]
+        for index in range(quota)
+    )
+    if len(set(selected)) != len(selected):
+        raise AuditError("within-stratum spread produced duplicate positions")
+    return selected
+
+
+def _geometry_select_candidate_a(
+    frame, full_positions: Sequence[int], budget: int,
+) -> BoundedGeometrySelection:
+    strata = _geometry_strata(frame, full_positions)
+    quotas = _geometry_allocate_quotas(strata, budget)
+    selected: list[int] = []
+    for key in sorted(strata, key=lambda item: tuple(str(part) for part in item)):
+        selected.extend(_geometry_spread_positions(strata[key], quotas[key]))
+    selected_positions = tuple(sorted(selected))
+    if len(selected_positions) != budget or len(set(selected_positions)) != budget:
+        raise AuditError("candidate A did not produce the exact unique budget")
+    return BoundedGeometrySelection(
+        origin="",
+        geometry=BOUNDED_GEOMETRY_PRIMARY,
+        full_positions=tuple(full_positions),
+        selected_positions=selected_positions,
+        parameters={
+            "stratum_columns": list(BOUNDED_GEOMETRY_STRATUM_COLUMNS),
+            "count_state_formula": "balls_before * 3 + strikes_before",
+            "missing_invalid_category_rule": (
+                "game_month outside integer 1..12, or balls/strikes outside integer "
+                "0..3/0..2, maps to __MISSING__"
+            ),
+            "quota_rule": (
+                "divmod(n_stratum*budget,n_full): quotient floor, descending "
+                "integer remainder, capacity redistribution"
+            ),
+            "remainder_tie_break": (
+                "descending integer remainder, then lexicographic stringified stratum key"
+            ),
+            "within_stratum_formula": "floor((2*j+1)*n/(2*q))",
+        },
+    )
+
+
+def _geometry_select_candidate_b(
+    full_positions: Sequence[int], budget: int,
+) -> BoundedGeometrySelection:
+    selected = _geometry_spread_positions(tuple(full_positions), budget)
+    return BoundedGeometrySelection(
+        origin="",
+        geometry="candidate_b",
+        full_positions=tuple(full_positions),
+        selected_positions=tuple(sorted(selected)),
+        parameters={
+            "formula": "floor((2*j+1)*n/(2*q))",
+            "rank_order": "full_mask_source_dataframe_order",
+        },
+    )
+
+
+def _geometry_normalize_row_id(value: Any) -> str:
+    if is_missing(value):
+        raise AuditError("candidate C requires nonmissing row_id values")
+    return str(value)
+
+
+def _geometry_candidate_c_digest(normalized_row_id: str) -> str:
+    payload = (
+        BOUNDED_GEOMETRY_HASH_NAMESPACE.encode("utf-8")
+        + b"\x00"
+        + normalized_row_id.encode("utf-8")
+    )
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _geometry_select_candidate_c(
+    frame, full_positions: Sequence[int], budget: int,
+) -> BoundedGeometrySelection:
+    row_ids = _geometry_column_values(frame, ROW_ID)
+    normalized: dict[int, str] = {}
+    seen: dict[str, int] = {}
+    for position in full_positions:
+        value = _geometry_normalize_row_id(row_ids[position])
+        if value in seen:
+            raise AuditError("candidate C requires unique row_id values")
+        seen[value] = int(position)
+        normalized[int(position)] = value
+    ranked = sorted(
+        full_positions,
+        key=lambda position: (
+            _geometry_candidate_c_digest(normalized[int(position)]),
+            normalized[int(position)],
+            int(position),
+        ),
+    )
+    selected = tuple(sorted(int(position) for position in ranked[:budget]))
+    if len(selected) != budget or len(set(selected)) != budget:
+        raise AuditError("candidate C did not produce the exact unique budget")
+    return BoundedGeometrySelection(
+        origin="",
+        geometry="candidate_c",
+        full_positions=tuple(full_positions),
+        selected_positions=selected,
+        parameters={
+            "hash_algorithm": "sha256",
+            "namespace": BOUNDED_GEOMETRY_HASH_NAMESPACE,
+            "hash_payload": "UTF8(namespace) + b'\\x00' + UTF8(str(row_id))",
+            "row_id_normalization": "UTF8(str(value)), no trimming",
+            "sort_tie_break": "digest, normalized_row_id, source_position",
+            "seed_policy": "no seeds or alternate namespaces",
+        },
+    )
+
+
+def select_bounded_geometry(
+    frame, origin: str, geometry: str,
+) -> BoundedGeometrySelection:
+    """Select one frozen geometry without reading labels or model outputs."""
+    full_positions = _geometry_origin_positions(frame, origin)
+    budget = min(BOUNDED_ROWS, len(full_positions))
+    if geometry == BOUNDED_GEOMETRY_PRIMARY:
+        selection = _geometry_select_candidate_a(frame, full_positions, budget)
+    elif geometry == "candidate_b":
+        selection = _geometry_select_candidate_b(full_positions, budget)
+    elif geometry == "candidate_c":
+        selection = _geometry_select_candidate_c(frame, full_positions, budget)
+    else:
+        raise AuditError(f"unknown bounded geometry candidate: {geometry}")
+    return BoundedGeometrySelection(
+        origin=origin,
+        geometry=selection.geometry,
+        full_positions=selection.full_positions,
+        selected_positions=selection.selected_positions,
+        parameters={"budget": budget, **dict(selection.parameters)},
+    )
+
+
+def _geometry_metric(value: Any = None, reason: str | None = None) -> dict[str, Any]:
+    return _abs_metric_result(value, reason)
+
+
+def _geometry_numeric_values(frame, column: str, positions: Sequence[int]) -> list[float]:
+    values: list[float] = []
+    raw_values = _geometry_column_values(frame, column)
+    for position in positions:
+        raw = raw_values[position]
+        if is_missing(raw):
+            continue
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(value):
+            values.append(value)
+    return values
+
+
+def _geometry_numeric_missing_rate(
+    frame, column: str, positions: Sequence[int],
+) -> float | None:
+    if not positions:
+        return None
+    raw_values = _geometry_column_values(frame, column)
+    missing = 0
+    for position in positions:
+        raw = raw_values[position]
+        if is_missing(raw):
+            missing += 1
+            continue
+        try:
+            numeric = float(raw)
+        except (TypeError, ValueError):
+            missing += 1
+            continue
+        if not math.isfinite(numeric):
+            missing += 1
+    return missing / len(positions)
+
+
+def _geometry_linear_quantile_sorted(values: Sequence[float], quantile: float) -> float:
+    if len(values) == 1:
+        return values[0]
+    position = (len(values) - 1) * quantile
+    lower = math.floor(position)
+    upper = math.ceil(position)
+    fraction = position - lower
+    return values[lower] + fraction * (values[upper] - values[lower])
+
+
+def _geometry_numeric_metrics(frame, column: str, full: Sequence[int], selected: Sequence[int]) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    bounded_rate = _geometry_numeric_missing_rate(frame, column, selected)
+    full_rate = _geometry_numeric_missing_rate(frame, column, full)
+    missing = _geometry_metric(
+        100.0 * (bounded_rate - full_rate)
+        if bounded_rate is not None and full_rate is not None else None,
+        None if bounded_rate is not None and full_rate is not None
+        else "missing_rate_unavailable",
+    )
+    full_values = _geometry_numeric_values(frame, column, full)
+    selected_values = _geometry_numeric_values(frame, column, selected)
+    if not full_values:
+        reason = "no_valid_numeric_values_in_full_panel"
+        return (
+            _geometry_metric(reason=reason),
+            {
+                "quantiles": {
+                    f"{quantile:.2f}": _geometry_metric(reason=reason)
+                    for quantile in ABS_QUANTILE_GRID
+                },
+                "reason": reason,
+            },
+            missing,
+        )
+    if not selected_values:
+        reason = "no_valid_numeric_values_in_bounded_panel"
+        return (
+            _geometry_metric(reason=reason),
+            {
+                "quantiles": {
+                    f"{quantile:.2f}": _geometry_metric(reason=reason)
+                    for quantile in ABS_QUANTILE_GRID
+                },
+                "reason": reason,
+            },
+            missing,
+        )
+    full_mean = math.fsum(full_values) / len(full_values)
+    selected_mean = math.fsum(selected_values) / len(selected_values)
+    full_variance = math.fsum((value - full_mean) ** 2 for value in full_values) / len(full_values)
+    full_sd = math.sqrt(full_variance)
+    if full_sd == 0.0:
+        smd = (
+            _geometry_metric(0.0)
+            if selected_mean == full_mean
+            else _geometry_metric(reason="degenerate_full_variance_unequal_means")
+        )
+    else:
+        smd = _geometry_metric((selected_mean - full_mean) / full_sd)
+    sorted_full = tuple(sorted(full_values))
+    sorted_selected = tuple(sorted(selected_values))
+    quantiles: dict[str, Any] = {}
+    for quantile in ABS_QUANTILE_GRID:
+        key = f"{quantile:.2f}"
+        delta = (
+            _geometry_linear_quantile_sorted(sorted_selected, quantile)
+            - _geometry_linear_quantile_sorted(sorted_full, quantile)
+        )
+        standardized = (
+            abs(delta) / full_sd if full_sd else (
+                0.0 if delta == 0.0 else None
+            )
+        )
+        quantiles[key] = {
+            "value": delta if math.isfinite(delta) else None,
+            "raw_delta": delta if math.isfinite(delta) else None,
+            "reason": None if math.isfinite(delta) else "non_finite_metric_result",
+            "standardized_abs_delta": standardized,
+            "standardized_reason": (
+                None if full_sd or delta == 0.0
+                else "degenerate_full_scale_unequal_quantiles"
+            ),
+        }
+    return smd, {"quantiles": quantiles, "reason": None}, missing
+
+
+def _geometry_distribution(frame, column: str, positions: Sequence[int]) -> dict[str, float]:
+    column_values = _geometry_column_values(frame, column)
+    values = [
+        _geometry_category_token(column_values[position])
+        for position in positions
+    ]
+    if not values:
+        return {}
+    counts = Counter(values)
+    total = len(values)
+    return {key: counts[key] / total for key in sorted(counts)}
+
+
+def _geometry_entity_metrics(frame, column: str, full: Sequence[int], selected: Sequence[int]) -> dict[str, Any]:
+    values = _geometry_column_values(frame, column)
+    full_unique = {
+        str(values[position]) for position in full if not is_missing(values[position])
+    }
+    selected_unique = {
+        str(values[position]) for position in selected if not is_missing(values[position])
+    }
+    if not full_unique:
+        return {
+            "full_unique_count": 0,
+            "bounded_unique_count": len(selected_unique),
+            "coverage_ratio": _geometry_metric(reason="full_unique_count_zero"),
+            "shortfall": _geometry_metric(reason="full_unique_count_zero"),
+        }
+    coverage = len(selected_unique) / len(full_unique)
+    return {
+        "full_unique_count": len(full_unique),
+        "bounded_unique_count": len(selected_unique),
+        "coverage_ratio": _geometry_metric(coverage),
+        "shortfall": _geometry_metric(1.0 - coverage),
+    }
+
+
+def _geometry_source_rank_coverage(
+    full_positions: Sequence[int], selected_positions: Sequence[int],
+) -> dict[str, Any]:
+    n_full = len(full_positions)
+    if not n_full:
+        return {
+            "bin_count": BOUNDED_GEOMETRY_SOURCE_BIN_COUNT,
+            "full_count_by_bin": {
+                str(key): 0 for key in range(BOUNDED_GEOMETRY_SOURCE_BIN_COUNT)
+            },
+            "selected_count_by_bin": {
+                str(key): 0 for key in range(BOUNDED_GEOMETRY_SOURCE_BIN_COUNT)
+            },
+            "supported_bins": [],
+            "occupied_supported_bins": [],
+            "all_supported_bins_occupied": False,
+            "source_bin_tv": _geometry_metric(reason="empty_full_panel"),
+            "reason": "empty_full_panel",
+        }
+    rank_by_position = {int(position): rank for rank, position in enumerate(full_positions)}
+    full_counts = Counter(
+        min(BOUNDED_GEOMETRY_SOURCE_BIN_COUNT - 1,
+            rank * BOUNDED_GEOMETRY_SOURCE_BIN_COUNT // n_full)
+        for rank in range(n_full)
+    )
+    selected_counts = Counter(
+        min(BOUNDED_GEOMETRY_SOURCE_BIN_COUNT - 1,
+            rank_by_position[int(position)] * BOUNDED_GEOMETRY_SOURCE_BIN_COUNT // n_full)
+        for position in selected_positions
+    )
+    supported = sorted(full_counts)
+    selected_distribution = {
+        str(key): selected_counts[key] / len(selected_positions)
+        for key in range(BOUNDED_GEOMETRY_SOURCE_BIN_COUNT)
+        if selected_positions and selected_counts[key]
+    }
+    full_distribution = {
+        str(key): full_counts[key] / n_full
+        for key in range(BOUNDED_GEOMETRY_SOURCE_BIN_COUNT)
+        if full_counts[key]
+    }
+    return {
+        "bin_count": BOUNDED_GEOMETRY_SOURCE_BIN_COUNT,
+        "full_count_by_bin": {
+            str(key): full_counts[key]
+            for key in range(BOUNDED_GEOMETRY_SOURCE_BIN_COUNT)
+        },
+        "selected_count_by_bin": {
+            str(key): selected_counts[key]
+            for key in range(BOUNDED_GEOMETRY_SOURCE_BIN_COUNT)
+        },
+        "supported_bins": supported,
+        "occupied_supported_bins": sorted(
+            key for key in supported if selected_counts[key] > 0
+        ),
+        "all_supported_bins_occupied": all(
+            selected_counts[key] > 0 for key in supported
+        ),
+        "source_bin_tv": _geometry_metric(
+            _total_variation(selected_distribution, full_distribution)
+            if selected_positions else None,
+            None if selected_positions else "empty_bounded_panel",
+        ),
+        "rank_bin_formula": "min(19, floor(rank * 20 / n_full))",
+        "reason": None,
+    }
+
+
+def compare_bounded_geometry(
+    frame, selection: BoundedGeometrySelection,
+) -> dict[str, Any]:
+    """Compute aggregate, non-target discrepancy for one frozen selection."""
+    full = selection.full_positions
+    selected = selection.selected_positions
+    categorical: dict[str, Any] = {}
+    for column in BOUNDED_GEOMETRY_CATEGORICAL_COLUMNS:
+        full_distribution = _geometry_distribution(frame, column, full)
+        selected_distribution = _geometry_distribution(frame, column, selected)
+        categorical[column] = _geometry_metric(
+            _total_variation(selected_distribution, full_distribution)
+            if full_distribution and selected_distribution else None,
+            None if full_distribution and selected_distribution
+            else "empty_panel_for_categorical_distribution",
+        )
+    smd: dict[str, Any] = {}
+    quantile: dict[str, Any] = {}
+    missing: dict[str, Any] = {}
+    for column in AUDIT_NUMERIC_COLUMNS:
+        smd[column], quantile[column], missing[column] = _geometry_numeric_metrics(
+            frame, column, full, selected
+        )
+    coverage = {
+        column: _geometry_entity_metrics(frame, column, full, selected)
+        for column in AUDIT_COVERAGE_COLUMNS
+    }
+    source_positions = _geometry_column_values(frame, "__source_position")
+    selected_source_positions = [source_positions[position] for position in selected]
+    row_ids = _geometry_column_values(frame, ROW_ID)
+    selected_row_ids = [_geometry_normalize_row_id(row_ids[position]) for position in selected]
+    return {
+        "origin": selection.origin,
+        "geometry": selection.geometry,
+        "n_full": len(full),
+        "n_selected": len(selected),
+        "budget": min(BOUNDED_ROWS, len(full)),
+        "parameters": dict(selection.parameters),
+        "selected_position_hash": canonical_hash(selected_source_positions),
+        "selected_row_id_hash": canonical_hash(selected_row_ids),
+        "source_position_min": min(selected_source_positions, default=None),
+        "source_position_max": max(selected_source_positions, default=None),
+        "categorical_total_variation": categorical,
+        "numeric_smd": smd,
+        "quantile_discrepancy": quantile,
+        "missing_rate_delta_pp": missing,
+        "entity_coverage": coverage,
+        "source_rank_coverage": _geometry_source_rank_coverage(full, selected),
+        "status": "OK",
+    }
+
+
+def _geometry_finite(value: Any) -> bool:
+    return isinstance(value, (int, float)) and math.isfinite(float(value))
+
+
+def _geometry_percentile(values: Sequence[float], quantile: float) -> float | None:
+    if not values:
+        return None
+    return _geometry_linear_quantile_sorted(tuple(sorted(values)), quantile)
+
+
+def _geometry_family_values(report: Mapping[str, Any], family: str) -> dict[str, float | None]:
+    values: dict[str, float | None] = {}
+    if family == "categorical_total_variation":
+        for column, result in report.get(family, {}).items():
+            values[column] = result.get("value")
+    elif family == "numeric_smd":
+        for column, result in report.get(family, {}).items():
+            value = result.get("value")
+            values[column] = abs(float(value)) if _geometry_finite(value) else None
+    elif family == "quantile_discrepancy":
+        for column, result in report.get(family, {}).items():
+            for key, item in result.get("quantiles", {}).items():
+                value = item.get("standardized_abs_delta")
+                values[f"{column}:{key}"] = (
+                    float(value) if _geometry_finite(value) else None
+                )
+    elif family == "missing_rate_delta_pp":
+        for column, result in report.get(family, {}).items():
+            value = result.get("value")
+            values[column] = abs(float(value)) if _geometry_finite(value) else None
+    elif family == "entity_coverage_shortfall":
+        for column, result in report.get("entity_coverage", {}).items():
+            value = result.get("shortfall", {}).get("value")
+            values[column] = float(value) if _geometry_finite(value) else None
+    return values
+
+
+def _geometry_family_gate(
+    current: Mapping[str, Any], candidate: Mapping[str, Any], family: str,
+    guardrail: float,
+) -> dict[str, Any]:
+    current_values = _geometry_family_values(current, family)
+    candidate_values = _geometry_family_values(candidate, family)
+    paired: list[tuple[float, float]] = []
+    null_reason: str | None = None
+    for key in sorted(set(current_values) | set(candidate_values)):
+        left = current_values.get(key)
+        right = candidate_values.get(key)
+        if _geometry_finite(left) and not _geometry_finite(right):
+            null_reason = f"candidate_null_for_finite_current:{key}"
+            continue
+        if _geometry_finite(left) and _geometry_finite(right):
+            paired.append((float(left), float(right)))
+    if null_reason is not None:
+        return {
+            "status": "FAIL_CLOSED",
+            "reason": null_reason,
+            "n_paired": len(paired),
+        }
+    if not paired:
+        return {
+            "status": "FAIL_CLOSED",
+            "reason": "no_finite_paired_family_values",
+            "n_paired": 0,
+        }
+    current_values_only = [left for left, _ in paired]
+    candidate_values_only = [right for _, right in paired]
+    current_median = _geometry_percentile(current_values_only, 0.50)
+    candidate_median = _geometry_percentile(candidate_values_only, 0.50)
+    current_p95 = _geometry_percentile(current_values_only, 0.95)
+    candidate_p95 = _geometry_percentile(candidate_values_only, 0.95)
+    assert current_median is not None and candidate_median is not None
+    assert current_p95 is not None and candidate_p95 is not None
+    median_no_worse = candidate_median <= current_median + BOUNDED_GEOMETRY_MEDIAN_TOLERANCE
+    strict_improvement = candidate_median < current_median - BOUNDED_GEOMETRY_MEDIAN_TOLERANCE
+    p95_no_regression = candidate_p95 <= current_p95 + guardrail
+    status = "PASS" if median_no_worse and p95_no_regression else "FAIL"
+    return {
+        "status": status,
+        "reason": None if status == "PASS" else "family_median_or_p95_guardrail_failed",
+        "n_paired": len(paired),
+        "current_median": current_median,
+        "candidate_median": candidate_median,
+        "median_no_worse": median_no_worse,
+        "strict_improvement": strict_improvement,
+        "current_p95": current_p95,
+        "candidate_p95": candidate_p95,
+        "p95_guardrail": guardrail,
+        "p95_no_regression": p95_no_regression,
+    }
+
+
+def _geometry_relative_reduction_gate(
+    current_result: Mapping[str, Any], candidate_result: Mapping[str, Any],
+    minimum_fraction: float,
+) -> dict[str, Any]:
+    current = current_result.get("value")
+    candidate = candidate_result.get("value")
+    if not _geometry_finite(current) or not _geometry_finite(candidate):
+        return {"status": "FAIL_CLOSED", "reason": "non_finite_gate_metric"}
+    current = float(current)
+    candidate = float(candidate)
+    if current <= BOUNDED_GEOMETRY_MEDIAN_TOLERANCE:
+        return {
+            "status": "FAIL_CLOSED",
+            "reason": "zero_baseline_relative_reduction_undefined",
+            "current": current,
+            "candidate": candidate,
+            "minimum_relative_reduction": minimum_fraction,
+        }
+    threshold = current * (1.0 - minimum_fraction)
+    passed = candidate <= threshold + BOUNDED_GEOMETRY_MEDIAN_TOLERANCE
+    return {
+        "status": "PASS" if passed else "FAIL",
+        "reason": None if passed else "minimum_relative_reduction_not_met",
+        "current": current,
+        "candidate": candidate,
+        "threshold": threshold,
+        "minimum_relative_reduction": minimum_fraction,
+    }
+
+
+def evaluate_bounded_geometry_gate(
+    reports_by_origin: Mapping[str, Mapping[str, Mapping[str, Any]]],
+) -> dict[str, Any]:
+    """Apply the frozen conjunctive Candidate-A gate for both origins."""
+    family_specs = {
+        "categorical_total_variation": 0.005,
+        "numeric_smd": 0.02,
+        "quantile_discrepancy": 0.02,
+        "missing_rate_delta_pp": 0.05,
+        "entity_coverage_shortfall": 0.01,
+    }
+    origin_results: dict[str, Any] = {}
+    for origin in ("r2022", "r2023"):
+        origin_reports = reports_by_origin.get(origin, {})
+        current = origin_reports.get("current_first_30k")
+        primary = origin_reports.get(BOUNDED_GEOMETRY_PRIMARY)
+        if (
+            current is None or primary is None
+            or current.get("status") != "OK"
+            or primary.get("status") != "OK"
+        ):
+            origin_results[origin] = {
+                "status": "FAIL_CLOSED",
+                "reason": "missing_current_or_primary_report",
+            }
+            continue
+        checks: dict[str, Any] = {}
+        checks["game_month_tv"] = _geometry_relative_reduction_gate(
+            current["categorical_total_variation"].get("game_month", {}),
+            primary["categorical_total_variation"].get("game_month", {}),
+            0.25,
+        )
+        checks["source_bin_tv"] = _geometry_relative_reduction_gate(
+            current["source_rank_coverage"].get("source_bin_tv", {}),
+            primary["source_rank_coverage"].get("source_bin_tv", {}),
+            0.50,
+        )
+        checks["all_supported_source_bins_occupied"] = {
+            "status": "PASS"
+            if primary["source_rank_coverage"].get("all_supported_bins_occupied")
+            else "FAIL",
+            "reason": None
+            if primary["source_rank_coverage"].get("all_supported_bins_occupied")
+            else "supported_source_rank_bin_empty",
+        }
+        families = {}
+        for family, guardrail in family_specs.items():
+            families[family] = _geometry_family_gate(
+                current, primary, family, guardrail
+            )
+        checks["family_medians"] = families
+        strict_count = sum(
+            result.get("strict_improvement", False)
+            for result in families.values()
+            if result.get("status") == "PASS"
+        )
+        checks["strict_family_improvement_count"] = {
+            "count": strict_count,
+            "required": 3,
+            "status": "PASS" if strict_count >= 3 else "FAIL",
+        }
+        statuses = [
+            result.get("status") for result in checks.values()
+            if isinstance(result, Mapping) and "status" in result
+        ]
+        statuses.extend(result.get("status") for result in families.values())
+        if any(status == "FAIL_CLOSED" for status in statuses):
+            status = "FAIL_CLOSED"
+        elif all(status == "PASS" for status in statuses):
+            status = "PASS"
+        else:
+            status = "FAIL"
+        origin_results[origin] = {
+            "status": status,
+            "checks": checks,
+        }
+    statuses = [origin_results[origin].get("status") for origin in ("r2022", "r2023")]
+    if any(status == "FAIL_CLOSED" for status in statuses):
+        result = "FAIL_CLOSED"
+    elif all(status == "PASS" for status in statuses):
+        result = "PRIMARY_PASS"
+    else:
+        result = "PRIMARY_FAIL"
+    return {
+        "result": result,
+        "primary_candidate": BOUNDED_GEOMETRY_PRIMARY,
+        "candidate_a_promotion_eligible": result == "PRIMARY_PASS",
+        "candidate_b_c_sensitivity_only": True,
+        "b_c_cannot_rescue_primary": True,
+        "origins_are_conjunctive": True,
+        "origins": origin_results,
+        "family_guardrails": family_specs,
+        "median_tolerance": BOUNDED_GEOMETRY_MEDIAN_TOLERANCE,
+    }
+
+
+def _bounded_geometry_contract() -> dict[str, Any]:
+    return {
+        "version": BOUNDED_GEOMETRY_CONTRACT_VERSION,
+        "scope": "r2022/r2023 regular-season outer validation only",
+        "budget_rule": "min(30000, full_outer_validation_rows)",
+        "candidate_a": {
+            "name": BOUNDED_GEOMETRY_PRIMARY,
+            "promotion_eligible": True,
+            "stratum_columns": list(BOUNDED_GEOMETRY_STRATUM_COLUMNS),
+            "game_month": "integer 1..12; missing, non-integral, or out-of-range values map to __MISSING__",
+            "count_state": "balls_before * 3 + strikes_before, with invalid components tokenized as __MISSING__",
+            "quota_rule": "divmod(n_stratum*budget, n_full); floor; descending integer remainder; capacity redistribution",
+            "remainder_tie_break": "descending integer remainder, then lexicographic stringified stratum key",
+            "within_stratum_formula": "floor((2*j+1)*n/(2*q))",
+        },
+        "candidate_b": {
+            "name": "candidate_b",
+            "promotion_eligible": False,
+            "sensitivity_only": True,
+            "formula": "floor((2*j+1)*n/(2*q)) over full mask source/DataFrame rank",
+        },
+        "candidate_c": {
+            "name": "candidate_c",
+            "promotion_eligible": False,
+            "sensitivity_only": True,
+            "hash_algorithm": "sha256",
+            "namespace": BOUNDED_GEOMETRY_HASH_NAMESPACE,
+            "hash_payload": "UTF8(namespace) + b'\\x00' + UTF8(str(row_id))",
+            "row_id_normalization": "UTF8(str(value)), no trimming",
+            "sort_tie_break": "digest, normalized_row_id, source_position",
+            "seed_policy": "no seeds or alternate namespaces",
+            "missing_or_duplicate_row_id": "FAIL_CLOSED",
+        },
+        "source_rank_bin_count": BOUNDED_GEOMETRY_SOURCE_BIN_COUNT,
+        "source_rank_bin_formula": "min(19, floor(rank * 20 / n_full))",
+        "source_rank_not_chronology": True,
+        "zero_baseline_relative_reduction": "FAIL_CLOSED when baseline <= 1e-12; undefined relative reduction",
+        "median_tolerance": BOUNDED_GEOMETRY_MEDIAN_TOLERANCE,
+        "metrics": {
+            "categorical_columns": list(BOUNDED_GEOMETRY_CATEGORICAL_COLUMNS),
+            "numeric_columns": list(AUDIT_NUMERIC_COLUMNS),
+            "coverage_columns": list(AUDIT_COVERAGE_COLUMNS),
+            "quantile_grid": list(ABS_QUANTILE_GRID),
+            "quantile_interpolation": ABS_QUANTILE_INTERPOLATION,
+        },
+        "target_rate_diagnostic": "not implemented in Phase 1",
+    }
+
+
+def bounded_geometry_contract() -> dict[str, Any]:
+    """Return the frozen, public Phase 1 geometry contract."""
+    return _bounded_geometry_contract()
+
+
+def run_bounded_validation_geometry_audit(
+    train_csv: Path, output_dir: Path, repo_root: Path,
+) -> tuple[dict[str, Any], tuple[Path, Path]]:
+    """Run the isolated, model-free outer-validation geometry comparison."""
+    repo_root = repo_root.resolve()
+    output = _ensure_external_output_dir(output_dir, repo_root)
+    frame = read_bounded_validation_features(train_csv.resolve())
+    projection_hash = _canonical_frame_hash(
+        frame, (*BOUNDED_GEOMETRY_PROJECTION_COLUMNS, "__source_position")
+    )
+    reports_by_origin: dict[str, dict[str, dict[str, Any]]] = {}
+    for origin in ("r2022", "r2023"):
+        reports_by_origin[origin] = {}
+        for geometry in ("current_first_30k", *BOUNDED_GEOMETRY_CANDIDATES):
+            try:
+                if geometry == "current_first_30k":
+                    full_positions = _geometry_origin_positions(frame, origin)
+                    selection = BoundedGeometrySelection(
+                        origin=origin,
+                        geometry=geometry,
+                        full_positions=full_positions,
+                        selected_positions=full_positions[:BOUNDED_ROWS],
+                        parameters={
+                            "rule": "first_30000_true_positions_in_dataframe_order",
+                        },
+                    )
+                else:
+                    selection = select_bounded_geometry(frame, origin, geometry)
+                reports_by_origin[origin][geometry] = compare_bounded_geometry(
+                    frame, selection
+                )
+            except AuditError as exc:
+                reports_by_origin[origin][geometry] = {
+                    "origin": origin,
+                    "geometry": geometry,
+                    "status": "FAIL_CLOSED",
+                    "reason": str(exc),
+                }
+    gate = evaluate_bounded_geometry_gate(reports_by_origin)
+    report: dict[str, Any] = {
+        "schema_version": REPORT_SCHEMA_VERSION,
+        "geometry_contract_version": BOUNDED_GEOMETRY_CONTRACT_VERSION,
+        "audit_kind": "Bounded validation representativeness geometry Phase 1",
+        "git_sha": _git_sha(repo_root),
+        "scope": {
+            "selection_origins": ["r2022", "r2023"],
+            "outer_validation_only": True,
+            "inner_train_access": False,
+            "inner_validation_access": False,
+            "outer_train_access": False,
+            "primary_access": False,
+            "r2024_access": False,
+            "target_2024_access": False,
+            "target_access": False,
+            "target_column_in_projection": False,
+            "test_distribution_access": False,
+            "public_leaderboard_evidence": False,
+            "external_information_access": False,
+            "trackman_access": False,
+            "model_training_or_scoring": False,
+            "branch_inert": True,
+            "active_policy_modified": False,
+        },
+        "sources": {
+            "train_features": {
+                "name": train_csv.name,
+                "projection_columns": list(BOUNDED_GEOMETRY_PROJECTION_COLUMNS),
+                "sha256": projection_hash,
+                "source_frame_hash": projection_hash,
+                "rows": len(frame),
+                "source_position_column": "__source_position",
+            },
+            "audit_script": {
+                "path": "scripts/audit_data_integrity_temporal.py",
+                "sha256": _sha256_file(Path(__file__).resolve()),
+            },
+        },
+        "label_access_ledger": [],
+        "sections": {
+            "contract": bounded_geometry_contract(),
+            "outer_validation_panels": reports_by_origin,
+            "acceptance_gate": gate,
+            "interpretation": {
+                "result_is_methodology_only": True,
+                "structural_representativeness_only": True,
+                "source_rank_is_not_chronology": True,
+                "candidate_a_only_promotion_eligible": True,
+                "candidate_b_c_sensitivity_only": True,
+                "b_c_cannot_rescue_candidate_a": True,
+                "target_rate_diagnostic": "not run",
+                "model_or_policy_action": "FORBIDDEN_IN_THIS_AUDIT",
+                "active_protocol_changed": False,
+            },
+        },
+        "privacy_contract": {
+            "aggregate_only": True,
+            "contains_raw_row_material": False,
+            "contains_individual_target_material": False,
+            "contains_row_identifier_lists": False,
+            "row_identifier_hashes_allowed": True,
+            "contains_predictions_models_or_submissions": False,
+        },
+        "expensive_work_executed": False,
+    }
+    report["canonical_report_sha256"] = canonical_report_hash(report)
+    return report, _write_bounded_geometry_report(report, output)
 
 
 def audit_main_structural_frame(frame) -> tuple[dict[str, Any], list[Finding]]:
@@ -2805,6 +3877,47 @@ def _write_report(report: Mapping[str, Any], output_dir: Path, *, stem: str) -> 
     return json_path, md_path
 
 
+def _write_bounded_geometry_report(
+    report: Mapping[str, Any], output_dir: Path,
+) -> tuple[Path, Path]:
+    """Write the model-free geometry report without row-level material."""
+    safe = _json_safe(report)
+    _assert_report_privacy(safe)
+    json_path = output_dir / "bounded_geometry_report.json"
+    md_path = output_dir / "bounded_geometry_report.md"
+    json_path.write_text(
+        json.dumps(safe, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False)
+        + "\n",
+        encoding="utf-8",
+    )
+    gate = safe.get("sections", {}).get("acceptance_gate", {})
+    lines = [
+        "# Bounded validation representativeness geometry Phase 1",
+        "",
+        f"- Contract: `{safe.get('geometry_contract_version')}`",
+        f"- Git SHA: `{safe.get('git_sha')}`",
+        f"- Canonical report SHA-256: `{safe.get('canonical_report_sha256')}`",
+        f"- Phase 1 result: `{gate.get('result')}`",
+        "",
+        "## Scope",
+        "",
+        "Feature-only r2022/r2023 regular-season outer-validation panels; no target, model, test, Trackman, Public, or external information.",
+        "Source-rank coverage is a deterministic coverage diagnostic, not a chronology claim.",
+        "",
+        "## Candidate policy",
+        "",
+        "Candidate A is the only promotion-eligible geometry within this experiment.",
+        "Candidates B and C are sensitivity controls only and cannot rescue a failed Candidate A.",
+        "",
+        "## Interpretation",
+        "",
+        "Model, feature, threshold, transformation, calibration, recovery-policy, and active-protocol changes are forbidden by this audit.",
+        "",
+    ]
+    md_path.write_text("\n".join(lines), encoding="utf-8")
+    return json_path, md_path
+
+
 def run_medium_audit(
     train_csv: Path, trackman_csv: Path, output_dir: Path, repo_root: Path,
 ) -> tuple[dict[str, Any], tuple[Path, Path]]:
@@ -3015,6 +4128,12 @@ def _static_report(repo_root: Path) -> dict[str, Any]:
         raise AuditError(
             "MEDIUM reader semantic audit failed: " + "; ".join(medium_reader_problems)
         )
+    geometry_reader_problems = audit_bounded_geometry_reader_semantics(source)
+    if geometry_reader_problems:
+        raise AuditError(
+            "bounded geometry reader semantic audit failed: "
+            + "; ".join(geometry_reader_problems)
+        )
     pipeline_findings = audit_pipeline_sources(repo_root)
     head = _git_sha(repo_root)
     status_finding = classify_project_status_sha(
@@ -3025,6 +4144,7 @@ def _static_report(repo_root: Path) -> dict[str, Any]:
         "semantic_source_audit": "PASS",
         "target_role_semantic_audit": "PASS",
         "medium_reader_semantic_audit": "PASS",
+        "bounded_geometry_reader_semantic_audit": "PASS",
         "pipeline_findings": [finding.to_dict() for finding in pipeline_findings],
         "project_status": status_finding.to_dict(),
         "abs_2024_feature_only_contract": abs_feature_only_contract(),
@@ -3055,6 +4175,15 @@ def build_parser() -> argparse.ArgumentParser:
     abs_2024.add_argument("--train-csv", type=Path, required=True)
     abs_2024.add_argument("--output-dir", type=Path, required=True)
     abs_2024.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
+    bounded_geometry = subparsers.add_parser(
+        "bounded-validation-geometry",
+        help="isolated feature-only r2022/r2023 outer-validation geometry audit",
+    )
+    bounded_geometry.add_argument("--train-csv", type=Path, required=True)
+    bounded_geometry.add_argument("--output-dir", type=Path, required=True)
+    bounded_geometry.add_argument(
+        "--repo-root", type=Path, default=Path(__file__).resolve().parents[1]
+    )
     return parser
 
 
@@ -3080,6 +4209,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             report = {
                 "mode": "MEDIUM_AGGREGATE_AUDIT",
+                "canonical_report_sha256": completed["canonical_report_sha256"],
+                "outputs": [str(path) for path in paths],
+            }
+        elif args.command == "bounded-validation-geometry":
+            completed, paths = run_bounded_validation_geometry_audit(
+                args.train_csv, args.output_dir, args.repo_root
+            )
+            report = {
+                "mode": "MEDIUM_BOUNDED_VALIDATION_GEOMETRY_FEATURE_ONLY",
                 "canonical_report_sha256": completed["canonical_report_sha256"],
                 "outputs": [str(path) for path in paths],
             }

@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import contextlib
 import csv
+import hashlib
 import importlib.util
 import io
 import json
+import math
 import os
 import subprocess
 import sys
@@ -1314,6 +1316,619 @@ class AbsDeterminismTests(unittest.TestCase):
             )
             outputs.append(completed.stdout.strip())
         self.assertTrue(outputs[0])
+        self.assertEqual(len(set(outputs)), 1)
+
+
+class BoundedGeometryTests(unittest.TestCase):
+    @staticmethod
+    def frame(n_per_origin: int = 40):
+        import pandas as pd
+
+        rows = []
+        for season in (2022, 2023):
+            for index in range(n_per_origin):
+                row = {
+                    column: 0 for column in audit.BOUNDED_GEOMETRY_PROJECTION_COLUMNS
+                }
+                row.update({
+                    "row_id": f"{season}-{index}",
+                    "season": season,
+                    "game_month": (index % 4) + 1,
+                    "game_dayofweek": index % 7,
+                    "top_bottom": "T" if index % 2 else "B",
+                    "game_type": "R",
+                    "balls_before": index % 4,
+                    "strikes_before": index % 3,
+                    "outs_before": index % 3,
+                    "base_state": ("___", "1__", "_2_")[index % 3],
+                    "pitcher_hand": "R" if index % 2 else "L",
+                    "batter_hand": "L" if index % 2 else "R",
+                    "pitcher_team_id": index % 5,
+                    "batter_team_id": index % 7,
+                    "pitcher_id": f"p-{index % 13}",
+                    "batter_id": f"b-{index % 17}",
+                    "inning": float(index % 9),
+                    "run_total_before": float(index % 6),
+                    "score_diff_pitcher_team": float((index % 5) - 2),
+                    "home_win_expectancy": index / max(1, n_per_origin),
+                    "li": float(index % 8) / 8.0,
+                    "asof_pitcher_n": index,
+                    "asof_batter_n": index + 1,
+                    "asof_pitcher_success_rate": 0.2 + (index % 5) / 10.0,
+                    "asof_batter_success_rate": 0.3 + (index % 4) / 10.0,
+                    "asof_pitcher_pitchmix_n": index + 2,
+                    "asof_pitcher_fastball_rate": 0.5,
+                    "asof_pitcher_breaking_rate": 0.2,
+                    "asof_pitcher_offspeed_rate": 0.3,
+                })
+                rows.append(row)
+        frame = pd.DataFrame(rows)
+        frame["__source_position"] = list(range(len(frame)))
+        return frame
+
+    def test_contract_and_outer_scope_are_frozen(self) -> None:
+        contract = audit._bounded_geometry_contract()
+        self.assertEqual(
+            contract["version"], "aimers9-bounded-validation-geometry-v1"
+        )
+        self.assertEqual(
+            contract["candidate_a"]["stratum_columns"],
+            ["game_month", "count_state"],
+        )
+        self.assertIn("integer 1..12", contract["candidate_a"]["game_month"])
+        self.assertIn("divmod", contract["candidate_a"]["quota_rule"])
+        self.assertTrue(contract["candidate_a"]["promotion_eligible"])
+        self.assertFalse(contract["candidate_b"]["promotion_eligible"])
+        self.assertFalse(contract["candidate_c"]["promotion_eligible"])
+        self.assertNotIn(audit.TARGET, audit.BOUNDED_GEOMETRY_PROJECTION_COLUMNS)
+
+    def test_largest_remainder_floor_and_deterministic_ties(self) -> None:
+        strata = {
+            ("a",): tuple(range(3)),
+            ("b",): tuple(range(3, 6)),
+            ("c",): tuple(range(6, 8)),
+        }
+        quotas = audit._geometry_allocate_quotas(strata, 4)
+        self.assertEqual(quotas, {("a",): 2, ("b",): 1, ("c",): 1})
+        reordered = dict(reversed(tuple(strata.items())))
+        self.assertEqual(quotas, audit._geometry_allocate_quotas(reordered, 4))
+
+    def test_quota_capacity_redistribution_and_empty_strata(self) -> None:
+        strata = {
+            ("small",): (0,),
+            ("large",): tuple(range(1, 11)),
+        }
+        quotas = audit._geometry_allocate_quotas(strata, 8)
+        self.assertEqual(quotas[("small",)], 1)
+        self.assertEqual(quotas[("large",)], 7)
+        self.assertEqual(audit._geometry_allocate_quotas({}, 0), {})
+
+    def test_missing_and_invalid_candidate_a_categories_share_missing_token(self) -> None:
+        self.assertEqual(audit._geometry_stratum_component("game_month", None), "__MISSING__")
+        self.assertEqual(audit._geometry_stratum_component("game_month", 13), "__MISSING__")
+        self.assertEqual(audit._geometry_stratum_component("balls_before", -1), "__MISSING__")
+        self.assertEqual(audit._geometry_stratum_component("strikes_before", 3), "__MISSING__")
+        self.assertEqual(audit._geometry_stratum_component("balls_before", 2.0), "2")
+
+    def test_within_stratum_spread_edge_cases_are_exact_and_unique(self) -> None:
+        positions = tuple(range(10))
+        self.assertEqual(audit._geometry_spread_positions(positions, 0), ())
+        self.assertEqual(audit._geometry_spread_positions(positions, 1), (5,))
+        self.assertEqual(audit._geometry_spread_positions(positions, 10), positions)
+        selected = audit._geometry_spread_positions(positions, 4)
+        self.assertEqual(selected, (1, 3, 6, 8))
+        self.assertEqual(len(selected), len(set(selected)))
+
+    def test_all_candidates_use_exact_budget_and_subset(self) -> None:
+        frame = self.frame()
+        with mock.patch.object(audit, "BOUNDED_ROWS", 7):
+            full = audit._geometry_origin_positions(frame, "r2022")
+            for candidate in audit.BOUNDED_GEOMETRY_CANDIDATES:
+                selection = audit.select_bounded_geometry(frame, "r2022", candidate)
+                self.assertEqual(selection.full_positions, full)
+                self.assertEqual(len(selection.selected_positions), 7)
+                self.assertEqual(len(set(selection.selected_positions)), 7)
+                self.assertTrue(set(selection.selected_positions) <= set(full))
+
+    def test_candidate_a_same_input_is_deterministic_and_strata_are_cached(self) -> None:
+        frame = self.frame(100)
+        with mock.patch.object(audit, "BOUNDED_ROWS", 17), mock.patch.object(
+            audit, "_geometry_column_values", wraps=audit._geometry_column_values
+        ) as column_values:
+            first = audit.select_bounded_geometry(frame, "r2022", "candidate_a")
+            second = audit.select_bounded_geometry(frame, "r2022", "candidate_a")
+        self.assertEqual(first, second)
+        # One precomputed array per stratum component for each selection.
+        self.assertEqual(column_values.call_count, 10)
+
+    def test_target_variants_cannot_change_geometry_selection(self) -> None:
+        first = self.frame(40)
+        second = first.copy()
+        first[audit.TARGET] = [0] * len(first)
+        second[audit.TARGET] = [1] * len(second)
+        with mock.patch.object(audit, "BOUNDED_ROWS", 17):
+            selected_first = audit.select_bounded_geometry(first, "r2022", "candidate_a")
+            selected_second = audit.select_bounded_geometry(second, "r2022", "candidate_a")
+        self.assertEqual(selected_first, selected_second)
+
+    def test_small_panel_uses_minimum_budget(self) -> None:
+        frame = self.frame(3)
+        with mock.patch.object(audit, "BOUNDED_ROWS", 30_000):
+            selection = audit.select_bounded_geometry(frame, "r2023", "candidate_a")
+        self.assertEqual(len(selection.selected_positions), 3)
+        self.assertEqual(selection.parameters["budget"], 3)
+
+    def test_candidate_c_fails_closed_on_missing_or_duplicate_row_id(self) -> None:
+        frame = self.frame(5)
+        frame.loc[0, "row_id"] = None
+        with self.assertRaisesRegex(audit.AuditError, "nonmissing row_id"):
+            audit.select_bounded_geometry(frame, "r2022", "candidate_c")
+        frame = self.frame(5)
+        frame.loc[1, "row_id"] = frame.loc[0, "row_id"]
+        with self.assertRaisesRegex(audit.AuditError, "unique row_id"):
+            audit.select_bounded_geometry(frame, "r2022", "candidate_c")
+
+    def test_candidate_c_hash_namespace_and_hash_seed_are_deterministic(self) -> None:
+        frame = self.frame()
+        first = audit.select_bounded_geometry(frame, "r2022", "candidate_c")
+        reordered = frame.loc[list(reversed(frame.index))].reset_index(drop=True)
+        reordered["__source_position"] = list(range(len(reordered)))
+        second = audit.select_bounded_geometry(reordered, "r2022", "candidate_c")
+        self.assertEqual(first.parameters["namespace"], audit.BOUNDED_GEOMETRY_HASH_NAMESPACE)
+        self.assertEqual(
+            first.parameters["hash_payload"],
+            "UTF8(namespace) + b'\\x00' + UTF8(str(row_id))",
+        )
+        contract = audit.bounded_geometry_contract()["candidate_c"]
+        self.assertEqual(contract["namespace"], audit.BOUNDED_GEOMETRY_HASH_NAMESPACE)
+        self.assertEqual(contract["hash_payload"], first.parameters["hash_payload"])
+        self.assertEqual(contract["row_id_normalization"], "UTF8(str(value)), no trimming")
+        self.assertEqual(contract["sort_tie_break"], "digest, normalized_row_id, source_position")
+        self.assertEqual(contract["seed_policy"], "no seeds or alternate namespaces")
+        expected_digest = hashlib.sha256(
+            audit.BOUNDED_GEOMETRY_HASH_NAMESPACE.encode("utf-8")
+            + b"\x00" + b"row-1"
+        ).hexdigest()
+        self.assertEqual(audit._geometry_candidate_c_digest("row-1"), expected_digest)
+        self.assertNotEqual(first.selected_positions, second.selected_positions)
+
+    def test_candidate_c_is_hash_seed_invariant_in_subprocesses(self) -> None:
+        code = (
+            "import sys\n"
+            f"sys.path.insert(0, {str(SCRIPT.parent)!r})\n"
+            "import pandas as pd\n"
+            "import audit_data_integrity_temporal as audit\n"
+            "audit.BOUNDED_ROWS = 7\n"
+            "frame = pd.DataFrame({\n"
+            " 'row_id': [f'row-{i}' for i in range(20)],\n"
+            " 'season': [2022]*20, 'game_type': ['R']*20,\n"
+            "})\n"
+            "selected = audit.select_bounded_geometry(frame, 'r2022', 'candidate_c').selected_positions\n"
+            "print(audit.canonical_hash(selected))\n"
+        )
+        outputs = []
+        for seed in ("1", "2", "3"):
+            environment = os.environ.copy()
+            environment["PYTHONHASHSEED"] = seed
+            completed = subprocess.run(
+                [sys.executable, "-c", code], check=True, capture_output=True,
+                text=True, env=environment,
+            )
+            outputs.append(completed.stdout.strip())
+        self.assertEqual(len(set(outputs)), 1)
+
+    def test_source_order_changes_rank_selection_and_provenance_not_chronology(self) -> None:
+        frame = self.frame()
+        with mock.patch.object(audit, "BOUNDED_ROWS", 7):
+            first = audit.select_bounded_geometry(frame, "r2022", "candidate_b")
+            reversed_frame = frame.iloc[::-1].reset_index(drop=True)
+            reversed_frame["__source_position"] = list(range(len(reversed_frame)))
+            second = audit.select_bounded_geometry(reversed_frame, "r2022", "candidate_b")
+        self.assertNotEqual(first.selected_positions, second.selected_positions)
+        self.assertTrue(audit._bounded_geometry_contract()["source_rank_not_chronology"])
+
+    def test_metrics_have_all_families_and_source_bins(self) -> None:
+        frame = self.frame()
+        with mock.patch.object(audit, "BOUNDED_ROWS", 7):
+            selection = audit.select_bounded_geometry(frame, "r2022", "candidate_a")
+        report = audit.compare_bounded_geometry(frame, selection)
+        self.assertEqual(
+            set(report), {
+                "origin", "geometry", "n_full", "n_selected", "budget",
+                "parameters", "selected_position_hash", "selected_row_id_hash",
+                "source_position_min", "source_position_max",
+                "categorical_total_variation", "numeric_smd", "quantile_discrepancy",
+                "missing_rate_delta_pp", "entity_coverage", "source_rank_coverage",
+                "status",
+            },
+        )
+        self.assertEqual(
+            set(report["categorical_total_variation"]),
+            set(audit.BOUNDED_GEOMETRY_CATEGORICAL_COLUMNS),
+        )
+        self.assertEqual(set(report["numeric_smd"]), set(audit.AUDIT_NUMERIC_COLUMNS))
+        self.assertEqual(set(report["entity_coverage"]), set(audit.AUDIT_COVERAGE_COLUMNS))
+        self.assertEqual(report["source_rank_coverage"]["bin_count"], 20)
+
+    def test_geometry_distribution_fetches_column_once(self) -> None:
+        frame = self.frame()
+        positions = (0, 1, 2, 3, 4)
+        with mock.patch.object(
+            audit, "_geometry_column_values", wraps=audit._geometry_column_values
+        ) as column_values:
+            observed = audit._geometry_distribution(frame, "game_month", positions)
+        self.assertEqual(column_values.call_count, 1)
+        self.assertEqual(
+            observed,
+            {"1": 0.4, "2": 0.2, "3": 0.2, "4": 0.2},
+        )
+
+    def test_numeric_missing_and_zero_scale_cases_fail_closed(self) -> None:
+        frame = self.frame(8)
+        frame["inning"] = frame["inning"].astype(object)
+        frame["inning"] = 1.0
+        frame["inning"] = frame["inning"].astype(object)
+        frame.loc[0, "inning"] = "bad"
+        with mock.patch.object(audit, "BOUNDED_ROWS", 3):
+            selection = audit.select_bounded_geometry(frame, "r2022", "candidate_a")
+        report = audit.compare_bounded_geometry(frame, selection)
+        self.assertEqual(report["numeric_smd"]["inning"]["value"], 0.0)
+        self.assertGreater(report["missing_rate_delta_pp"]["inning"]["value"], 0.0)
+        frame["inning"] = "bad"
+        report = audit.compare_bounded_geometry(frame, selection)
+        self.assertIsNone(report["numeric_smd"]["inning"]["value"])
+        self.assertEqual(report["missing_rate_delta_pp"]["inning"]["value"], 0.0)
+        self.assertEqual(
+            report["numeric_smd"]["inning"]["reason"],
+            "no_valid_numeric_values_in_full_panel",
+        )
+
+    def test_selected_all_invalid_keeps_finite_missing_rate_delta(self) -> None:
+        frame = self.frame(4)
+        frame["inning"] = frame["inning"].astype(object)
+        frame["inning"] = 1.0
+        frame["inning"] = frame["inning"].astype(object)
+        frame.loc[0, "inning"] = "bad"
+        selection = audit.BoundedGeometrySelection(
+            origin="r2022",
+            geometry="synthetic_selected_invalid",
+            full_positions=(0, 1, 2, 3),
+            selected_positions=(0,),
+            parameters={},
+        )
+        report = audit.compare_bounded_geometry(frame, selection)
+        self.assertIsNone(report["numeric_smd"]["inning"]["value"])
+        self.assertEqual(
+            report["numeric_smd"]["inning"]["reason"],
+            "no_valid_numeric_values_in_bounded_panel",
+        )
+        self.assertTrue(all(
+            item["value"] is None
+            for item in report["quantile_discrepancy"]["inning"]["quantiles"].values()
+        ))
+        self.assertEqual(report["missing_rate_delta_pp"]["inning"]["value"], 75.0)
+
+    def test_gate_is_conjunctive_and_b_c_cannot_rescue_primary(self) -> None:
+        base = {
+            "categorical_total_variation": {
+                "game_month": {"value": 0.4, "reason": None},
+            },
+            "numeric_smd": {"x": {"value": 0.2, "reason": None}},
+            "quantile_discrepancy": {
+                "x": {"quantiles": {
+                    "0.10": {"standardized_abs_delta": 0.2},
+                    "0.50": {"standardized_abs_delta": 0.2},
+                    "0.90": {"standardized_abs_delta": 0.2},
+                }},
+            },
+            "missing_rate_delta_pp": {"x": {"value": 0.2, "reason": None}},
+            "entity_coverage": {"x": {"shortfall": {"value": 0.2}}},
+            "source_rank_coverage": {
+                "source_bin_tv": {"value": 0.4, "reason": None},
+                "all_supported_bins_occupied": True,
+            },
+            "status": "OK",
+        }
+        primary = json.loads(json.dumps(base))
+        primary["categorical_total_variation"]["game_month"]["value"] = 0.1
+        primary["source_rank_coverage"]["source_bin_tv"]["value"] = 0.1
+        for family in ("numeric_smd", "missing_rate_delta_pp"):
+            primary[family]["x"]["value"] = 0.1
+        for item in primary["quantile_discrepancy"]["x"]["quantiles"].values():
+            item["standardized_abs_delta"] = 0.1
+        primary["entity_coverage"]["x"]["shortfall"]["value"] = 0.1
+        reports = {
+            "r2022": {"current_first_30k": base, "candidate_a": primary,
+                      "candidate_b": base, "candidate_c": base},
+            "r2023": {"current_first_30k": base, "candidate_a": primary,
+                      "candidate_b": base, "candidate_c": base},
+        }
+        gate = audit.evaluate_bounded_geometry_gate(reports)
+        self.assertEqual(gate["result"], "PRIMARY_PASS")
+        self.assertTrue(gate["candidate_a_promotion_eligible"])
+        primary["categorical_total_variation"]["game_month"]["value"] = 0.4
+        gate = audit.evaluate_bounded_geometry_gate(reports)
+        self.assertEqual(gate["result"], "PRIMARY_FAIL")
+        self.assertTrue(gate["b_c_cannot_rescue_primary"])
+
+    def test_25_and_50_percent_gates_are_individually_frozen(self) -> None:
+        self.assertEqual(
+            audit._geometry_relative_reduction_gate(
+                {"value": 0.4}, {"value": 0.3}, 0.25
+            )["status"],
+            "PASS",
+        )
+        self.assertEqual(
+            audit._geometry_relative_reduction_gate(
+                {"value": 0.4}, {"value": 0.2}, 0.50
+            )["status"],
+            "PASS",
+        )
+        self.assertEqual(
+            audit._geometry_relative_reduction_gate(
+                {"value": 0.4}, {"value": 0.300001}, 0.25
+            )["status"],
+            "FAIL",
+        )
+        self.assertEqual(
+            audit._geometry_relative_reduction_gate(
+                {"value": 0.4}, {"value": 0.200001}, 0.50
+            )["status"],
+            "FAIL",
+        )
+
+    def test_three_of_five_family_rule_is_required(self) -> None:
+        base = {
+            "categorical_total_variation": {"game_month": {"value": 0.4}},
+            "numeric_smd": {"x": {"value": 0.2}},
+            "quantile_discrepancy": {"x": {"quantiles": {
+                "0.10": {"standardized_abs_delta": 0.2},
+                "0.50": {"standardized_abs_delta": 0.2},
+                "0.90": {"standardized_abs_delta": 0.2},
+            }}},
+            "missing_rate_delta_pp": {"x": {"value": 0.2}},
+            "entity_coverage": {"x": {"shortfall": {"value": 0.2}}},
+            "source_rank_coverage": {
+                "source_bin_tv": {"value": 0.4},
+                "all_supported_bins_occupied": True,
+            },
+            "status": "OK",
+        }
+        candidate = json.loads(json.dumps(base))
+        candidate["categorical_total_variation"]["game_month"]["value"] = 0.1
+        candidate["numeric_smd"]["x"]["value"] = 0.1
+        candidate["source_rank_coverage"]["source_bin_tv"]["value"] = 0.1
+        reports = {
+            origin: {
+                "current_first_30k": base,
+                "candidate_a": candidate,
+                "candidate_b": candidate,
+                "candidate_c": candidate,
+            }
+            for origin in ("r2022", "r2023")
+        }
+        gate = audit.evaluate_bounded_geometry_gate(reports)
+        self.assertEqual(gate["result"], "PRIMARY_FAIL")
+        for origin in ("r2022", "r2023"):
+            self.assertEqual(
+                gate["origins"][origin]["checks"]["strict_family_improvement_count"]["count"],
+                2,
+            )
+
+    def test_each_p95_guardrail_is_frozen(self) -> None:
+        expected = {
+            "categorical_total_variation": 0.005,
+            "numeric_smd": 0.02,
+            "quantile_discrepancy": 0.02,
+            "missing_rate_delta_pp": 0.05,
+            "entity_coverage_shortfall": 0.01,
+        }
+        base = {
+            "categorical_total_variation": {"game_month": {"value": 0.2}},
+            "numeric_smd": {"x": {"value": 0.2}},
+            "quantile_discrepancy": {"x": {"quantiles": {
+                "0.10": {"standardized_abs_delta": 0.2},
+                "0.50": {"standardized_abs_delta": 0.2},
+                "0.90": {"standardized_abs_delta": 0.2},
+            }}},
+            "missing_rate_delta_pp": {"x": {"value": 0.2}},
+            "entity_coverage": {"x": {"shortfall": {"value": 0.2}}},
+        }
+        for family, guardrail in expected.items():
+            candidate = json.loads(json.dumps(base))
+            excessive = 0.2 + guardrail + 1e-6
+            if family == "quantile_discrepancy":
+                for item in candidate[family]["x"]["quantiles"].values():
+                    item["standardized_abs_delta"] = excessive
+            elif family == "entity_coverage_shortfall":
+                candidate["entity_coverage"]["x"]["shortfall"]["value"] = excessive
+            else:
+                candidate[family]["x" if family != "categorical_total_variation" else "game_month"]["value"] = excessive
+            result = audit._geometry_family_gate(base, candidate, family, guardrail)
+            self.assertEqual(result["status"], "FAIL", family)
+
+    def test_finite_current_to_null_family_comparison_is_fail_closed(self) -> None:
+        current = {"categorical_total_variation": {"game_month": {"value": 0.2}}}
+        candidate = {"categorical_total_variation": {"game_month": {"value": None}}}
+        result = audit._geometry_family_gate(
+            current, candidate, "categorical_total_variation", 0.005
+        )
+        self.assertEqual(result["status"], "FAIL_CLOSED")
+
+    def test_finite_current_to_null_candidate_is_fail_closed(self) -> None:
+        current = {"value": 0.4}
+        candidate = {"value": None, "reason": "empty"}
+        result = audit._geometry_relative_reduction_gate(current, candidate, 0.25)
+        self.assertEqual(result["status"], "FAIL_CLOSED")
+
+    def test_zero_baseline_relative_reduction_is_fail_closed(self) -> None:
+        for baseline in (0.0, 1e-13, 1e-12):
+            result = audit._geometry_relative_reduction_gate(
+                {"value": baseline}, {"value": baseline}, 0.25
+            )
+            self.assertEqual(result["status"], "FAIL_CLOSED")
+            self.assertEqual(result["reason"], "zero_baseline_relative_reduction_undefined")
+        normal = audit._geometry_relative_reduction_gate(
+            {"value": 2e-12}, {"value": 1e-12}, 0.25
+        )
+        self.assertEqual(normal["status"], "PASS")
+
+    def test_geometry_reader_static_firewall_passes_and_target_is_not_projected(self) -> None:
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertEqual(audit.audit_bounded_geometry_reader_semantics(source), [])
+        self.assertNotIn(audit.TARGET, audit.BOUNDED_GEOMETRY_PROJECTION_COLUMNS)
+
+    def test_source_rank_small_and_empty_panels_are_explicit(self) -> None:
+        small = audit._geometry_source_rank_coverage((0, 1, 2), (1,))
+        self.assertEqual(len(small["full_count_by_bin"]), 20)
+        self.assertEqual(len(small["selected_count_by_bin"]), 20)
+        self.assertEqual(small["supported_bins"], [0, 6, 13])
+        self.assertEqual(small["occupied_supported_bins"], [6])
+        self.assertFalse(small["all_supported_bins_occupied"])
+        empty = audit._geometry_source_rank_coverage((), ())
+        self.assertEqual(empty["source_bin_tv"]["reason"], "empty_full_panel")
+        self.assertEqual(len(empty["selected_count_by_bin"]), 20)
+
+    def test_feature_only_reader_excludes_2024_and_target_from_frame(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="aimers9-bounded-geometry-reader-") as temp:
+            path = Path(temp) / "train.csv"
+            rows = []
+            for season, row_id in ((2022, "r22"), (2023, "r23"), (2024, "r24")):
+                row = {column: 0 for column in audit.TRAIN_COLUMNS}
+                row.update({
+                    "row_id": row_id, "season": season, "game_type": "R",
+                    "game_month": 5, "base_state": "___",
+                    "control_success": "POISON-TARGET",
+                })
+                rows.append(row)
+            with path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=audit.TRAIN_COLUMNS)
+                writer.writeheader()
+                writer.writerows(rows)
+            frame = audit.read_bounded_validation_features(path)
+            self.assertEqual(frame["season"].tolist(), [2022, 2023])
+            self.assertNotIn(audit.TARGET, frame.columns)
+            self.assertNotIn("POISON-TARGET", frame.to_string())
+
+    def test_bounded_geometry_cli_writes_feature_only_contract_report(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="aimers9-bounded-geometry-cli-") as temp:
+            root = Path(temp)
+            path = root / "train.csv"
+            rows = []
+            for season in (2022, 2023):
+                for index in range(35):
+                    row = {column: 0 for column in audit.TRAIN_COLUMNS}
+                    row.update({
+                        "row_id": f"{season}-{index}",
+                        "season": season,
+                        "game_type": "R",
+                        "game_month": index % 5 + 1,
+                        "balls_before": index % 4,
+                        "strikes_before": index % 3,
+                        "base_state": "___",
+                        "control_success": "POISON_TARGET",
+                    })
+                    rows.append(row)
+            with path.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=audit.TRAIN_COLUMNS)
+                writer.writeheader()
+                writer.writerows(rows)
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                rc = audit.main([
+                    "bounded-validation-geometry",
+                    "--train-csv", str(path),
+                    "--output-dir", str(root / "output"),
+                    "--repo-root", str(SCRIPT.parents[1]),
+                ])
+            self.assertEqual(rc, 0)
+            payload = json.loads(output.getvalue())
+            self.assertEqual(payload["mode"], "MEDIUM_BOUNDED_VALIDATION_GEOMETRY_FEATURE_ONLY")
+            report_path = root / "output" / "bounded_geometry_report.json"
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                report["geometry_contract_version"],
+                audit.BOUNDED_GEOMETRY_CONTRACT_VERSION,
+            )
+            self.assertEqual(report["label_access_ledger"], [])
+            self.assertFalse(report["scope"]["target_access"])
+            self.assertFalse(report["scope"]["target_column_in_projection"])
+            self.assertTrue(report["scope"]["branch_inert"])
+            for field in (
+                "target_2024_access", "test_distribution_access",
+                "public_leaderboard_evidence", "external_information_access",
+                "trackman_access", "model_training_or_scoring",
+                "active_policy_modified",
+            ):
+                self.assertFalse(report["scope"][field], field)
+            panels = report["sections"]["outer_validation_panels"]
+            self.assertEqual(set(panels), {"r2022", "r2023"})
+            for origin in panels.values():
+                self.assertEqual(
+                    set(origin),
+                    {"current_first_30k", "candidate_a", "candidate_b", "candidate_c"},
+                )
+            self.assertIn(
+                report["sections"]["acceptance_gate"]["result"],
+                {"PRIMARY_PASS", "PRIMARY_FAIL", "FAIL_CLOSED"},
+            )
+            self.assertNotIn("POISON_TARGET", report_path.read_text(encoding="utf-8"))
+
+            output_two = io.StringIO()
+            with contextlib.redirect_stdout(output_two):
+                second_rc = audit.main([
+                    "bounded-validation-geometry",
+                    "--train-csv", str(path),
+                    "--output-dir", str(root / "output-two"),
+                    "--repo-root", str(SCRIPT.parents[1]),
+                ])
+            self.assertEqual(second_rc, 0)
+            report_two = json.loads(
+                (root / "output-two" / "bounded_geometry_report.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(report, report_two)
+            self.assertEqual(
+                report["canonical_report_sha256"],
+                audit.canonical_report_hash(report),
+            )
+
+            def assert_finite_or_null(value: object) -> None:
+                if isinstance(value, float):
+                    self.assertTrue(math.isfinite(value))
+                elif isinstance(value, dict):
+                    for item in value.values():
+                        assert_finite_or_null(item)
+                elif isinstance(value, list):
+                    for item in value:
+                        assert_finite_or_null(item)
+
+            assert_finite_or_null(report)
+
+    def test_geometry_report_is_hash_seed_invariant_for_same_order(self) -> None:
+        code = (
+            "import sys\n"
+            f"sys.path.insert(0, {str(SCRIPT.parent)!r})\n"
+            "import pandas as pd\n"
+            "import audit_data_integrity_temporal as audit\n"
+            "frame = pd.DataFrame({\n"
+            " 'row_id': ['a','b','c','d','e','f'],\n"
+            " 'season': [2022]*6, 'game_type': ['R']*6,\n"
+            " 'game_month': [1,2,3,4,5,6], 'balls_before': [0,1,2,3,0,1],\n"
+            " 'strikes_before': [0,1,2,0,1,2], '__source_position': list(range(6)),\n"
+            "})\n"
+            "print(audit.canonical_hash(audit.select_bounded_geometry(frame, 'r2022', 'candidate_a').selected_positions))\n"
+        )
+        outputs = []
+        for seed in ("1", "2", "3"):
+            environment = os.environ.copy()
+            environment["PYTHONHASHSEED"] = seed
+            completed = subprocess.run(
+                [sys.executable, "-c", code], check=True, capture_output=True,
+                text=True, env=environment,
+            )
+            outputs.append(completed.stdout.strip())
         self.assertEqual(len(set(outputs)), 1)
 
 
