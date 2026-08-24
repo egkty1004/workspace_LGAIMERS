@@ -1,0 +1,90 @@
+{
+  "contract_version": "aimers9-trackman-repertoire-crosswalk-v2",
+  "documentary_snapshot_checked_against_runtime_contract": true,
+  "scope": {
+    "main_seasons": [2019, 2020, 2021, 2022, 2023, 2024],
+    "origins": [2022, 2023, 2024],
+    "game_type": "R",
+    "target_free": true,
+    "test_free": true,
+    "leaderboard_free": true,
+    "external_free": true,
+    "future_safe": true,
+    "main_projection": ["row_id", "season", "game_type", "game_month", "game_dayofweek", "inning", "top_bottom", "balls_before", "strikes_before", "outs_before", "base_state", "pitcher_id", "pitcher_hand", "pitcher_team_id", "batter_hand", "asof_pitcher_pitchmix_n", "asof_pitcher_fastball_rate", "asof_pitcher_breaking_rate", "asof_pitcher_offspeed_rate"],
+    "trackman_projection": ["trackman_id", "season", "game_date", "game_month", "game_dayofweek", "inning", "top_bottom", "balls_before", "strikes_before", "outs_before", "pitcher_trackman_id", "pitcher_hand", "batter_hand", "pitcher_team", "pitch_type_group"],
+    "forbidden_main": ["control_success"],
+    "forbidden_trackman": ["tagged_pitch_type", "auto_pitch_type", "rel_speed", "spin_rate", "induced_vert_break", "horz_break", "extension", "rel_height", "rel_side", "zone_speed", "batter_trackman_id"]
+  },
+  "taxonomy": {
+    "canonical_families": ["fastball", "breaking", "offspeed"],
+    "expected_trackman_groups": ["fastball", "breaking", "offspeed", "other"],
+    "trackman_other_mode": "exclude_other_renormalize_known",
+    "alternate_mapping_allowed": false,
+    "mode_must_freeze_before_matching": true,
+    "compatibility_requires_main_three_family_sum": true,
+    "compatibility_requires_documented_family_names": true,
+    "source_level_denominator_proof": {"status": "NOT_PROVEN", "known_only_denominator_proven": false, "basis": "repository documentation names rate fields but does not prove TrackMan known-only denominator compatibility", "observational_rule": {"enabled": true, "requires_main_complete_three_family_sum": true, "requires_all_canonical_families": true, "requires_unexpected_groups_absent": true, "requires_other_rows_zero": true, "requires_missing_rows_zero": true}},
+    "documentation_evidence": ["docs/data_description.md:asof_pitcher_fastball_rate/breaking/offspeed_rate", "docs/data_description.md:pitch_type_group"],
+    "share_sum_tolerance": 0.000001,
+    "minimum_complete_main_rows": 1,
+    "minimum_trackman_known_rows": 1,
+    "unexpected_group_policy": "reject"
+  },
+  "materialization": {
+    "representation": "share_based_annual_three_family_trajectory",
+    "source_order_allowed": false,
+    "source_order_status": "NOT_PROVEN",
+    "asof_mode": "infer_reset_or_cumulative_from_support_invariants",
+    "mode_min_transition_fraction": 0.95,
+    "storage_precision_probe": "decimal_tokens_target_free",
+    "storage_tolerance_multiplier": 2.0,
+    "storage_tolerance_minimum": 0.000001,
+    "cumulative_negative_increment_tolerance_multiplier": 2.0,
+    "max_support_snapshot_tie_policy": "conflicting_ties_fail_closed",
+    "count_reconstruction_is_primary_requirement": false
+  },
+  "selection": {
+    "channels": ["annual_mix_tv", "trajectory_delta_half_l1"],
+    "distance": "annual_mix_tv_and_trajectory_delta_half_l1",
+    "hand": "hard_compatibility_only",
+    "support": "eligibility_and_quality_only",
+    "team": "not_used",
+    "mutual_top1": true,
+    "second_best_margin": true,
+    "one_to_one": true,
+    "ambiguous_ties_unmatched": true,
+    "minimum_common_seasons": 2,
+    "minimum_common_delta_seasons": 1
+  },
+  "verification": {
+    "channel": "held_out_non_repertoire_context",
+    "columns": ["game_month", "game_dayofweek", "inning", "top_bottom", "balls_before", "strikes_before", "outs_before", "batter_hand"],
+    "selection_columns_excluded": ["pitch_type_group", "asof_pitcher_fastball_rate", "asof_pitcher_breaking_rate", "asof_pitcher_offspeed_rate", "asof_pitcher_pitchmix_n"],
+    "mapping_frozen_before_verification": true,
+    "verifier_can_change_mapping": false,
+    "verifier_confirmed_manifest": false,
+    "null_risk_ceiling": 0.01
+  },
+  "self_identification": {
+    "reference": "seasons <= origin - 2",
+    "query": "season == origin - 1",
+    "diagnostic_name": "next_season_repertoire_persistence",
+    "not_full_multi_year_validation": true,
+    "distance": "annual_mix_tv_reference_latest_to_single_query_season",
+    "separate_null_contract": true
+  },
+  "nulls": {
+    "risk_ceiling": 0.01,
+    "wilson_confidence": 0.95,
+    "requested_calibration_transformations": 1000,
+    "requested_evaluation_transformations": 1000,
+    "trial_unit": "unique_origin_transformation_familywise_any_accept",
+    "calibration_namespace": "aimers9-trackman-repertoire-crosswalk-v2/null/calibration",
+    "evaluation_namespace": "aimers9-trackman-repertoire-crosswalk-v2/null/evaluation",
+    "calibration_evaluation_disjoint": true,
+    "duplicate_transformations_do_not_increase_n": true,
+    "small_finite_space_is_not_repeated": true
+  },
+  "level_r": {"scope": "prerequisite_diagnostic_only", "source_order_prerequisite": "SOURCE_ORDER_PROVEN", "exact_matcher_implemented": false, "not_run_status": "NOT_RUN_SOURCE_ORDER_NOT_PROVEN"},
+  "output": {"aggregate_only": true, "external_only": true, "files": ["trackman_repertoire_crosswalk_v2_report.json", "trackman_repertoire_crosswalk_v2_report.md"], "include_raw_mapping_ids": false, "include_target_values": false, "include_physics": false}
+}
