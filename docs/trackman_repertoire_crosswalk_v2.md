@@ -71,7 +71,8 @@ the mode cannot be established, the result is `MATERIALIZATION_NOT_PROVEN`.
 Selection uses only repertoire evidence:
 
 1. worst common-season total variation of the three-family shares;
-2. worst common adjacent-season half-L1 trajectory delta.
+2. worst half-L1 trajectory delta over common calendar-adjacent pairs only
+   (`season == previous_season + 1`); a 2019/2021 gap supplies no delta.
 
 The two channel thresholds and the second-best-margin threshold are derived
 from one familywise best-false-pair statistic per unique calibration
@@ -83,8 +84,18 @@ non-top assigned pair. A threshold is unavailable when its null space is
 insufficient and selection fails closed.
 
 Support is used for validity/quality only, not as an activity similarity score.
-Pitcher hand is a hard compatibility filter. Team identity, numeric ID overlap,
-physics, and activity/calendar fingerprints are not selection evidence.
+Pitcher hand is a hard compatibility filter derived only from seasons `< Y`:
+profiles retain `hands_by_season`, and a missing or multi-hand pre-origin
+history is incompatible with every counterpart. The same hand-compatible,
+finite candidate universe is used by both selection-null calibration and
+evaluation; impossible cross-hand null pairs are never counted. Team identity,
+numeric ID overlap, physics, and activity/calendar fingerprints are not
+selection evidence.
+
+The selection null candidate universe is the finite pre-origin hard-hand,
+finite-distance fit matrix itself. The verifier null uses the corresponding
+pre-origin hard-hand-compatible universe. Neither null includes impossible
+cross-hand assignments.
 
 Candidate selection is mutual top-1, one-to-one, and ambiguity-safe. Exact ties,
 non-mutual top-1, one-to-many/many-to-one conflicts, and missing evidence remain
@@ -98,10 +109,13 @@ still constrains the observed margin and reverse top-1 decision.
 
 The held-out season uses only non-repertoire context distributions: month,
 day-of-week, inning band, top/bottom, count, outs, and batter hand. These
-fields are disjoint from the selection channels. The verifier reports a
-method-level aggregate statistic with its own disjoint context null. Every
-context calibration/evaluation transformation is additionally forbidden from
-retaining any actual frozen `selection_map_Y` partner; its Wilson result is a
+fields are disjoint from the selection channels. The verifier reports one
+aggregate statistic per required channel, with a separately calibrated null
+threshold per channel at frozen `q=0.01`, using per-channel median TV; all
+required channels must pass conjunctively for method-level PASS.
+Every context calibration/evaluation transformation is additionally forbidden
+from retaining any actual frozen `selection_map_Y` partner and is restricted
+to the same pre-origin hand-compatible universe. Its Wilson result is a
 false-accept risk proxy. It reports evidence only and cannot alter
 `selection_map_Y` or emit a verifier-confirmed manifest.
 

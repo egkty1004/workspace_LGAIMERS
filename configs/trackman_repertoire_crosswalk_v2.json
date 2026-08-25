@@ -47,6 +47,10 @@
     "channels": ["annual_mix_tv", "trajectory_delta_half_l1"],
     "distance": "annual_mix_tv_and_trajectory_delta_half_l1",
     "hand": "hard_compatibility_only",
+    "hand_temporal_basis": "hands_by_season_pre_origin_only",
+    "unknown_or_ambiguous_hand": "incompatible",
+    "trajectory_delta_pairs": "calendar_adjacent_only",
+    "null_candidate_universe": "finite_pre_origin_hard_hand_fit_matrix",
     "support": "eligibility_and_quality_only",
     "team": "not_used",
     "mutual_top1": true,
@@ -63,7 +67,11 @@
     "mapping_frozen_before_verification": true,
     "verifier_can_change_mapping": false,
     "verifier_confirmed_manifest": false,
-    "null_risk_ceiling": 0.01
+    "null_risk_ceiling": 0.01,
+    "null_candidate_universe": "pre_origin_hard_hand_compatible",
+    "aggregation": "per_channel_median_total_variation",
+    "calibration_quantile": 0.01,
+    "all_required_channels_conjunctive": true
   },
   "self_identification": {
     "reference": "seasons <= origin - 2",

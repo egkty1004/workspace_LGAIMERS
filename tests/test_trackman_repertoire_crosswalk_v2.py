@@ -146,6 +146,24 @@ class TaxonomyAndMaterializationTests(unittest.TestCase):
         right = audit.build_main_profiles(shuffled, mode["mode"], 1e-6)
         self.assertEqual(audit.canonical_hash(left), audit.canonical_hash(right))
 
+    def test_temporal_hand_uses_only_pre_origin_seasons(self):
+        frame = main_rows()
+        base = audit.build_main_profiles(frame, "CUMULATIVE", 1e-6)
+        poisoned = frame.copy()
+        poisoned.loc[(poisoned["pitcher_id"] == "m1") & (poisoned["season"] == 2024), "pitcher_hand"] = "R"
+        changed = audit.build_main_profiles(poisoned, "CUMULATIVE", 1e-6)
+        base_sub = audit._subprofile(base["m1"], 2022)
+        changed_sub = audit._subprofile(changed["m1"], 2022)
+        self.assertEqual(base_sub["hands"], ["L"])
+        self.assertEqual(base_sub["hands"], changed_sub["hands"])
+        self.assertEqual(base_sub["hand_status"], changed_sub["hand_status"])
+        self.assertEqual(audit.canonical_hash(base_sub), audit.canonical_hash(changed_sub))
+
+    def test_unknown_or_ambiguous_pre_origin_hand_is_not_open_compatibility(self):
+        counterpart = {"hands": ["L"], "hand_status": "KNOWN"}
+        self.assertFalse(audit._hard_hand_compatible({"hands": [], "hand_status": "UNKNOWN"}, counterpart))
+        self.assertFalse(audit._hard_hand_compatible({"hands": ["L", "R"], "hand_status": "AMBIGUOUS"}, counterpart))
+
     def test_support_range_reset_and_ambiguous_modes(self):
         config = audit.load_contract_config(ROOT)
         reset = main_rows()
@@ -179,6 +197,11 @@ class TaxonomyAndMaterializationTests(unittest.TestCase):
         profiles = audit.build_main_profiles(frame, "CUMULATIVE", 1e-6)
         self.assertNotIn(2021, profiles["m1"]["annual"])
 
+    def test_non_adjacent_seasons_do_not_supply_a_trajectory_delta(self):
+        left = {"annual": {2019: {"share": (0.6, 0.2, 0.2)}, 2021: {"share": (0.7, 0.2, 0.1)}}}
+        right = {"annual": {2019: {"share": (0.6, 0.2, 0.2)}, 2021: {"share": (0.7, 0.2, 0.1)}}}
+        self.assertIsNone(audit.repertoire_distance(left, right, min_seasons=2, min_deltas=1))
+
 
 class SelectionVerificationTests(unittest.TestCase):
     def setUp(self):
@@ -196,14 +219,77 @@ class SelectionVerificationTests(unittest.TestCase):
         self.assertTrue(result["frozen_before_verification"])
         self.assertNotIn("team", result)
 
+    def test_pre_origin_hand_poison_does_not_change_selection(self):
+        frame = main_rows()
+        # Use a richer all-same-hand fixture so the null contract has a
+        # non-empty finite calibration universe rather than an empty result
+        # caused by one identity per hand.
+        frame["pitcher_hand"] = "L"
+        extras = []
+        for pitcher, fastball, breaking, offspeed in (("m3", 0.65, 0.20, 0.15), ("m4", 0.55, 0.30, 0.15)):
+            extra = frame[frame["pitcher_id"] == "m1"].copy()
+            extra["pitcher_id"] = pitcher
+            extra["asof_pitcher_fastball_rate"] = fastball
+            extra["asof_pitcher_breaking_rate"] = breaking
+            extra["asof_pitcher_offspeed_rate"] = offspeed
+            extras.append(extra)
+        frame = pd.concat([frame, *extras], ignore_index=True)
+        tm_frame = trackman_rows()
+        tm_frame["pitcher_hand"] = "L"
+        tm_extras = []
+        for pitcher in ("t3", "t4"):
+            extra = tm_frame[tm_frame["pitcher_trackman_id"] == "t1"].copy()
+            extra["pitcher_trackman_id"] = pitcher
+            tm_extras.append(extra)
+        tm_frame = pd.concat([tm_frame, *tm_extras], ignore_index=True)
+        base = audit.build_main_profiles(frame, "CUMULATIVE", 1e-6)
+        poisoned = frame.copy()
+        poisoned.loc[(poisoned["pitcher_id"] == "m1") & (poisoned["season"] == 2024), "pitcher_hand"] = "R"
+        changed = audit.build_main_profiles(poisoned, "CUMULATIVE", 1e-6)
+        tm_all = audit.build_trackman_profiles(tm_frame)
+        base_fit = {key: audit._subprofile(value, 2022) for key, value in base.items()}
+        changed_fit = {key: audit._subprofile(value, 2022) for key, value in changed.items()}
+        tm_fit = {key: audit._subprofile(value, 2022) for key, value in tm_all.items()}
+        changed_tm_fit = {key: audit._subprofile(value, 2022) for key, value in tm_all.items()}
+        base_null = audit.calibrate_selection_null(base_fit, tm_fit, requested=10)
+        changed_null = audit.calibrate_selection_null(changed_fit, changed_tm_fit, requested=10)
+        base_selection = audit.fit_repertoire_selection_map(base_fit, tm_fit, taxonomy=self.taxonomy, calibration=base_null)
+        changed_selection = audit.fit_repertoire_selection_map(changed_fit, changed_tm_fit, taxonomy=self.taxonomy, calibration=changed_null)
+        self.assertGreater(base_selection["candidate_count"], 0)
+        self.assertEqual(base_selection["candidate_count"], changed_selection["candidate_count"])
+        self.assertGreater(base_null["allowed_pair_count"], 0)
+        self.assertEqual(base_null["allowed_pair_count"], changed_null["allowed_pair_count"])
+        self.assertEqual(base_selection["mapping_hash"], changed_selection["mapping_hash"])
+        self.assertEqual(base_selection["selection_map"], changed_selection["selection_map"])
+
+    def test_cross_hand_near_identical_profiles_are_excluded_from_null_universe(self):
+        def profile(hand, share):
+            annual = {season: {"share": share} for season in (2019, 2020, 2021)}
+            return {"annual": annual, "hands": [hand], "hand_status": "KNOWN"}
+        shares = ((0.60, 0.25, 0.15), (0.65, 0.20, 0.15), (0.55, 0.30, 0.15), (0.70, 0.20, 0.10))
+        left = {f"m{i}": profile("L", share) for i, share in enumerate(shares, 1)}
+        baseline_right = {f"t{i}": profile("L", share) for i, share in enumerate(shares, 1)}
+        result = audit.calibrate_selection_null(left, baseline_right, requested=3)
+        opposite = profile("R", shares[0])
+        expanded_right = {**baseline_right, "tX": opposite}
+        expanded = audit.calibrate_selection_null(left, expanded_right, requested=3)
+        self.assertTrue(result["hand_eligible_candidate_universe"])
+        self.assertEqual(result["allowed_pair_count"], 16)
+        self.assertEqual(result["allowed_pair_count"], expanded["allowed_pair_count"])
+        for key in ("annual_mix_threshold", "trajectory_delta_threshold", "second_best_margin_threshold"):
+            self.assertEqual(result[key], expanded[key])
+        for key in ("unique_trials", "false_accept_rate_proxy", "wilson_95_upper_bound_proxy", "accepted_count_p95"):
+            self.assertEqual(result["evaluation"][key], expanded["evaluation"][key])
+        self.assertEqual(result["evaluation"]["unique_trials"], 3)
+
     def test_full_matrix_second_best_outside_channel_threshold_constrains_margin(self):
         distances = {
             ("m1", "t1"): {"annual_mix_tv": 0.01, "trajectory_delta_half_l1": 0.01, "distance": 0.01},
             ("m1", "t2"): {"annual_mix_tv": 0.11, "trajectory_delta_half_l1": 0.01, "distance": 0.02},
         }
 
-        main = {"m1": {}}
-        tm = {"t1": {}, "t2": {}}
+        main = {"m1": {"hands": ["L"], "hand_status": "KNOWN"}}
+        tm = {"t1": {"hands": ["L"], "hand_status": "KNOWN"}, "t2": {"hands": ["L"], "hand_status": "KNOWN"}}
 
         def fake_distance_by_identity(left, right, *, min_seasons=2, min_deltas=1):
             left_id = next(key for key, value in main.items() if value is left)
@@ -237,6 +323,26 @@ class SelectionVerificationTests(unittest.TestCase):
         evidence = audit.verify_selection_map_oop(selection, self.main, self.tm, 2022, requested=1000)
         self.assertTrue(evidence["null"]["forbidden_partner_map_enforced"])
         self.assertTrue(evidence["null"]["null_trials_preserve_selected_partners"])
+
+    def test_oop_requires_every_verifier_channel(self):
+        def profile():
+            return {"annual": {}, "contexts": {2022: {}}, "hands": ["L"], "hand_status": "KNOWN"}
+        main = {f"m{i}": profile() for i in (1, 2, 3)}
+        tm = {f"t{i}": profile() for i in (1, 2, 3)}
+        selection = {f"m{i}": f"t{i}" for i in (1, 2, 3)}
+
+        def fake_context(selection_map, main_profiles, trackman_profiles, origin, *, right_assignment=None):
+            values = {field: 0.1 for field in audit.VERIFIER_CHANNELS}
+            if right_assignment is None:
+                values["game_month"] = 0.9
+            return {"verified_pairs": 3, "values": [0.1, 0.1, 0.1], "distributions": {}, "channel_statistics": values, "statistic": max(values.values())}
+
+        with mock.patch.object(audit, "_context_stat", side_effect=fake_context):
+            result = audit.verify_selection_map_oop(selection, main, tm, 2022, requested=2)
+        self.assertEqual(result["method_status"], "FAIL")
+        self.assertEqual(result["null"]["channel_thresholds"]["game_month"], 0.1)
+        self.assertEqual(result["observed"]["channel_statistics"]["game_month"], 0.9)
+        self.assertEqual(result["required_channels"], list(audit.VERIFIER_CHANNELS))
 
     def test_context_selection_conflict_cannot_make_high_confidence(self):
         selection = {"m1": "t1"}

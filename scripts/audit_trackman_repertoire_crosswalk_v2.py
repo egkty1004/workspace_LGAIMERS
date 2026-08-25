@@ -29,6 +29,7 @@ ORIGINS = (2022, 2023, 2024)
 MAIN_SEASONS = tuple(range(2019, 2025))
 GAME_TYPE = "R"
 FAMILIES = ("fastball", "breaking", "offspeed")
+VERIFIER_CHANNELS = ("game_month", "game_dayofweek", "inning", "top_bottom", "balls_before", "strikes_before", "outs_before", "batter_hand")
 TARGET = "control_success"
 SOURCE_ORDER_STATUS = "NOT_PROVEN"
 LEVEL_R_NOT_RUN = "NOT_RUN_SOURCE_ORDER_NOT_PROVEN"
@@ -155,7 +156,7 @@ def _runtime_contract() -> dict[str, Any]:
         "selection": {
             "channels": ["annual_mix_tv", "trajectory_delta_half_l1"],
             "distance": "annual_mix_tv_and_trajectory_delta_half_l1",
-            "hand": "hard_compatibility_only", "support": "eligibility_and_quality_only",
+            "hand": "hard_compatibility_only", "hand_temporal_basis": "hands_by_season_pre_origin_only", "unknown_or_ambiguous_hand": "incompatible", "trajectory_delta_pairs": "calendar_adjacent_only", "null_candidate_universe": "finite_pre_origin_hard_hand_fit_matrix", "support": "eligibility_and_quality_only",
             "team": "not_used", "mutual_top1": True, "second_best_margin": True,
             "one_to_one": True, "ambiguous_ties_unmatched": True,
             "minimum_common_seasons": 2, "minimum_common_delta_seasons": 1,
@@ -166,6 +167,10 @@ def _runtime_contract() -> dict[str, Any]:
             "selection_columns_excluded": ["pitch_type_group", "asof_pitcher_fastball_rate", "asof_pitcher_breaking_rate", "asof_pitcher_offspeed_rate", "asof_pitcher_pitchmix_n"],
             "mapping_frozen_before_verification": True, "verifier_can_change_mapping": False,
             "verifier_confirmed_manifest": False, "null_risk_ceiling": 0.01,
+            "null_candidate_universe": "pre_origin_hard_hand_compatible",
+            "aggregation": "per_channel_median_total_variation",
+            "calibration_quantile": 0.01,
+            "all_required_channels_conjunctive": True,
         },
         "self_identification": {
             "reference": "seasons <= origin - 2", "query": "season == origin - 1",
@@ -501,13 +506,16 @@ def build_main_profiles(frame: pd.DataFrame, mode: str, tolerance: float) -> dic
         snapshots: dict[int, dict[str, Any]] = {}
         contexts: dict[int, dict[str, Counter[str]]] = {}
         hands: set[str] = set()
+        hands_by_season: dict[int, list[str]] = {}
         for season, group in pitcher_frame.groupby("season", sort=True):
             season_int = int(season)
             item = _snapshot(group, tolerance)
             if item is not None:
                 snapshots[season_int] = item
             contexts[season_int] = _profile_context(group.to_dict("records"))
-            hands.update({_hand(x) for x in group["pitcher_hand"].tolist() if _hand(x) is not None})
+            season_hands = sorted({_hand(x) for x in group["pitcher_hand"].tolist() if _hand(x) is not None})
+            hands_by_season[season_int] = season_hands
+            hands.update(season_hands)
         annual: dict[int, dict[str, Any]] = {}
         for season in sorted(snapshots):
             current = snapshots[season]
@@ -528,7 +536,7 @@ def build_main_profiles(frame: pd.DataFrame, mode: str, tolerance: float) -> dic
                 if total <= tolerance:
                     continue
                 annual[season] = {"share": tuple(max(0.0, value / total) for value in differences), "support": denominator}
-        profiles[pid] = {"annual": annual, "contexts": contexts, "hands": sorted(hands), "rows": int(len(pitcher_frame)), "rows_by_season": {int(season): int(len(group)) for season, group in pitcher_frame.groupby("season", sort=True)}}
+        profiles[pid] = {"annual": annual, "contexts": contexts, "hands": sorted(hands), "hands_by_season": hands_by_season, "rows": int(len(pitcher_frame)), "rows_by_season": {int(season): int(len(group)) for season, group in pitcher_frame.groupby("season", sort=True)}}
     return profiles
 
 
@@ -541,6 +549,7 @@ def build_trackman_profiles(frame: pd.DataFrame) -> dict[str, dict[str, Any]]:
         annual: dict[int, dict[str, Any]] = {}
         contexts: dict[int, dict[str, Counter[str]]] = {}
         hands: set[str] = set()
+        hands_by_season: dict[int, list[str]] = {}
         for season, group in pitcher_frame.groupby("season", sort=True):
             counts = Counter(_text(value) for value in group["pitch_type_group"].tolist())
             known = {family: int(counts.get(family, 0)) for family in FAMILIES}
@@ -548,8 +557,10 @@ def build_trackman_profiles(frame: pd.DataFrame) -> dict[str, dict[str, Any]]:
             if known_total > 0:
                 annual[int(season)] = {"share": tuple(known[family] / known_total for family in FAMILIES), "support": known_total, "other_count": int(counts.get("other", 0) or 0)}
             contexts[int(season)] = _profile_context(group.to_dict("records"))
-            hands.update({_hand(x) for x in group["pitcher_hand"].tolist() if _hand(x) is not None})
-        profiles[pid] = {"annual": annual, "contexts": contexts, "hands": sorted(hands), "rows": int(len(pitcher_frame)), "rows_by_season": {int(season): int(len(group)) for season, group in pitcher_frame.groupby("season", sort=True)}}
+            season_hands = sorted({_hand(x) for x in group["pitcher_hand"].tolist() if _hand(x) is not None})
+            hands_by_season[int(season)] = season_hands
+            hands.update(season_hands)
+        profiles[pid] = {"annual": annual, "contexts": contexts, "hands": sorted(hands), "hands_by_season": hands_by_season, "rows": int(len(pitcher_frame)), "rows_by_season": {int(season): int(len(group)) for season, group in pitcher_frame.groupby("season", sort=True)}}
     return profiles
 
 
@@ -600,7 +611,14 @@ def assess_taxonomy_compatibility(main: pd.DataFrame, trackman: pd.DataFrame, co
 def _subprofile(profile: Mapping[str, Any], before: int | None = None) -> dict[str, Any]:
     annual = {int(s): value for s, value in profile.get("annual", {}).items() if before is None or int(s) < before}
     contexts = {int(s): value for s, value in profile.get("contexts", {}).items() if before is None or int(s) < before}
-    return {"annual": annual, "contexts": contexts, "hands": list(profile.get("hands", [])), "rows": int(profile.get("rows", 0)), "rows_by_season": {int(s): int(n) for s, n in profile.get("rows_by_season", {}).items() if before is None or int(s) < before}}
+    hands_by_season = {int(s): list(values) for s, values in profile.get("hands_by_season", {}).items() if before is None or int(s) < before}
+    if "hands_by_season" in profile:
+        hand_values = sorted({value for values in hands_by_season.values() for value in values})
+        hand_status = "KNOWN" if all(len(values) == 1 for values in hands_by_season.values()) and len(hand_values) == 1 else "AMBIGUOUS" if any(len(values) > 1 for values in hands_by_season.values()) or len(hand_values) > 1 else "UNKNOWN"
+    else:
+        hand_values = sorted(set(map(str, profile.get("hands", []))))
+        hand_status = "KNOWN" if len(hand_values) == 1 else "UNKNOWN"
+    return {"annual": annual, "contexts": contexts, "hands": hand_values, "hand_status": hand_status, "hands_by_season": hands_by_season, "rows": int(profile.get("rows", 0)), "rows_by_season": {int(s): int(n) for s, n in profile.get("rows_by_season", {}).items() if before is None or int(s) < before}}
 
 
 def _tv(left: Sequence[float], right: Sequence[float]) -> float:
@@ -614,15 +632,18 @@ def repertoire_distance(left: Mapping[str, Any], right: Mapping[str, Any], *, mi
     level = [_tv(left["annual"][s]["share"], right["annual"][s]["share"]) for s in common]
     left_delta = {s: tuple(a - b for a, b in zip(left["annual"][s]["share"], left["annual"][p]["share"])) for p, s in zip(common, common[1:])}
     right_delta = {s: tuple(a - b for a, b in zip(right["annual"][s]["share"], right["annual"][p]["share"])) for p, s in zip(common, common[1:])}
-    delta = [_tv(left_delta[s], right_delta[s]) for s in left_delta if s in right_delta]
+    adjacent_delta_seasons = [s for p, s in zip(common, common[1:]) if s == p + 1]
+    delta = [_tv(left_delta[s], right_delta[s]) for s in adjacent_delta_seasons if s in left_delta and s in right_delta]
     if len(delta) < min_deltas:
         return None
     return {"annual_mix_tv": max(level), "trajectory_delta_half_l1": max(delta), "common_seasons": common, "distance": max(max(level), max(delta))}
 
 
 def _hard_hand_compatible(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+    if left.get("hand_status") != "KNOWN" or right.get("hand_status") != "KNOWN":
+        return False
     a, b = set(left.get("hands", [])), set(right.get("hands", []))
-    return not a or not b or bool(a.intersection(b))
+    return bool(a.intersection(b))
 
 
 def _assignment_key(pairs: Iterable[tuple[str, str]]) -> tuple[tuple[str, str], ...]:
@@ -638,15 +659,18 @@ def _is_derangement(assignment: Iterable[tuple[str, str]]) -> bool:
     return all(str(left) != str(right) for left, right in assignment)
 
 
-def generate_unique_null_transformations(left_ids: Sequence[str], right_ids: Sequence[str], *, requested: int, namespace: str, forbidden: Iterable[tuple[tuple[str, str], ...]] = (), require_derangement: bool = False, forbidden_partners: Mapping[str, str] | None = None) -> dict[str, Any]:
+def generate_unique_null_transformations(left_ids: Sequence[str], right_ids: Sequence[str], *, requested: int, namespace: str, forbidden: Iterable[tuple[tuple[str, str], ...]] = (), require_derangement: bool = False, forbidden_partners: Mapping[str, str] | None = None, allowed_pairs: Mapping[str, Iterable[str]] | None = None) -> dict[str, Any]:
     left, right = sorted(set(map(str, left_ids))), sorted(set(map(str, right_ids)))
     pair_count = min(len(left), len(right))
     canonical = _assignment_key(zip(left[:pair_count], right[:pair_count]))
     forbidden_keys = {_assignment_key(item) for item in forbidden}
     partner_map = {str(key): str(value) for key, value in (forbidden_partners or {}).items()}
+    allowed = {str(key): {str(value) for value in values} for key, values in (allowed_pairs or {}).items()}
 
     def valid(item: tuple[tuple[str, str], ...]) -> bool:
         if require_derangement and not _is_derangement(item):
+            return False
+        if allowed_pairs is not None and any(right not in allowed.get(left, set()) for left, right in item):
             return False
         return all(partner_map.get(left) != right for left, right in item)
 
@@ -681,7 +705,7 @@ def generate_unique_null_transformations(left_ids: Sequence[str], right_ids: Seq
                 if len(assignments) >= requested:
                     break
         finite = None
-    return {"assignments": assignments, "requested": int(requested), "generated_unique": len(assignments), "pair_count": pair_count, "finite_space": finite, "exhausted_space": finite is not None and len(seen) >= finite, "trial_unit": "unique_null_transformation_derangement" if require_derangement else "unique_null_transformation", "canonical_rejected": True, "require_derangement": bool(require_derangement), "forbidden_partner_map_applied": bool(partner_map), "namespace": namespace}
+    return {"assignments": assignments, "requested": int(requested), "generated_unique": len(assignments), "pair_count": pair_count, "finite_space": finite, "exhausted_space": finite is not None and len(seen) >= finite, "trial_unit": "unique_null_transformation_derangement" if require_derangement else "unique_null_transformation", "canonical_rejected": True, "require_derangement": bool(require_derangement), "forbidden_partner_map_applied": bool(partner_map), "allowed_pair_universe_applied": allowed_pairs is not None, "namespace": namespace}
 
 
 def wilson_upper_bound(successes: int, trials: int, confidence: float = 0.95) -> float | None:
@@ -729,15 +753,21 @@ def calibrate_selection_null(left_profiles: Mapping[str, Mapping[str, Any]], rig
     """Freeze separate channel thresholds and a null-derived margin threshold."""
     minimum = minimum or {"seasons": 2, "deltas": 1}
     left, right = sorted(left_profiles), sorted(right_profiles)
-    cal = generate_unique_null_transformations(left, right, requested=requested, namespace=namespace + "/selection")
     distances: dict[str, dict[str, Any]] = {}
     for main_id in left:
         row: dict[str, Any] = {}
         for tm_id in right:
+            if not _hard_hand_compatible(left_profiles[main_id], right_profiles[tm_id]):
+                continue
             value = _distance_for_pair(left_profiles, right_profiles, (main_id, tm_id), minimum)
             if value is not None:
                 row[tm_id] = value
         distances[main_id] = row
+    # Nulls use the exact same pre-origin hard-hand finite candidate universe
+    # as the observed fit matrix.  Impossible cross-hand pairs can never form
+    # a calibration or evaluation trial.
+    allowed_pairs = {main_id: tuple(sorted(row)) for main_id, row in distances.items()}
+    cal = generate_unique_null_transformations(left, right, requested=requested, namespace=namespace + "/selection", allowed_pairs=allowed_pairs)
     annual_stats: list[float] = []
     delta_stats: list[float] = []
     margin_stats: list[float] = []
@@ -757,7 +787,7 @@ def calibrate_selection_null(left_profiles: Mapping[str, Mapping[str, Any]], rig
     annual_threshold = float(pd.Series(annual_stats).quantile(NULL_RISK_CEILING, interpolation="linear")) if annual_stats else None
     delta_threshold = float(pd.Series(delta_stats).quantile(NULL_RISK_CEILING, interpolation="linear")) if delta_stats else None
     margin_threshold = float(pd.Series(margin_stats).quantile(1.0 - NULL_RISK_CEILING, interpolation="linear")) if margin_stats else None
-    evaluation = generate_unique_null_transformations(left, right, requested=requested, namespace=NULL_EVAL_NS + "/selection", forbidden=cal["assignments"])
+    evaluation = generate_unique_null_transformations(left, right, requested=requested, namespace=NULL_EVAL_NS + "/selection", forbidden=cal["assignments"], allowed_pairs=allowed_pairs)
     outcomes: list[bool] = []
     accepted_counts: list[int] = []
     for assignment in evaluation["assignments"]:
@@ -772,7 +802,7 @@ def calibrate_selection_null(left_profiles: Mapping[str, Mapping[str, Any]], rig
         accepted_counts.append(accepted)
         outcomes.append(accepted > 0)
     evaluation_summary = null_false_accept_summary(outcomes, requested=requested, generated_unique=evaluation["generated_unique"], exhausted_space=evaluation["exhausted_space"], pair_count=evaluation["pair_count"], accepted_counts=accepted_counts)
-    return {"annual_mix_threshold": annual_threshold, "trajectory_delta_threshold": delta_threshold, "second_best_margin_threshold": margin_threshold, "threshold_quantile_risk": NULL_RISK_CEILING, "calibration": {k: v for k, v in cal.items() if k != "assignments"}, "evaluation": evaluation_summary, "calibration_statistics_count": len(annual_stats), "calibration_evaluation_disjoint": not bool(set(map(repr, cal["assignments"])) & set(map(repr, evaluation["assignments"]))), "familywise_statistic": "minimum false-pair channel statistic per unique transformation; maximum margin statistic", "margin_definition": "second-best distance minus best distance", "thresholds_null_derived": True}
+    return {"annual_mix_threshold": annual_threshold, "trajectory_delta_threshold": delta_threshold, "second_best_margin_threshold": margin_threshold, "threshold_quantile_risk": NULL_RISK_CEILING, "calibration": {k: v for k, v in cal.items() if k != "assignments"}, "evaluation": evaluation_summary, "calibration_statistics_count": len(annual_stats), "calibration_evaluation_disjoint": not bool(set(map(repr, cal["assignments"])) & set(map(repr, evaluation["assignments"]))), "hand_eligible_candidate_universe": True, "allowed_pair_count": sum(len(value) for value in allowed_pairs.values()), "familywise_statistic": "minimum false-pair channel statistic per unique transformation; maximum margin statistic", "margin_definition": "second-best distance minus assigned distance only for unique top-1 assigned pairs", "thresholds_null_derived": True}
 
 
 def _sorted_distance_items(values: Mapping[str, Mapping[str, Any]]) -> list[tuple[str, Mapping[str, Any]]]:
@@ -837,23 +867,23 @@ def _distribution_tv(left: Mapping[str, int], right: Mapping[str, int]) -> float
 
 
 def _context_stat(selection_map: Mapping[str, str], main_profiles: Mapping[str, Mapping[str, Any]], trackman_profiles: Mapping[str, Mapping[str, Any]], origin: int, *, right_assignment: Mapping[str, str] | None = None) -> dict[str, Any]:
-    fields = ("game_month", "game_dayofweek", "inning", "top_bottom", "balls_before", "strikes_before", "outs_before", "batter_hand")
     scores: list[float] = []
-    per_field: dict[str, list[float]] = {field: [] for field in fields}
+    per_field: dict[str, list[float]] = {field: [] for field in VERIFIER_CHANNELS}
     for main_id, original_tm_id in sorted(selection_map.items()):
         tm_id = right_assignment.get(main_id, original_tm_id) if right_assignment is not None else original_tm_id
         left = main_profiles.get(main_id, {}).get("contexts", {}).get(origin, {})
         right = trackman_profiles.get(tm_id, {}).get("contexts", {}).get(origin, {})
         if not left or not right:
             continue
-        values = {field: _distribution_tv(left.get(field, Counter()), right.get(field, Counter())) for field in fields}
+        values = {field: _distribution_tv(left.get(field, Counter()), right.get(field, Counter())) for field in VERIFIER_CHANNELS}
         finite = [float(value) for value in values.values() if value is not None]
         for field, value in values.items():
             if value is not None:
                 per_field[field].append(float(value))
         if finite:
             scores.append(max(finite))
-    return {"verified_pairs": len(scores), "values": scores, "distributions": {field: {"count": len(values), "median_tv": float(pd.Series(values).median()) if values else None} for field, values in per_field.items()}, "statistic": float(pd.Series(scores).median()) if scores else None}
+    channel_statistics = {field: float(pd.Series(values).median()) if values else None for field, values in per_field.items()}
+    return {"verified_pairs": len(scores), "values": scores, "distributions": {field: {"count": len(values), "median_tv": channel_statistics[field]} for field, values in per_field.items()}, "channel_statistics": channel_statistics, "statistic": float(pd.Series(scores).median()) if scores else None}
 
 
 def verify_selection_map_oop(selection_map: Mapping[str, str], main_profiles: Mapping[str, Mapping[str, Any]], trackman_profiles: Mapping[str, Mapping[str, Any]], origin: int, *, requested: int = 1000) -> dict[str, Any]:
@@ -862,26 +892,33 @@ def verify_selection_map_oop(selection_map: Mapping[str, str], main_profiles: Ma
     observed = _context_stat(selection_map, main_profiles, trackman_profiles, origin)
     left_ids = sorted(selection_map)
     right_ids = sorted(selection_map.values())
-    calibration = generate_unique_null_transformations(left_ids, right_ids, requested=requested, namespace=f"{CONTRACT_VERSION}/verification/{origin}/calibration", forbidden_partners=selection_map)
-    calibration_stats: list[float] = []
+    pre_main = {identity: _subprofile(profile, origin) for identity, profile in main_profiles.items()}
+    pre_trackman = {identity: _subprofile(profile, origin) for identity, profile in trackman_profiles.items()}
+    allowed_pairs = {left: tuple(sorted(right for right in right_ids if _hard_hand_compatible(pre_main.get(left, {}), pre_trackman.get(right, {})))) for left in left_ids}
+    calibration = generate_unique_null_transformations(left_ids, right_ids, requested=requested, namespace=f"{CONTRACT_VERSION}/verification/{origin}/calibration", forbidden_partners=selection_map, allowed_pairs=allowed_pairs)
+    calibration_channel_stats: dict[str, list[float]] = {field: [] for field in VERIFIER_CHANNELS}
     for assignment in calibration["assignments"]:
         assignment_map = {left: right for left, right in assignment}
-        stat = _context_stat(selection_map, main_profiles, trackman_profiles, origin, right_assignment=assignment_map)["statistic"]
-        if stat is not None:
-            calibration_stats.append(float(stat))
-    threshold = float(pd.Series(calibration_stats).quantile(NULL_RISK_CEILING, interpolation="linear")) if calibration_stats else None
-    evaluation = generate_unique_null_transformations(left_ids, right_ids, requested=requested, namespace=f"{CONTRACT_VERSION}/verification/{origin}/evaluation", forbidden=calibration["assignments"], forbidden_partners=selection_map)
+        channel_values = _context_stat(selection_map, main_profiles, trackman_profiles, origin, right_assignment=assignment_map)["channel_statistics"]
+        for field, value in channel_values.items():
+            if value is not None:
+                calibration_channel_stats[field].append(float(value))
+    channel_thresholds = {field: float(pd.Series(values).quantile(NULL_RISK_CEILING, interpolation="linear")) if values else None for field, values in calibration_channel_stats.items()}
+    evaluation = generate_unique_null_transformations(left_ids, right_ids, requested=requested, namespace=f"{CONTRACT_VERSION}/verification/{origin}/evaluation", forbidden=calibration["assignments"], forbidden_partners=selection_map, allowed_pairs=allowed_pairs)
     outcomes: list[bool] = []
     accepted_counts: list[int] = []
     for assignment in evaluation["assignments"]:
         assignment_map = {left: right for left, right in assignment}
-        stat = _context_stat(selection_map, main_profiles, trackman_profiles, origin, right_assignment=assignment_map)["statistic"]
-        accepted = int(stat is not None and threshold is not None and stat <= threshold)
+        channel_values = _context_stat(selection_map, main_profiles, trackman_profiles, origin, right_assignment=assignment_map)["channel_statistics"]
+        accepted = int(all(channel_values[field] is not None and channel_thresholds[field] is not None and float(channel_values[field]) <= float(channel_thresholds[field]) for field in VERIFIER_CHANNELS))
         accepted_counts.append(accepted)
         outcomes.append(bool(accepted))
     null = null_false_accept_summary(outcomes, requested=requested, generated_unique=evaluation["generated_unique"], exhausted_space=evaluation["exhausted_space"], pair_count=evaluation["pair_count"], accepted_counts=accepted_counts)
-    method_pass = bool(observed["statistic"] is not None and threshold is not None and observed["statistic"] <= threshold and null["passes_1pct_ceiling"] and null["unique_trials"] > 0)
-    return {"method_level_only": True, "selection_map_hash_before": map_hash, "selection_map_hash_after": map_hash, "verifier_confirmed_manifest": False, "observed": {key: value for key, value in observed.items() if key != "values"}, "null": {"threshold": threshold, "calibration_unique_trials": len(calibration_stats), "evaluation": null, "calibration_evaluation_disjoint": not bool(set(map(repr, calibration["assignments"])) & set(map(repr, evaluation["assignments"]))), "forbidden_partner_map_enforced": calibration["forbidden_partner_map_applied"] and evaluation["forbidden_partner_map_applied"], "null_trials_preserve_selected_partners": all(all(selection_map.get(left) != right for left, right in assignment) for assignment in (*calibration["assignments"], *evaluation["assignments"]))}, "distributions": observed["distributions"], "method_status": "PASS" if method_pass else "FAIL", "mapping_immutable": True}
+    observed_channels = observed["channel_statistics"]
+    channel_pass = {field: bool(observed_channels[field] is not None and channel_thresholds[field] is not None and float(observed_channels[field]) <= float(channel_thresholds[field])) for field in VERIFIER_CHANNELS}
+    observed_channels_pass = bool(all(channel_pass.values()))
+    method_pass = bool(observed_channels_pass and all(value is not None for value in channel_thresholds.values()) and null["passes_1pct_ceiling"] and null["unique_trials"] > 0)
+    return {"method_level_only": True, "selection_map_hash_before": map_hash, "selection_map_hash_after": map_hash, "verifier_confirmed_manifest": False, "required_channels": list(VERIFIER_CHANNELS), "observed": {key: value for key, value in observed.items() if key != "values"}, "observed_channel_pass": channel_pass, "all_required_channels_pass": observed_channels_pass, "null": {"channel_thresholds": channel_thresholds, "calibration_unique_trials": len(calibration["assignments"]), "calibration_channel_statistics_count": {field: len(values) for field, values in calibration_channel_stats.items()}, "evaluation": null, "calibration_evaluation_disjoint": not bool(set(map(repr, calibration["assignments"])) & set(map(repr, evaluation["assignments"]))), "forbidden_partner_map_enforced": calibration["forbidden_partner_map_applied"] and evaluation["forbidden_partner_map_applied"], "allowed_pair_universe_applied": calibration["allowed_pair_universe_applied"] and evaluation["allowed_pair_universe_applied"], "null_trials_preserve_selected_partners": all(all(selection_map.get(left) != right for left, right in assignment) for assignment in (*calibration["assignments"], *evaluation["assignments"]))}, "distributions": observed["distributions"], "method_status": "PASS" if method_pass else "FAIL", "mapping_immutable": True}
 
 
 def self_id_acceptance_gate(correct_accepted: int, wrong_accepted: int, eligible: int, null_contract: Mapping[str, Any]) -> dict[str, Any]:
