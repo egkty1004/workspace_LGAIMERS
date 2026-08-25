@@ -1,1 +1,356 @@
-‰×z-~)İ©~Šî±êÈ]zçŞÄ®º+r§‚)à‚º.¦‡é‰İ‚‚º.¥Ú²z-{¬µ¥µÁ½ÉĞ½Áä)¥µÁ½ÉĞ©Í½¸)¥µÁ½ÉĞµ…Ñ )¥µÁ½ÉĞÍåÌ)¥µÁ½ÉĞÑ•µÁ™¥±”)¥µÁ½ÉĞÕ¹¥ÑÑ•ÍĞ)™É½´Á…Ñ¡±¥ˆ¥µÁ½ÉĞA…Ñ ()¥µÁ½ÉĞÁ…¹‘…Ì…ÌÁ()MI%AQ}%H€ôA…Ñ ¡}}™¥±•}|¤¹É•Í½±Ù” ¤¹Á…É•¹ÑÍlÅt€¼€‰ÍÉ¥ÁÑÌˆ)ÍåÌ¹Á…Ñ ¹¥¹Í•ÉĞ À°ÍÑÈ¡MI%AQ}%H¤¤)¥µÁ½ÉĞ…Õ‘¥Ñ}ÑÉ…­µ…¹}É½ÍÍİ…±­}™É••}½¹Ñ•áÑ}ÁÉ¥½ÉÍ}ØÄ…Ì…Õ‘¥Ğ€€Œ¹½Å„èĞÀÈ(()I==P€ôA…Ñ ¡}}™¥±•}|¤¹É•Í½±Ù” ¤¹Á…É•¹ÑÍlÅt(()‘•˜µ…¥¹}™É…µ”¡Í•…Í½¹Ìô ÈÀÄä°€ÈÀÈÀ°€ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤è(€€€É½İÌ€ômt(€€€™½È¥¹‘•à°Í•…Í½¸¥¸•¹Õµ•É…Ñ”¡Í•…Í½¹Ì¤è(€€€€€€€É½İÌ¹…ÁÁ•¹¡ì(€€€€€€€€€€€€‰É½İ}¥ˆè˜‰µ…¥¸µíÍ•…Í½¹ôµí¥¹‘•áôˆ°€‰Í•…Í½¸ˆèÍ•…Í½¸°(€€€€€€€€€€€€‰‰…±±Í}‰•™½É”ˆè¥¹‘•à€”€Ğ°€‰ÍÑÉ¥­•Í}‰•™½É”ˆè¥¹‘•à€”€Ì°(€€€€€€€€€€€€‰½ÕÑÍ}‰•™½É”ˆè¥¹‘•à€”€Ì°(€€€€€€€ô¤(€€€É•ÑÕÉ¸Á¹…Ñ…É…µ”¡É½İÌ°½±Õµ¹Ìõ…Õ‘¥Ğ¹5%9}AI=)Q%=8¤(()‘•˜ÑÉ…­µ…¹}™É…µ”¡¥¹±Õ‘•|ÈÀÈĞõQÉÕ”¤è(€€€É½İÌ€ômt(€€€™…µ¥±¥•Ì€ô…Õ‘¥Ğ¹5%1%L(€€€€Œ€ÈÀÄä¥ÌÑ¡”½¹±ä¡¥ÍÑ½Éä™½È€ÈÀÈÀ´´ÈÀÈĞ¸€Q¡”™¥ÉÍĞ½¹Ñ•áĞ¡…Ì„(€€€€ŒÍÕÁÁ½ÉÑ•0À…¹„¹½¸µé•É¼‘•Ù¥…Ñ¥½¸™É½´Ñ¡”±½‰…°ÁÉ¥½È¸(€€€™½È¥¹‘•à¥¸É…¹” ÄÈÀ¤è(€€€€€€€É½İÌ¹…ÁÁ•¹¡ì‰Í•…Í½¸ˆè€ÈÀÄä°€‰‰…±±Í}‰•™½É”ˆè€À°€‰ÍÑÉ¥­•Í}‰•™½É”ˆè€À°€‰½ÕÑÍ}‰•™½É”ˆè€À°€‰Á¥Ñ¡}ÑåÁ•}É½ÕÀˆè™…µ¥±¥•Ím¥¹‘•à€”€Éuô¤(€€€™½È¥¹‘•à¥¸É…¹” ÔÀ¤è(€€€€€€€É½İÌ¹…ÁÁ•¹¡ì‰Í•…Í½¸ˆè€ÈÀÄä°€‰‰…±±Í}‰•™½É”ˆè€À°€‰ÍÑÉ¥­•Í}‰•™½É”ˆè€À°€‰½ÕÑÍ}‰•™½É”ˆè€Ä°€‰Á¥Ñ¡}ÑåÁ•}É½ÕÀˆè™…µ¥±¥•ÍlÈ€¬€¡¥¹‘•à€”€È¥uô¤(€€€™½È¥¹‘•à¥¸É…¹” ÄÀ¤è(€€€€€€€É½İÌ¹…ÁÁ•¹¡ì‰Í•…Í½¸ˆè€ÈÀÄä°€‰‰…±±Í}‰•™½É”ˆè€Ä°€‰ÍÑÉ¥­•Í}‰•™½É”ˆè€À°€‰½ÕÑÍ}‰•™½É”ˆè€À°€‰Á¥Ñ¡}ÑåÁ•}É½ÕÀˆè™…µ¥±¥•Ím¥¹‘•à€”€Ñuô¤(€€€¥˜¥¹±Õ‘•|ÈÀÈĞè(€€€€€€€™½È¥¹‘•à¥¸É…¹” ĞÀ¤è(€€€€€€€€€€€É½İÌ¹…ÁÁ•¹¡ì‰Í•…Í½¸ˆè€ÈÀÈĞ°€‰‰…±±Í}‰•™½É”ˆè€Ì°€‰ÍÑÉ¥­•Í}‰•™½É”ˆè€È°€‰½ÕÑÍ}‰•™½É”ˆè€È°€‰Á¥Ñ¡}ÑåÁ•}É½ÕÀˆè™…µ¥±¥•Ím¥¹‘•à€”€Ñuô¤(€€€É•ÑÕÉ¸Á¹…Ñ…É…µ”¡É½İÌ°½±Õµ¹Ìõ…Õ‘¥Ğ¹QI-59}AI=)Q%=8¤(()±…ÍÌ½¹ÑÉ…Ñ¹‘¥É•İ…±±Q•ÍÑÌ¡Õ¹¥ÑÑ•ÍĞ¹Q•ÍÑ…Í”¤è(€€€‘•˜Ñ•ÍÑ}ÉÕ¹Ñ¥µ•}½¹™¥}…¹‘}ÍÑ…Ñ¥}™¥É•İ…±°¡Í•±˜¤è(€€€€€€€½¹™¥œ€ô…Õ‘¥Ğ¹±½…‘}½¹ÑÉ…Ñ}½¹™¥œ¡I==P¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡½¹™¥l‰½¹ÑÉ…Ñ}Ù•ÉÍ¥½¸‰t°…Õ‘¥Ğ¹=9QIQ}YIM%=8¤(€€€€€€€ÍÑ…Ñ¥Œ€ô…Õ‘¥Ğ¹ÍÑ…Ñ¥}½¹ÑÉ…Ğ¡I==P¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ”¡ÍÑ…Ñ¥l‰ÍÑ…Ñ¥}Á…ÍÌ‰t¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ…±Í”¡ÍÑ…Ñ¥l‰Ñ…É•Ñ}…•ÍÌ‰t¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ…±Í”¡ÍÑ…Ñ¥l‰ÑÉ…­µ…¹}•¹Ñ¥Ñå}…•ÍÌ‰t¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ…±Í”¡ÍÑ…Ñ¥l‰ÑÉ…­µ…¹}Á¡åÍ¥Í}…•ÍÌ‰t¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ…±Í”¡ÍÑ…Ñ¥l‰‰…­½™™}±•Ù•±}¥Í}µ½‘•±}™•…ÑÕÉ”‰t¤((€€€‘•˜Ñ•ÍÑ}½¹™¥}‘¥Ù•É•¹•}™…¥±Í}±½Í•¡Í•±˜¤è(€€€€€€€½¹™¥œ€ô…Õ‘¥Ğ¹±½…‘}½¹ÑÉ…Ñ}½¹™¥œ¡I==P¤(€€€€€€€¡…¹•€ô½Áä¹‘••Á½Áä¡½¹™¥œ¤(€€€€€€€¡…¹•‘l‰½¹Ñ•áĞ‰ul‰ÍÕÁÁ½ÉÑ}Ñ¡É•Í¡½±‰t€ô€ää(€€€€€€€İ¥Ñ Í•±˜¹…ÍÍ•ÉÑI…¥Í•Ì¡…Õ‘¥Ğ¹½¹Ñ•áÑAÉ¥½ÉÕ‘¥ÑÉÉ½È¤è(€€€€€€€€€€€…Õ‘¥Ğ¹Ù…±¥‘…Ñ•}½¹ÑÉ…Ñ}½¹™¥œ¡¡…¹•¤((€€€‘•˜Ñ•ÍÑ}ÁÉ½©•Ñ¥½¹}É•©•ÑÍ}Ñ…É•Ñ}•¹Ñ¥Ñå}…¹‘}Á¡åÍ¥Ì¡Í•±˜¤è(€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ” ¤¹½Áä ¤(€€€€€€€µ…¥¹l‰½¹ÑÉ½±}ÍÕ•ÍÌ‰t€ô€À(€€€€€€€İ¥Ñ Í•±˜¹…ÍÍ•ÉÑI…¥Í•Ì¡…Õ‘¥Ğ¹½¹Ñ•áÑAÉ¥½ÉÕ‘¥ÑÉÉ½È¤è(€€€€€€€€€€€…Õ‘¥Ğ¹Ù…±¥‘…Ñ•}ÁÉ½©•Ñ¥½¸¡µ…¥¸¤(€€€€€€€ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ” ¤¹½Áä ¤(€€€€€€€ÑÉ…­µ…¹l‰ÑÉ…­µ…¹}¥‰t€ô€‰™½É‰¥‘‘•¸ˆ(€€€€€€€İ¥Ñ Í•±˜¹…ÍÍ•ÉÑI…¥Í•Ì¡…Õ‘¥Ğ¹½¹Ñ•áÑAÉ¥½ÉÕ‘¥ÑÉÉ½È¤è(€€€€€€€€€€€…Õ‘¥Ğ¹Ù…±¥‘…Ñ•}ÁÉ½©•Ñ¥½¸¡ÑÉ…­µ…¸°ÑÉ…­µ…¸õQÉÕ”¤((€€€‘•˜Ñ•ÍÑ}ÍÙ}É•…‘•É}ÕÍ•Í}•á…Ñ}™•…ÑÕÉ•}ÁÉ½©•Ñ¥½¹Ì¡Í•±˜¤è(€€€€€€€İ¥Ñ Ñ•µÁ™¥±”¹Q•µÁ½É…Éå¥É•Ñ½Éä ¤…Ì‘¥É•Ñ½Éäè(€€€€€€€€€€€µ…¥¹}Á…Ñ €ôA…Ñ ¡‘¥É•Ñ½Éä¤€¼€‰ÑÉ…¥¸¹ÍØˆ(€€€€€€€€€€€Ñµ}Á…Ñ €ôA…Ñ ¡‘¥É•Ñ½Éä¤€¼€‰ÑÉ…­µ…¸¹ÍØˆ(€€€€€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÄä°€ÈÀÈÀ¤¤¹½Áä ¤(€€€€€€€€€€€µ…¥¹l‰½¹ÑÉ½±}ÍÕ•ÍÌ‰t€ôlÀ°€Åt(€€€€€€€€€€€µ…¥¸¹Ñ½}ÍØ¡µ…¥¹}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€ÑÉ…­µ…¹}™É…µ”¡…±Í”¤¹Ñ½}ÍØ¡Ñµ}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€É•…‘}µ…¥¸€ô…Õ‘¥Ğ¹É•…‘}µ…¥¹}™•…ÑÕÉ•Ì¡µ…¥¹}Á…Ñ ¤(€€€€€€€€€€€É•…‘}Ñ´€ô…Õ‘¥Ğ¹É•…‘}ÑÉ…­µ…¹}™•…ÑÕÉ•Ì¡Ñµ}Á…Ñ ¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡ÑÕÁ±”¡É•…‘}µ…¥¸¹½±Õµ¹Ì¤°…Õ‘¥Ğ¹5%9}AI=)Q%=8¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡ÑÕÁ±”¡É•…‘}Ñ´¹½±Õµ¹Ì¤°…Õ‘¥Ğ¹QI-59}AI=)Q%=8¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑ9½Ñ%¸ ‰½¹ÑÉ½±}ÍÕ•ÍÌˆ°É•…‘}µ…¥¸¹½±Õµ¹Ì¤((€€€‘•˜Ñ•ÍÑ}Í½Á•‘}É•…‘•ÉÍ}¥¹½É•}Á½¥Í½¹•‘}Ñ…É•Ñ}•¹Ñ¥Ñ¥•Í}…¹‘}Á¡åÍ¥Ì¡Í•±˜¤è(€€€€€€€İ¥Ñ Ñ•µÁ™¥±”¹Q•µÁ½É…Éå¥É•Ñ½Éä ¤…Ì‘¥É•Ñ½Éäè(€€€€€€€€€€€‘¥É•Ñ½Éä€ôA…Ñ ¡‘¥É•Ñ½Éä¤(€€€€€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÈÀ°€ÈÀÈÈ¤¤¹½Áä ¤(€€€€€€€€€€€µ…¥¹l‰½¹ÑÉ½±}ÍÕ•ÍÌ‰t€ôlÀ°€Åt(€€€€€€€€€€€µ…¥¹l‰Á¥Ñ¡•É}¥‰t€ôl‰ÀÄˆ°€‰ÀÈ‰t(€€€€€€€€€€€µ…¥¹l‰Á¥Ñ¡•É}Ñ•…µ}¥‰t€ôl‰ĞÄˆ°€‰ĞÈ‰t(€€€€€€€€€€€Á½¥Í½¹•‘}µ…¥¸€ôµ…¥¸¹½Áä ¤(€€€€€€€€€€€Á½¥Í½¹•‘}µ…¥¹l‰½¹ÑÉ½±}ÍÕ•ÍÌ‰t€ôlÄ°€Át(€€€€€€€€€€€Á½¥Í½¹•‘}µ…¥¹l‰Á¥Ñ¡•É}¥‰t€ôl‰Á½¥Í½¸µ„ˆ°€‰Á½¥Í½¸µˆ‰t(€€€€€€€€€€€Á½¥Í½¹•‘}µ…¥¹l‰Á¥Ñ¡•É}Ñ•…µ}¥‰t€ôl‰Á½¥Í½¸µÑ•…´µ„ˆ°€‰Á½¥Í½¸µÑ•…´µˆ‰t(€€€€€€€€€€€Ñ´€ôÑÉ…­µ…¹}™É…µ”¡QÉÕ”¤¹¡•… ĞÀ¤¹½Áä ¤(€€€€€€€€€€€Ñµl‰Á¥Ñ¡•É}ÑÉ…­µ…¹}¥‰t€ôm˜‰Ñ´µí¥¹‘•áôˆ™½È¥¹‘•à¥¸É…¹”¡±•¸¡Ñ´¤¥t(€€€€€€€€€€€Ñµl‰É•±}ÍÁ••‰t€ô€äÀ¸À(€€€€€€€€€€€Á½¥Í½¹•‘}Ñ´€ôÑ´¹½Áä ¤(€€€€€€€€€€€Á½¥Í½¹•‘}Ñµl‰Á¥Ñ¡•É}ÑÉ…­µ…¹}¥‰t€ô€‰Á½¥Í½¹•ˆ(€€€€€€€€€€€Á½¥Í½¹•‘}Ñµl‰É•±}ÍÁ••‰t€ô€´äää¸À(€€€€€€€€€€€µ…¥¹}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰µ…¥¸¹ÍØˆ(€€€€€€€€€€€Á½¥Í½¹•‘}µ…¥¹}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰Á½¥Í½¹•µµ…¥¸¹ÍØˆ(€€€€€€€€€€€Ñµ}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰Ñ´¹ÍØˆ(€€€€€€€€€€€Á½¥Í½¹•‘}Ñµ}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰Á½¥Í½¹•µÑ´¹ÍØˆ(€€€€€€€€€€€µ…¥¸¹Ñ½}ÍØ¡µ…¥¹}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€Á½¥Í½¹•‘}µ…¥¸¹Ñ½}ÍØ¡Á½¥Í½¹•‘}µ…¥¹}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€Ñ´¹Ñ½}ÍØ¡Ñµ}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€Á½¥Í½¹•‘}Ñ´¹Ñ½}ÍØ¡Á½¥Í½¹•‘}Ñµ}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€±•…¹}µ…¥¸€ô…Õ‘¥Ğ¹É•…‘}µ…¥¹}™•…ÑÕÉ•Ì¡µ…¥¹}Á…Ñ ¤(€€€€€€€€€€€¡…¹•‘}µ…¥¸€ô…Õ‘¥Ğ¹É•…‘}µ…¥¹}™•…ÑÕÉ•Ì¡Á½¥Í½¹•‘}µ…¥¹}Á…Ñ ¤(€€€€€€€€€€€±•…¹}Ñ´€ô…Õ‘¥Ğ¹É•…‘}ÑÉ…­µ…¹}™•…ÑÕÉ•Ì¡Ñµ}Á…Ñ ¤(€€€€€€€€€€€¡…¹•‘}Ñ´€ô…Õ‘¥Ğ¹É•…‘}ÑÉ…­µ…¹}™•…ÑÕÉ•Ì¡Á½¥Í½¹•‘}Ñµ}Á…Ñ ¤(€€€€€€€€€€€±•…¹}™•…ÑÕÉ•Ì€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡±•…¹}µ…¥¸°…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡±•…¹}Ñ´°Í•…Í½¹Ìô ÈÀÈÀ°€ÈÀÈÈ¤¤¤(€€€€€€€€€€€¡…¹•‘}™•…ÑÕÉ•Ì€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡¡…¹•‘}µ…¥¸°…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡¡…¹•‘}Ñ´°Í•…Í½¹Ìô ÈÀÈÀ°€ÈÀÈÈ¤¤¤(€€€€€€€€€€€Á¹Ñ•ÍÑ¥¹œ¹…ÍÍ•ÉÑ}™É…µ•}•ÅÕ…°¡±•…¹}µ…¥¸°¡…¹•‘}µ…¥¸¤(€€€€€€€€€€€Á¹Ñ•ÍÑ¥¹œ¹…ÍÍ•ÉÑ}™É…µ•}•ÅÕ…°¡±•…¹}Ñ´°¡…¹•‘}Ñ´¤(€€€€€€€€€€€Á¹Ñ•ÍÑ¥¹œ¹…ÍÍ•ÉÑ}™É…µ•}•ÅÕ…°¡±•…¹}™•…ÑÕÉ•Ì°¡…¹•‘}™•…ÑÕÉ•Ì¤((€€€‘•˜Ñ•ÍÑ}¥¹Ù…±¥‘}½¹Ñ•áÑ}¥Í}‘½µ…¥¹}­¥±±}¹½Ñ}ÍÁ…ÉÍ•}™…±±‰…¬¡Í•±˜¤è(€€€€€€€‰…€ôµ…¥¹}™É…µ”  ÈÀÈÈ°¤¤¹½Áä ¤(€€€€€€€‰…¹±½lÀ°€‰‰…±±Í}‰•™½É”‰t€ô€Ğ(€€€€€€€İ¥Ñ Í•±˜¹…ÍÍ•ÉÑI…¥Í•Ì¡…Õ‘¥Ğ¹½¹Ñ•áÑ½µ…¥¹9½ÑAÉ½Ù•¸¤è(€€€€€€€€€€€‰…‘}ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡…±Í”¤¹½Áä ¤(€€€€€€€€€€€‰…‘}ÑÉ…­µ…¸¹±½lÀ°€‰½ÕÑÍ}‰•™½É”‰t€ô€Ì(€€€€€€€€€€€…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡‰…‘}ÑÉ…­µ…¸¤(€€€€€€€İ¥Ñ Í•±˜¹…ÍÍ•ÉÑI…¥Í•Ì¡…Õ‘¥Ğ¹½¹Ñ•áÑ½µ…¥¹9½ÑAÉ½Ù•¸¤è(€€€€€€€€€€€…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡‰…°…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¹}™É…µ”¡…±Í”¤¤¤((€€€‘•˜Ñ•ÍÑ}µ¥ÍÍ¥¹}ÑÉ…­µ…¹}™…µ¥±å}¥Í}Ñ…á½¹½µå}™…¥±ÕÉ”¡Í•±˜¤è(€€€€€€€ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡…±Í”¤¹½Áä ¤(€€€€€€€ÑÉ…­µ…¸¹±½lÀ°€‰Á¥Ñ¡}ÑåÁ•}É½ÕÀ‰t€ô9½¹”(€€€€€€€İ¥Ñ Í•±˜¹…ÍÍ•ÉÑI…¥Í•Ì¡…Õ‘¥Ğ¹Q…á½¹½µå9½ÑAÉ½Ù•¸¤è(€€€€€€€€€€€…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¸¤(()±…ÍÌAÉ¥½É½¹ÍÑÉÕÑ¥½¹Q•ÍÑÌ¡Õ¹¥ÑÑ•ÍĞ¹Q•ÍÑ…Í”¤è(€€€‘•˜Ñ•ÍÑ}ÍÑÉ¥Ñ}ÁÉ¥½É}Í•…Í½¹}…¹‘}™ÕÑÕÉ•}Á½¥Í½¸¡Í•±˜¤è(€€€€€€€‰…Í”€ôÑÉ…­µ…¹}™É…µ”¡QÉÕ”¤(€€€€€€€Á½¥Í½¹•€ô‰…Í”¹½Áä ¤(€€€€€€€Á½¥Í½¹•¹±½mÁ½¥Í½¹•‘l‰Í•…Í½¸‰t€ôô€ÈÀÈĞ°€‰Á¥Ñ¡}ÑåÁ•}É½ÕÀ‰t€ô€‰½Ñ¡•Èˆ(€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤(€€€€€€€™¥ÉÍĞ€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡‰…Í”°Í•…Í½¹Ìô ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤¤(€€€€€€€Í•½¹€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡Á½¥Í½¹•°Í•…Í½¹Ìô ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤¤(€€€€€€€Á¹Ñ•ÍÑ¥¹œ¹…ÍÍ•ÉÑ}™É…µ•}•ÅÕ…°¡™¥ÉÍĞ¹¥±½lèÍt¹É•Í•Ñ}¥¹‘•à¡‘É½ÀõQÉÕ”¤°Í•½¹¹¥±½lèÍt¹É•Í•Ñ}¥¹‘•à¡‘É½ÀõQÉÕ”¤¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ” ¡™¥ÉÍĞ¹¥±½lÍum±¥ÍĞ¡…Õ‘¥Ğ¹QUI}=1U59MlèÑt¥t€„ôÍ•½¹¹¥±½lÍum±¥ÍĞ¡…Õ‘¥Ğ¹QUI}=1U59MlèÑt¥t¤¹…¹ä ¤¤((€€€‘•˜Ñ•ÍÑ}ÑÉ…­µ…¹}É½İ}½É‘•É}¥¹Ù…É¥…¹”¡Í•±˜¤è(€€€€€€€ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡QÉÕ”¤(€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤(€€€€€€€™¥ÉÍĞ€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¸°Í•…Í½¹Ìô ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤¤(€€€€€€€Í¡Õ™™±•€ôÑÉ…­µ…¸¹Í…µÁ±”¡™É…ŒôÄ¸À°É…¹‘½µ}ÍÑ…Ñ”ôäÄ¤¹É•Í•Ñ}¥¹‘•à¡‘É½ÀõQÉÕ”¤(€€€€€€€Í•½¹€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡Í¡Õ™™±•°Í•…Í½¹Ìô ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤¤(€€€€€€€Á¹Ñ•ÍÑ¥¹œ¹…ÍÍ•ÉÑ}™É…µ•}•ÅÕ…°¡™¥ÉÍĞ°Í•½¹¤((€€€‘•˜Ñ•ÍÑ}ÉÕ¹Ñ¥µ•}‘•Ñ•Éµ¥¹¥Íµ}•Ù¥‘•¹•}É•‰Õ¥±‘Í}½µÁ±•Ñ•}½ÕÑÁÕĞ¡Í•±˜¤è(€€€€€€€ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡QÉÕ”¤(€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤(€€€€€€€µ½‘•°€ô…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¸°Í•…Í½¹Ìô ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤(€€€€€€€•Ù¥‘•¹”€ô…Õ‘¥Ğ¹…ÍÍ•ÍÍ}‘•Ñ•Éµ¥¹¥Í´¡µ…¥¸°ÑÉ…­µ…¸°µ½‘•°¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ”¡•Ù¥‘•¹•l‰Ñ•ÍÑ•‰t¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ”¡•Ù¥‘•¹•l‰½µÁ±•Ñ•}™•…ÑÕÉ•}½ÕÑÁÕÑ}•ÅÕ…°‰t¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡•Ù¥‘•¹•l‰½É¥¥¹…±}™•…ÑÕÉ•}½ÕÑÁÕÑ}Í¡„ÈÔØ‰t°•Ù¥‘•¹•l‰Á•ÉµÕÑ•‘}™•…ÑÕÉ•}½ÕÑÁÕÑ}Í¡„ÈÔØ‰t¤((€€€‘•˜Ñ•ÍÑ}½Ñ¡•É}¥Í}É•Ñ…¥¹•‘}…Í}™½ÕÉÑ¡}Í¥µÁ±•á}™…µ¥±ä¡Í•±˜¤è(€€€€€€€µ½‘•°€ô…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¹}™É…µ”¡…±Í”¤°Í•…Í½¹Ìô ÈÀÈÀ°¤¤(€€€€€€€™•…ÑÕÉ•Ì€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¹}™É…µ”  ÈÀÈÀ°¤¤°µ½‘•°¤(€€€€€€€Ù…±Õ•Ì€ôm™±½…Ğ¡™•…ÑÕÉ•Ì¹±½lÀ°½±Õµ¹t¤™½È½±Õµ¸¥¸…Õ‘¥Ğ¹QUI}=1U59MlèÑut(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡±•¸¡Ù…±Õ•Ì¤°€Ğ¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ±µ½ÍÑÅÕ…°¡ÍÕ´¡Ù…±Õ•Ì¤°€Ä¸À¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ”¡…±°¡µ…Ñ ¹¥Í™¥¹¥Ñ”¡Ù…±Õ”¤™½ÈÙ…±Õ”¥¸Ù…±Õ•Ì¤¤((€€€‘•˜Ñ•ÍÑ}°Å}‰•±½İ|ÄÀÁ}™…±±Í}‰…­}Ñ½}±½‰…±}…¹‘}ÍÕÁÁ½ÉÑ}¥Í}Í•±•Ñ•‘}±•Ù•°¡Í•±˜¤è(€€€€€€€µ½‘•°€ô…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¹}™É…µ”¡…±Í”¤°Í•…Í½¹Ìô ÈÀÈÀ°¤¤(€€€€€€€É½Ü€ôÁ¹…Ñ…É…µ”¡mì‰É½İ}¥ˆè€‰ÍÁ…ÉÍ”ˆ°€‰Í•…Í½¸ˆè€ÈÀÈÀ°€‰‰…±±Í}‰•™½É”ˆè€Ä°€‰ÍÑÉ¥­•Í}‰•™½É”ˆè€À°€‰½ÕÑÍ}‰•™½É”ˆè€Áõt°½±Õµ¹Ìõ…Õ‘¥Ğ¹5%9}AI=)Q%=8¤(€€€€€€€™•…ÑÕÉ•Ì€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡É½Ü°µ½‘•°¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡™•…ÑÕÉ•Ì¹±½lÀ°€‰}}‰…­½™™}±•Ù•°‰t°€‰±½‰…°ˆ¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡™•…ÑÕÉ•Ì¹±½lÀ°€‰Ñµ}™}ÍÕÁÁ½ÉĞ‰t°±•¸¡ÑÉ…­µ…¹}™É…µ”¡…±Í”¤¤¤(€€€€€€€É½İ}°À€ôÁ¹…Ñ…É…µ”¡mì‰É½İ}¥ˆè€‰‘•¹Í”ˆ°€‰Í•…Í½¸ˆè€ÈÀÈÀ°€‰‰…±±Í}‰•™½É”ˆè€À°€‰ÍÑÉ¥­•Í}‰•™½É”ˆè€À°€‰½ÕÑÍ}‰•™½É”ˆè€Áõt°½±Õµ¹Ìõ…Õ‘¥Ğ¹5%9}AI=)Q%=8¤(€€€€€€€‘•¹Í”€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡É½İ}°À°µ½‘•°¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡‘•¹Í”¹±½lÀ°€‰}}‰…­½™™}±•Ù•°‰t°€‰0Àˆ¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡‘•¹Í”¹±½lÀ°€‰Ñµ}™}ÍÕÁÁ½ÉĞ‰t°€ÄÈÀ¤((€€€‘•˜Ñ•ÍÑ|ÈÀÄå}¹½}¡¥ÍÑ½Éå}¥Í}•áÁ±¥¥Ğ¡Í•±˜¤è(€€€€€€€µ½‘•°€ô…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¹}™É…µ”¡…±Í”¤°Í•…Í½¹Ìô ÈÀÄä°¤¤(€€€€€€€™•…ÑÕÉ•Ì€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¹}™É…µ”  ÈÀÄä°¤¤°µ½‘•°¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡™•…ÑÕÉ•Ì¹±½lÀ°€‰}}‰…­½™™}±•Ù•°‰t°€‰9=}!%MQ=Idˆ¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡™•…ÑÕÉ•Ì¹±½lÀ°€‰Ñµ}™}ÍÕÁÁ½ÉĞ‰t°€À¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ”¡Á¹¥Í¹„¡™•…ÑÕÉ•Ì¹±½lÀ°€‰Ñµ}™}Á}™…ÍÑ‰…±°‰t¤¤((€€€‘•˜Ñ•ÍÑ}Ñİ•±Ù•|ÈÀÈÕ}½Õ¹Ñ}ÍÑ…Ñ•Í}¹••‘}¹½}°Å}Ñ¡É•Í¡½±¡Í•±˜¤è(€€€€€€€É½İÌ€ômt(€€€€€€€™½È¥¹‘•à¥¸É…¹” ÄÈ¤è(€€€€€€€€€€€É½İÌ¹…ÁÁ•¹¡ì‰É½İ}¥ˆè˜ˆÈÀÈÔµí¥¹‘•áôˆ°€‰Í•…Í½¸ˆè€ÈÀÈÔ°€‰‰…±±Í}‰•™½É”ˆè¥¹‘•à€”€Ğ°€‰ÍÑÉ¥­•Í}‰•™½É”ˆè¥¹‘•à€”€Ì°€‰½ÕÑÍ}‰•™½É”ˆè¥¹‘•à€”€Íô¤(€€€€€€€µ…¥¸€ôÁ¹…Ñ…É…µ”¡É½İÌ°½±Õµ¹Ìõ…Õ‘¥Ğ¹5%9}AI=)Q%=8¤(€€€€€€€™•…ÑÕÉ•Ì€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¹}™É…µ”¡…±Í”¤°Í•…Í½¹Ìô ÈÀÈÔ°¤¤¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡±•¸¡™•…ÑÕÉ•Ì¤°€ÄÈ¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ”¡™•…ÑÕÉ•Íl‰Ñµ}™}Á}™…ÍÑ‰…±°‰t¹¹½Ñ¹„ ¤¹…±° ¤¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ”¡Í•Ğ¡™•…ÑÕÉ•Íl‰}}‰…­½™™}±•Ù•°‰t¤¹¥ÍÍÕ‰Í•Ğ¡ì‰0Àˆ°€‰0Äˆ°€‰±½‰…°‰ô¤¤((€€€‘•˜Ñ•ÍÑ}…É•…Ñ•}±½½­ÕÁ}É•ÁÉ½‘Õ•Í}Í•±•Ñ•‘}™•…ÑÕÉ•}É•½É‘Ì¡Í•±˜¤è(€€€€€€€ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡QÉÕ”¤(€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤(€€€€€€€µ½‘•°€ô…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¸°Í•…Í½¹Ìô ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤(€€€€€€€™•…ÑÕÉ•Ì€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°µ½‘•°¤(€€€€€€€±½½­ÕÀ€ô…Õ‘¥Ğ¹‰Õ¥±‘}…É•…Ñ•}±½½­ÕÀ¡µ½‘•°¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ%¸ ‰0Àˆ°±½½­ÕÁl‰Í•…Í½¹Ì‰ulˆÈÀÈÈ‰t¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ%¸ ‰0Äˆ°±½½­ÕÁl‰Í•…Í½¹Ì‰ulˆÈÀÈÈ‰t¤(€€€€€€€™½È¥¹‘•à°É½Ü¥¸•¹Õµ•É…Ñ”¡µ…¥¸¹Ñ½}‘¥Ğ ‰É•½É‘Ìˆ¤¤è(€€€€€€€€€€€É•ÁÉ½‘Õ•€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}±½½­ÕÁ}É½Ü¡É½Ü°±½½­ÕÀ°¥¹Ğ¡É½İl‰Í•…Í½¸‰t¤¤(€€€€€€€€€€€•áÁ•Ñ•€ôí½±Õµ¸è™•…ÑÕÉ•Ì¹±½m¥¹‘•à°½±Õµ¹t™½È½±Õµ¸¥¸l©…Õ‘¥Ğ¹QUI}=1U59L°€‰}}‰…­½™™}±•Ù•°‰uô(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•ÁÉ½‘Õ•°•áÁ•Ñ•¤(€€€€€€€É•Ù•ÉÍ•‘}±½½­ÕÀ€ô…Õ‘¥Ğ¹‰Õ¥±‘}…É•…Ñ•}±½½­ÕÀ¡…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¸¹¥±½lèè´Åt¹É•Í•Ñ}¥¹‘•à¡‘É½ÀõQÉÕ”¤°Í•…Í½¹Ìô ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡…Õ‘¥Ğ¹…¹½¹¥…±}¡…Í ¡±½½­ÕÀ¤°…Õ‘¥Ğ¹…¹½¹¥…±}¡…Í ¡É•Ù•ÉÍ•‘}±½½­ÕÀ¤¤((€€€‘•˜Ñ•ÍÑ}•¹Ñ¥Ñå}…¹‘}Á¡åÍ¥Í}½±Õµ¹Í}…¹¹½Ñ}…™™•Ñ}™•…ÑÕÉ•Ì¡Í•±˜¤è(€€€€€€€ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡…±Í”¤(€€€€€€€µ½‘•°€ô…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¸°Í•…Í½¹Ìô ÈÀÈÀ°¤¤(€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÈÀ°¤¤(€€€€€€€•áÁ•Ñ•€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°µ½‘•°¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡ÑÕÁ±”¡ÑÉ…­µ…¸¹½±Õµ¹Ì¤°…Õ‘¥Ğ¹QI-59}AI=)Q%=8¤(€€€€€€€Á¹Ñ•ÍÑ¥¹œ¹…ÍÍ•ÉÑ}™É…µ•}•ÅÕ…°¡•áÁ•Ñ•°…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°µ½‘•°¤¤(()±…ÍÌ%¹‘•Á•¹‘•¹•¹‘•ÁÑ…¹•Q•ÍÑÌ¡Õ¹¥ÑÑ•ÍĞ¹Q•ÍÑ…Í”¤è(€€€‘•˜Ñ•ÍÑ}µ…¥¹}É½İ}…‘‘}‘•±•Ñ•}Í¡Õ™™±•}¥¹‘•Á•¹‘•¹”¡Í•±˜¤è(€€€€€€€µ½‘•°€ô…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¹}™É…µ”¡QÉÕ”¤°Í•…Í½¹Ìô ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ°€ÈÀÈÔ¤¤(€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÈÈ°€ÈÀÈÌ°€ÈÀÈĞ¤¤(€€€€€€€•áÁ•Ñ•€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°µ½‘•°¤(€€€€€€€…Õµ•¹Ñ•€ôÁ¹½¹…Ğ¡mµ…¥¸°µ…¥¹}™É…µ”  ÈÀÈÔ°¤¥t°¥¹½É•}¥¹‘•àõQÉÕ”¤(€€€€€€€…Õµ•¹Ñ•‘}É•ÍÕ±Ğ€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡…Õµ•¹Ñ•°µ½‘•°¤(€€€€€€€Á¹Ñ•ÍÑ¥¹œ¹…ÍÍ•ÉÑ}™É…µ•}•ÅÕ…°¡•áÁ•Ñ•°…Õµ•¹Ñ•‘}É•ÍÕ±Ğ¹¥±½lè±•¸¡µ…¥¸¥t¹É•Í•Ñ}¥¹‘•à¡‘É½ÀõQÉÕ”¤¤(€€€€€€€Í¡Õ™™±•€ôµ…¥¸¹Í…µÁ±”¡™É…ŒôÄ°É…¹‘½µ}ÍÑ…Ñ”ôÜ¤¹É•Í•Ñ}¥¹‘•à¡‘É½ÀõQÉÕ”¤(€€€€€€€Í¡Õ™™±•‘}É•ÍÕ±Ğ€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡Í¡Õ™™±•°µ½‘•°¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡Í•Ğ¡ÑÕÁ±”¡É½Ü¤™½ÈÉ½Ü¥¸•áÁ•Ñ•‘m±¥ÍĞ¡…Õ‘¥Ğ¹QUI}=1U59L¥t¹Ñ½}¹ÕµÁä ¤¤°Í•Ğ¡ÑÕÁ±”¡É½Ü¤™½ÈÉ½Ü¥¸Í¡Õ™™±•‘}É•ÍÕ±Ñm±¥ÍĞ¡…Õ‘¥Ğ¹QUI}=1U59L¥t¹Ñ½}¹ÕµÁä ¤¤¤((€€€‘•˜Ñ•ÍÑ}…•ÁÑ…¹•}‘½•Í}¹½Ñ}™…¥±}™½É}ÍÁ…ÉÍ•}°Å}…±½¹”¡Í•±˜¤è(€€€€€€€ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡…±Í”¤(€€€€€€€µ…¥¸€ôÁ¹…Ñ…É…µ”¡mì‰É½İ}¥ˆè€‰àˆ°€‰Í•…Í½¸ˆè€ÈÀÈÀ°€‰‰…±±Í}‰•™½É”ˆè€Ä°€‰ÍÑÉ¥­•Í}‰•™½É”ˆè€À°€‰½ÕÑÍ}‰•™½É”ˆè€Áõt°½±Õµ¹Ìõ…Õ‘¥Ğ¹5%9}AI=)Q%=8¤(€€€€€€€µ½‘•°€ô…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¸°Í•…Í½¹Ìô ÈÀÈÀ°¤¤(€€€€€€€™•…ÑÕÉ•Ì€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°µ½‘•°¤(€€€€€€€É•ÍÕ±Ğ€ô…Õ‘¥Ğ¹•Ù…±Õ…Ñ•}…•ÁÑ…¹”¡µ…¥¸°™•…ÑÕÉ•Ì°ÑÉ…­µ…¸¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ9½Ñ%¸ ‰9=}Y1%}11}11	,ˆ°É•ÍÕ±Ñl‰Á}™…¥±}É•…Í½¹Ì‰t¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ”¡É•ÍÕ±Ñl‰°Å}ÍÕÁÁ½ÉÑ}‰•±½İ}Ñ¡É•Í¡½±‘}¥Í}¹½Ñ}™…¥±ÕÉ”‰t¤((€€€‘•˜Ñ•ÍÑ}½¹Ñ•áÑ}Ù…É¥…Ñ¥½¹}½±±…ÁÍ•}¥Í}Á}™…¥°¡Í•±˜¤è(€€€€€€€ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡…±Í”¤¹½Áä ¤(€€€€€€€ÑÉ…­µ…¹l‰Á¥Ñ¡}ÑåÁ•}É½ÕÀ‰t€ô€‰™…ÍÑ‰…±°ˆ(€€€€€€€µ½‘•°€ô…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¸°Í•…Í½¹Ìô ÈÀÈÀ°¤¤(€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÈÀ°¤¤(€€€€€€€™•…ÑÕÉ•Ì€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°µ½‘•°¤(€€€€€€€É•ÍÕ±Ğ€ô…Õ‘¥Ğ¹•Ù…±Õ…Ñ•}…•ÁÑ…¹”¡µ…¥¸°™•…ÑÕÉ•Ì°ÑÉ…­µ…¸¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑ%¸ ‰=9QaQ}YI%Q%=9}=11AMˆ°É•ÍÕ±Ñl‰Á}™…¥±}É•…Í½¹Ì‰t¤((€€€‘•˜Ñ•ÍÑ}…¹½¹¥…±}É•Á½ÉÑ}¡…Í¡}…¹‘}•áÑ•É¹…±}½ÕÑÁÕÑ}Õ…É¡Í•±˜¤è(€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÈÀ°¤¤(€€€€€€€ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡…±Í”¤(€€€€€€€µ½‘•°€ô…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¸°Í•…Í½¹Ìô ÈÀÈÀ°¤¤(€€€€€€€™•…ÑÕÉ•Ì€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°µ½‘•°¤(€€€€€€€…•ÁÑ…¹”€ô…Õ‘¥Ğ¹•Ù…±Õ…Ñ•}…•ÁÑ…¹”¡µ…¥¸°™•…ÑÕÉ•Ì°ÑÉ…­µ…¸¤(€€€€€€€Ñ…á½¹½µä€ô…Õ‘¥Ğ¹Ù…±¥‘…Ñ•}ÑÉ…­µ…¹}Ñ…á½¹½µä¡ÑÉ…­µ…¸¤(€€€€€€€É•Á½ÉĞ€ô…Õ‘¥Ğ¹‰Õ¥±‘}É•Á½ÉĞ¡µ…¥¸°ÑÉ…­µ…¸°™•…ÑÕÉ•Ì°…•ÁÑ…¹”°Ñ…á½¹½µä°É•Á½}É½½ĞõI==P°½¹™¥}Á…Ñ õI==P€¼€‰½¹™¥Ìˆ€¼€‰ÑÉ…­µ…¹}É½ÍÍİ…±­}™É••}½¹Ñ•áÑ}ÁÉ¥½ÉÍ}ØÄ¹©Í½¸ˆ°ÍÉ¥ÁÑ}Á…Ñ õI==P€¼€‰ÍÉ¥ÁÑÌˆ€¼€‰…Õ‘¥Ñ}ÑÉ…­µ…¹}É½ÍÍİ…±­}™É••}½¹Ñ•áÑ}ÁÉ¥½ÉÍ}ØÄ¹Áäˆ°½¹™¥œõ…Õ‘¥Ğ¹±½…‘}½¹ÑÉ…Ñ}½¹™¥œ¡I==P¤¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰…¹½¹¥…±}É•Á½ÉÑ}Í¡„ÈÔØ‰t°…Õ‘¥Ğ¹…¹½¹¥…±}É•Á½ÉÑ}¡…Í ¡É•Á½ÉĞ¤¤(€€€€€€€İ¥Ñ Í•±˜¹…ÍÍ•ÉÑI…¥Í•Ì¡…Õ‘¥Ğ¹½¹Ñ•áÑAÉ¥½ÉÕ‘¥ÑÉÉ½È¤è(€€€€€€€€€€€…Õ‘¥Ğ¹İÉ¥Ñ•}½ÕÑÁÕÑÌ¡É•Á½ÉĞ°…Õ‘¥Ğ¹‰Õ¥±‘}…É•…Ñ•}±½½­ÕÀ¡µ½‘•°¤°I==P€¼€‰™½É‰¥‘‘•¸µ½ÕÑÁÕĞˆ°É•Á½}É½½ĞõI==P¤((€€€‘•˜Ñ•ÍÑ}‘•Ñ•Éµ¥¹¥ÍÑ¥}…É•…Ñ•}É•Á½ÉĞ¡Í•±˜¤è(€€€€€€€ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡…±Í”¤(€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÈÀ°€ÈÀÈÈ¤¤(€€€€€€€µ½‘•°€ô…Õ‘¥Ğ¹‰Õ¥±‘}½¹Ñ•áÑ}ÁÉ¥½É}µ½‘•°¡ÑÉ…­µ…¸°Í•…Í½¹Ìô ÈÀÈÀ°€ÈÀÈÈ¤¤(€€€€€€€™•…ÑÕÉ•Ì€ô…Õ‘¥Ğ¹…ÁÁ±å}½¹Ñ•áÑ}ÁÉ¥½É}™•…ÑÕÉ•Ì¡µ…¥¸°µ½‘•°¤(€€€€€€€…•ÁÑ…¹”€ô…Õ‘¥Ğ¹•Ù…±Õ…Ñ•}…•ÁÑ…¹”¡µ…¥¸°™•…ÑÕÉ•Ì°ÑÉ…­µ…¸¤(€€€€€€€Ñ…á½¹½µä€ô…Õ‘¥Ğ¹Ù…±¥‘…Ñ•}ÑÉ…­µ…¹}Ñ…á½¹½µä¡ÑÉ…­µ…¸¤(€€€€€€€½¹™¥œ€ô…Õ‘¥Ğ¹±½…‘}½¹ÑÉ…Ñ}½¹™¥œ¡I==P¤(€€€€€€€­İ…ÉÌ€ôì‰É•Á½}É½½ĞˆèI==P°€‰½¹™¥}Á…Ñ ˆèI==P€¼€‰½¹™¥Ìˆ€¼€‰ÑÉ…­µ…¹}É½ÍÍİ…±­}™É••}½¹Ñ•áÑ}ÁÉ¥½ÉÍ}ØÄ¹©Í½¸ˆ°€‰ÍÉ¥ÁÑ}Á…Ñ ˆèI==P€¼€‰ÍÉ¥ÁÑÌˆ€¼€‰…Õ‘¥Ñ}ÑÉ…­µ…¹}É½ÍÍİ…±­}™É••}½¹Ñ•áÑ}ÁÉ¥½ÉÍ}ØÄ¹Áäˆ°€‰½¹™¥œˆè½¹™¥ô(€€€€€€€™¥ÉÍĞ€ô…Õ‘¥Ğ¹‰Õ¥±‘}É•Á½ÉĞ¡µ…¥¸°ÑÉ…­µ…¸°™•…ÑÕÉ•Ì°…•ÁÑ…¹”°Ñ…á½¹½µä°€¨©­İ…ÉÌ¤(€€€€€€€Í•½¹€ô…Õ‘¥Ğ¹‰Õ¥±‘}É•Á½ÉĞ¡µ…¥¸°ÑÉ…­µ…¸°™•…ÑÕÉ•Ì°…•ÁÑ…¹”°Ñ…á½¹½µä°€¨©­İ…ÉÌ¤(€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡™¥ÉÍÑl‰…¹½¹¥…±}É•Á½ÉÑ}Í¡„ÈÔØ‰t°Í•½¹‘l‰…¹½¹¥…±}É•Á½ÉÑ}Í¡„ÈÔØ‰t¤(€€€€€€€©Í½¸¹‘ÕµÁÌ¡™¥ÉÍĞ°…±±½İ}¹…¸õ…±Í”¤((€€€‘•˜Ñ•ÍÑ}¥¹Ù…±¥‘}‘½µ…¥¹}ÉÕ¹}¥Í}É•Á½ÉÑ…‰±•}Á}­¥±°¡Í•±˜¤è(€€€€€€€İ¥Ñ Ñ•µÁ™¥±”¹Q•µÁ½É…Éå¥É•Ñ½Éä ¤…Ì‘¥É•Ñ½Éäè(€€€€€€€€€€€‘¥É•Ñ½Éä€ôA…Ñ ¡‘¥É•Ñ½Éä¤(€€€€€€€€€€€µ…¥¸€ôµ…¥¹}™É…µ”  ÈÀÈÈ°¤¤¹½Áä ¤(€€€€€€€€€€€µ…¥¸¹±½lÀ°€‰‰…±±Í}‰•™½É”‰t€ô€Ğ(€€€€€€€€€€€µ…¥¹}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰µ…¥¸¹ÍØˆ(€€€€€€€€€€€Ñµ}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰Ñ´¹ÍØˆ(€€€€€€€€€€€½ÕÑÁÕĞ€ô‘¥É•Ñ½Éä€¼€‰½ÕÑÁÕĞˆ(€€€€€€€€€€€µ…¥¸¹Ñ½}ÍØ¡µ…¥¹}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€ÑÉ…­µ…¹}™É…µ”¡…±Í”¤¹Ñ½}ÍØ¡Ñµ}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€É•Á½ÉĞ°Á…Ñ¡Ì€ô…Õ‘¥Ğ¹ÉÕ¹}™É½µ}Á…Ñ¡Ì¡µ…¥¹}Á…Ñ °Ñµ}Á…Ñ °½ÕÑÁÕĞ°I==P¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰…•ÁÑ…¹”‰ul‰Ù•É‘¥Ğ‰t°€‰A}-%10ˆ¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰…•ÁÑ…¹”‰ul‰­¥±±}É•…Í½¹Ì‰t°l‰=9QaQ}=5%9}9=Q}AI=Y8‰t¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑ…±Í”¡É•Á½ÉÑl‰™•…ÑÕÉ•}½ÕÑÁÕÑ}…Ù…¥±…‰±”‰t¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ”¡Á…Ñ¡ÍlÁt¹•á¥ÍÑÌ ¤¤((€€€‘•˜Ñ•ÍÑ}¥¹Ù…±¥‘}ÑÉ…­µ…¹}½¹Ñ•áÑ}ÉÕ¹}¥Í}É•Á½ÉÑ…‰±•}Á}­¥±°¡Í•±˜¤è(€€€€€€€İ¥Ñ Ñ•µÁ™¥±”¹Q•µÁ½É…Éå¥É•Ñ½Éä ¤…Ì‘¥É•Ñ½Éäè(€€€€€€€€€€€‘¥É•Ñ½Éä€ôA…Ñ ¡‘¥É•Ñ½Éä¤(€€€€€€€€€€€µ…¥¹}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰µ…¥¸¹ÍØˆ(€€€€€€€€€€€Ñµ}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰Ñ´¹ÍØˆ(€€€€€€€€€€€µ…¥¹}™É…µ”  ÈÀÈÈ°¤¤¹Ñ½}ÍØ¡µ…¥¹}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€¥¹Ù…±¥‘}ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡…±Í”¤¹½Áä ¤(€€€€€€€€€€€¥¹Ù…±¥‘}ÑÉ…­µ…¸¹±½lÀ°€‰½ÕÑÍ}‰•™½É”‰t€ô€Ì(€€€€€€€€€€€¥¹Ù…±¥‘}ÑÉ…­µ…¸¹Ñ½}ÍØ¡Ñµ}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€É•Á½ÉĞ°|€ô…Õ‘¥Ğ¹ÉÕ¹}™É½µ}Á…Ñ¡Ì¡µ…¥¹}Á…Ñ °Ñµ}Á…Ñ °‘¥É•Ñ½Éä€¼€‰½ÕÑÁÕĞˆ°I==P¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰…•ÁÑ…¹”‰ul‰Ù•É‘¥Ğ‰t°€‰A}-%10ˆ¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰…•ÁÑ…¹”‰ul‰­¥±±}É•…Í½¹Ì‰t°l‰=9QaQ}=5%9}9=Q}AI=Y8‰t¤((€€€‘•˜Ñ•ÍÑ}É…İ}µ¥ÍÍ¥¹}ÑÉ…­µ…¹}™…µ¥±å}¥Í}Ñ…á½¹½µå}­¥±±}¹½Ñ}Õ¹•áÁ•Ñ•¡Í•±˜¤è(€€€€€€€İ¥Ñ Ñ•µÁ™¥±”¹Q•µÁ½É…Éå¥É•Ñ½Éä ¤…Ì‘¥É•Ñ½Éäè(€€€€€€€€€€€‘¥É•Ñ½Éä€ôA…Ñ ¡‘¥É•Ñ½Éä¤(€€€€€€€€€€€µ…¥¹}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰µ…¥¸¹ÍØˆ(€€€€€€€€€€€Ñµ}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰Ñ´¹ÍØˆ(€€€€€€€€€€€µ…¥¹}™É…µ”  ÈÀÈÈ°¤¤¹Ñ½}ÍØ¡µ…¥¹}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€¥¹Ù…±¥‘}ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡…±Í”¤¹½Áä ¤(€€€€€€€€€€€¥¹Ù…±¥‘}ÑÉ…­µ…¸¹±½lÀ°€‰Á¥Ñ¡}ÑåÁ•}É½ÕÀ‰t€ô9½¹”(€€€€€€€€€€€¥¹Ù…±¥‘}ÑÉ…­µ…¸¹Ñ½}ÍØ¡Ñµ}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€É•Á½ÉĞ°|€ô…Õ‘¥Ğ¹ÉÕ¹}™É½µ}Á…Ñ¡Ì¡µ…¥¹}Á…Ñ °Ñµ}Á…Ñ °‘¥É•Ñ½Éä€¼€‰½ÕÑÁÕĞˆ°I==P¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰…•ÁÑ…¹”‰ul‰Ù•É‘¥Ğ‰t°€‰A}-%10ˆ¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰…•ÁÑ…¹”‰ul‰­¥±±}É•…Í½¹Ì‰t°l‰Qa=9=5e}9=Q}AI=Y8‰t¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰Ñ…á½¹½µä‰ul‰µ¥ÍÍ¥¹}É½İÌ‰t°€Ä¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰Ñ…á½¹½µä‰ul‰Õ¹•áÁ•Ñ•‘}É½İÌ‰t°€À¤((€€€‘•˜Ñ•ÍÑ}½ÕÑ}½™}Í½Á•}Í•…Í½¹}¥Í}Ñ•µÁ½É…±}­¥±°¡Í•±˜¤è(€€€€€€€İ¥Ñ Ñ•µÁ™¥±”¹Q•µÁ½É…Éå¥É•Ñ½Éä ¤…Ì‘¥É•Ñ½Éäè(€€€€€€€€€€€‘¥É•Ñ½Éä€ôA…Ñ ¡‘¥É•Ñ½Éä¤(€€€€€€€€€€€µ…¥¹}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰µ…¥¸¹ÍØˆ(€€€€€€€€€€€Ñµ}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰Ñ´¹ÍØˆ(€€€€€€€€€€€µ…¥¹}™É…µ”  ÈÀÈÈ°¤¤¹Ñ½}ÍØ¡µ…¥¹}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€¥¹Ù…±¥‘}ÑÉ…­µ…¸€ôÑÉ…­µ…¹}™É…µ”¡…±Í”¤¹½Áä ¤(€€€€€€€€€€€¥¹Ù…±¥‘}ÑÉ…­µ…¸¹±½lÀ°€‰Í•…Í½¸‰t€ô€ÈÀÈÔ(€€€€€€€€€€€¥¹Ù…±¥‘}ÑÉ…­µ…¸¹Ñ½}ÍØ¡Ñµ}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€É•Á½ÉĞ°|€ô…Õ‘¥Ğ¹ÉÕ¹}™É½µ}Á…Ñ¡Ì¡µ…¥¹}Á…Ñ °Ñµ}Á…Ñ °‘¥É•Ñ½Éä€¼€‰½ÕÑÁÕĞˆ°I==P¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰…•ÁÑ…¹”‰ul‰Ù•É‘¥Ğ‰t°€‰A}-%10ˆ¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰…•ÁÑ…¹”‰ul‰­¥±±}É•…Í½¹Ì‰t°l‰Q5A=I1}UM1%Qe}9=Q}AI=Y8‰t¤((€€€‘•˜Ñ•ÍÑ}Ù…±¥‘}ÉÕ¹}É•Á½ÉÑ}É•½É‘Í}‘•Ñ•Éµ¥¹¥Íµ}•Ù¥‘•¹”¡Í•±˜¤è(€€€€€€€İ¥Ñ Ñ•µÁ™¥±”¹Q•µÁ½É…Éå¥É•Ñ½Éä ¤…Ì‘¥É•Ñ½Éäè(€€€€€€€€€€€‘¥É•Ñ½Éä€ôA…Ñ ¡‘¥É•Ñ½Éä¤(€€€€€€€€€€€µ…¥¹}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰µ…¥¸¹ÍØˆ(€€€€€€€€€€€Ñµ}Á…Ñ €ô‘¥É•Ñ½Éä€¼€‰Ñ´¹ÍØˆ(€€€€€€€€€€€µ…¥¹}™É…µ”  ÈÀÈÀ°€ÈÀÈÈ°€ÈÀÈĞ¤¤¹Ñ½}ÍØ¡µ…¥¹}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€ÑÉ…­µ…¹}™É…µ”¡QÉÕ”¤¹Ñ½}ÍØ¡Ñµ}Á…Ñ °¥¹‘•àõ…±Í”¤(€€€€€€€€€€€É•Á½ÉĞ°|€ô…Õ‘¥Ğ¹ÉÕ¹}™É½µ}Á…Ñ¡Ì¡µ…¥¹}Á…Ñ °Ñµ}Á…Ñ °‘¥É•Ñ½Éä€¼€‰½ÕÑÁÕĞˆ°I==P¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑÅÕ…°¡É•Á½ÉÑl‰…•ÁÑ…¹”‰ul‰Ù•É‘¥Ğ‰t°€‰A}AMLˆ¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ”¡É•Á½ÉÑl‰…•ÁÑ…¹”‰ul‰‘•Ñ•Éµ¥¹¥Í´‰ul‰Ñ•ÍÑ•‰t¤(€€€€€€€€€€€Í•±˜¹…ÍÍ•ÉÑQÉÕ”¡É•Á½ÉÑl‰…•ÁÑ…¹”‰ul‰‘•Ñ•Éµ¥¹¥Í´‰ul‰½µÁ±•Ñ•}™•…ÑÕÉ•}½ÕÑÁÕÑ}•ÅÕ…°‰t¤(()¥˜}}¹…µ•}|€ôô€‰}}µ…¥¹}|ˆè(€€€Õ¹¥ÑÑ•ÍĞ¹µ…¥¸ ¤
+import copy
+import json
+import math
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+import pandas as pd
+
+SCRIPT_DIR = Path(__file__).resolve().parents[1] / "scripts"
+sys.path.insert(0, str(SCRIPT_DIR))
+import audit_trackman_crosswalk_free_context_priors_v1 as audit  # noqa: E402
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def main_frame(seasons=(2019, 2020, 2022, 2023, 2024, 2025)):
+    rows = []
+    for index, season in enumerate(seasons):
+        rows.append({
+            "row_id": f"main-{season}-{index}", "season": season,
+            "balls_before": index % 4, "strikes_before": index % 3,
+            "outs_before": index % 3,
+        })
+    return pd.DataFrame(rows, columns=audit.MAIN_PROJECTION)
+
+
+def trackman_frame(include_2024=True):
+    rows = []
+    families = audit.FAMILIES
+    # 2019 is the only history for 2020--2024.  The first context has a
+    # supported L0 and a non-zero deviation from the global prior.
+    for index in range(120):
+        rows.append({"season": 2019, "balls_before": 0, "strikes_before": 0, "outs_before": 0, "pitch_type_group": families[index % 2]})
+    for index in range(50):
+        rows.append({"season": 2019, "balls_before": 0, "strikes_before": 0, "outs_before": 1, "pitch_type_group": families[2 + (index % 2)]})
+    for index in range(10):
+        rows.append({"season": 2019, "balls_before": 1, "strikes_before": 0, "outs_before": 0, "pitch_type_group": families[index % 4]})
+    if include_2024:
+        for index in range(40):
+            rows.append({"season": 2024, "balls_before": 3, "strikes_before": 2, "outs_before": 2, "pitch_type_group": families[index % 4]})
+    return pd.DataFrame(rows, columns=audit.TRACKMAN_PROJECTION)
+
+
+class ContractAndFirewallTests(unittest.TestCase):
+    def test_runtime_config_and_static_firewall(self):
+        config = audit.load_contract_config(ROOT)
+        self.assertEqual(config["contract_version"], audit.CONTRACT_VERSION)
+        static = audit.static_contract(ROOT)
+        self.assertTrue(static["static_pass"])
+        self.assertFalse(static["target_access"])
+        self.assertFalse(static["trackman_entity_access"])
+        self.assertFalse(static["trackman_physics_access"])
+        self.assertFalse(static["backoff_level_is_model_feature"])
+
+    def test_config_divergence_fails_closed(self):
+        config = audit.load_contract_config(ROOT)
+        changed = copy.deepcopy(config)
+        changed["context"]["support_threshold"] = 99
+        with self.assertRaises(audit.ContextPriorAuditError):
+            audit.validate_contract_config(changed)
+
+    def test_projection_rejects_target_entity_and_physics(self):
+        main = main_frame().copy()
+        main["control_success"] = 0
+        with self.assertRaises(audit.ContextPriorAuditError):
+            audit.validate_projection(main)
+        trackman = trackman_frame().copy()
+        trackman["trackman_id"] = "forbidden"
+        with self.assertRaises(audit.ContextPriorAuditError):
+            audit.validate_projection(trackman, trackman=True)
+
+    def test_csv_reader_uses_exact_feature_projections(self):
+        with tempfile.TemporaryDirectory() as directory:
+            main_path = Path(directory) / "train.csv"
+            tm_path = Path(directory) / "trackman.csv"
+            main = main_frame((2019, 2020)).copy()
+            main["control_success"] = [0, 1]
+            main.to_csv(main_path, index=False)
+            trackman_frame(False).to_csv(tm_path, index=False)
+            read_main = audit.read_main_features(main_path)
+            read_tm = audit.read_trackman_features(tm_path)
+            self.assertEqual(tuple(read_main.columns), audit.MAIN_PROJECTION)
+            self.assertEqual(tuple(read_tm.columns), audit.TRACKMAN_PROJECTION)
+            self.assertNotIn("control_success", read_main.columns)
+
+    def test_scoped_readers_ignore_poisoned_target_entities_and_physics(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            main = main_frame((2020, 2022)).copy()
+            main["control_success"] = [0, 1]
+            main["pitcher_id"] = ["p1", "p2"]
+            main["pitcher_team_id"] = ["t1", "t2"]
+            poisoned_main = main.copy()
+            poisoned_main["control_success"] = [1, 0]
+            poisoned_main["pitcher_id"] = ["poison-a", "poison-b"]
+            poisoned_main["pitcher_team_id"] = ["poison-team-a", "poison-team-b"]
+            tm = trackman_frame(True).head(40).copy()
+            tm["pitcher_trackman_id"] = [f"tm-{index}" for index in range(len(tm))]
+            tm["rel_speed"] = 90.0
+            poisoned_tm = tm.copy()
+            poisoned_tm["pitcher_trackman_id"] = "poisoned"
+            poisoned_tm["rel_speed"] = -999.0
+            main_path = directory / "main.csv"
+            poisoned_main_path = directory / "poisoned-main.csv"
+            tm_path = directory / "tm.csv"
+            poisoned_tm_path = directory / "poisoned-tm.csv"
+            main.to_csv(main_path, index=False)
+            poisoned_main.to_csv(poisoned_main_path, index=False)
+            tm.to_csv(tm_path, index=False)
+            poisoned_tm.to_csv(poisoned_tm_path, index=False)
+            clean_main = audit.read_main_features(main_path)
+            changed_main = audit.read_main_features(poisoned_main_path)
+            clean_tm = audit.read_trackman_features(tm_path)
+            changed_tm = audit.read_trackman_features(poisoned_tm_path)
+            clean_features = audit.apply_context_prior_features(clean_main, audit.build_context_prior_model(clean_tm, seasons=(2020, 2022)))
+            changed_features = audit.apply_context_prior_features(changed_main, audit.build_context_prior_model(changed_tm, seasons=(2020, 2022)))
+            pd.testing.assert_frame_equal(clean_main, changed_main)
+            pd.testing.assert_frame_equal(clean_tm, changed_tm)
+            pd.testing.assert_frame_equal(clean_features, changed_features)
+
+    def test_invalid_context_is_domain_kill_not_sparse_fallback(self):
+        bad = main_frame((2022,)).copy()
+        bad.loc[0, "balls_before"] = 4
+        with self.assertRaises(audit.ContextDomainNotProven):
+            bad_trackman = trackman_frame(False).copy()
+            bad_trackman.loc[0, "outs_before"] = 3
+            audit.build_context_prior_model(bad_trackman)
+        with self.assertRaises(audit.ContextDomainNotProven):
+            audit.apply_context_prior_features(bad, audit.build_context_prior_model(trackman_frame(False)))
+
+    def test_missing_trackman_family_is_taxonomy_failure(self):
+        trackman = trackman_frame(False).copy()
+        trackman.loc[0, "pitch_type_group"] = None
+        with self.assertRaises(audit.TaxonomyNotProven):
+            audit.build_context_prior_model(trackman)
+
+
+class PriorConstructionTests(unittest.TestCase):
+    def test_strict_prior_season_and_future_poison(self):
+        base = trackman_frame(True)
+        poisoned = base.copy()
+        poisoned.loc[poisoned["season"] == 2024, "pitch_type_group"] = "other"
+        main = main_frame((2022, 2023, 2024, 2025))
+        first = audit.apply_context_prior_features(main, audit.build_context_prior_model(base, seasons=(2022, 2023, 2024, 2025)))
+        second = audit.apply_context_prior_features(main, audit.build_context_prior_model(poisoned, seasons=(2022, 2023, 2024, 2025)))
+        pd.testing.assert_frame_equal(first.iloc[:3].reset_index(drop=True), second.iloc[:3].reset_index(drop=True))
+        self.assertTrue((first.iloc[3][list(audit.FEATURE_COLUMNS[:4])] != second.iloc[3][list(audit.FEATURE_COLUMNS[:4])]).any())
+
+    def test_trackman_row_order_invariance(self):
+        trackman = trackman_frame(True)
+        main = main_frame((2022, 2023, 2024, 2025))
+        first = audit.apply_context_prior_features(main, audit.build_context_prior_model(trackman, seasons=(2022, 2023, 2024, 2025)))
+        shuffled = trackman.sample(frac=1.0, random_state=91).reset_index(drop=True)
+        second = audit.apply_context_prior_features(main, audit.build_context_prior_model(shuffled, seasons=(2022, 2023, 2024, 2025)))
+        pd.testing.assert_frame_equal(first, second)
+
+    def test_runtime_determinism_evidence_rebuilds_complete_output(self):
+        trackman = trackman_frame(True)
+        main = main_frame((2022, 2023, 2024, 2025))
+        model = audit.build_context_prior_model(trackman, seasons=(2022, 2023, 2024, 2025))
+        evidence = audit.assess_determinism(main, trackman, model)
+        self.assertTrue(evidence["tested"])
+        self.assertTrue(evidence["complete_feature_output_equal"])
+        self.assertEqual(evidence["original_feature_output_sha256"], evidence["permuted_feature_output_sha256"])
+
+    def test_other_is_retained_as_fourth_simplex_family(self):
+        model = audit.build_context_prior_model(trackman_frame(False), seasons=(2020,))
+        features = audit.apply_context_prior_features(main_frame((2020,)), model)
+        values = [float(features.loc[0, column]) for column in audit.FEATURE_COLUMNS[:4]]
+        self.assertEqual(len(values), 4)
+        self.assertAlmostEqual(sum(values), 1.0)
+        self.assertTrue(all(math.isfinite(value) for value in values))
+
+    def test_l1_below_100_falls_back_to_global_and_support_is_selected_level(self):
+        model = audit.build_context_prior_model(trackman_frame(False), seasons=(2020,))
+        row = pd.DataFrame([{"row_id": "sparse", "season": 2020, "balls_before": 1, "strikes_before": 0, "outs_before": 0}], columns=audit.MAIN_PROJECTION)
+        features = audit.apply_context_prior_features(row, model)
+        self.assertEqual(features.loc[0, "__backoff_level"], "global")
+        self.assertEqual(features.loc[0, "tm_cf_support"], len(trackman_frame(False)))
+        row_l0 = pd.DataFrame([{"row_id": "dense", "season": 2020, "balls_before": 0, "strikes_before": 0, "outs_before": 0}], columns=audit.MAIN_PROJECTION)
+        dense = audit.apply_context_prior_features(row_l0, model)
+        self.assertEqual(dense.loc[0, "__backoff_level"], "L0")
+        self.assertEqual(dense.loc[0, "tm_cf_support"], 120)
+
+    def test_2019_no_history_is_explicit(self):
+        model = audit.build_context_prior_model(trackman_frame(False), seasons=(2019,))
+        features = audit.apply_context_prior_features(main_frame((2019,)), model)
+        self.assertEqual(features.loc[0, "__backoff_level"], "NO_HISTORY")
+        self.assertEqual(features.loc[0, "tm_cf_support"], 0)
+        self.assertTrue(pd.isna(features.loc[0, "tm_cf_p_fastball"]))
+
+    def test_twelve_2025_count_states_need_no_l1_threshold(self):
+        rows = []
+        for index in range(12):
+            rows.append({"row_id": f"2025-{index}", "season": 2025, "balls_before": index % 4, "strikes_before": index % 3, "outs_before": index % 3})
+        main = pd.DataFrame(rows, columns=audit.MAIN_PROJECTION)
+        features = audit.apply_context_prior_features(main, audit.build_context_prior_model(trackman_frame(False), seasons=(2025,)))
+        self.assertEqual(len(features), 12)
+        self.assertTrue(features["tm_cf_p_fastball"].notna().all())
+        self.assertTrue(set(features["__backoff_level"]).issubset({"L0", "L1", "global"}))
+
+    def test_aggregate_lookup_reproduces_selected_feature_records(self):
+        trackman = trackman_frame(True)
+        main = main_frame((2022, 2023, 2024, 2025))
+        model = audit.build_context_prior_model(trackman, seasons=(2022, 2023, 2024, 2025))
+        features = audit.apply_context_prior_features(main, model)
+        lookup = audit.build_aggregate_lookup(model)
+        self.assertIn("L0", lookup["seasons"]["2022"])
+        self.assertIn("L1", lookup["seasons"]["2022"])
+        for index, row in enumerate(main.to_dict("records")):
+            reproduced = audit.apply_context_prior_lookup_row(row, lookup, int(row["season"]))
+            expected = {column: features.loc[index, column] for column in [*audit.FEATURE_COLUMNS, "__backoff_level"]}
+            self.assertEqual(reproduced, expected)
+        reversed_lookup = audit.build_aggregate_lookup(audit.build_context_prior_model(trackman.iloc[::-1].reset_index(drop=True), seasons=(2022, 2023, 2024, 2025)))
+        self.assertEqual(audit.canonical_hash(lookup), audit.canonical_hash(reversed_lookup))
+
+    def test_entity_and_physics_columns_cannot_affect_features(self):
+        trackman = trackman_frame(False)
+        model = audit.build_context_prior_model(trackman, seasons=(2020,))
+        main = main_frame((2020,))
+        expected = audit.apply_context_prior_features(main, model)
+        self.assertEqual(tuple(trackman.columns), audit.TRACKMAN_PROJECTION)
+        pd.testing.assert_frame_equal(expected, audit.apply_context_prior_features(main, model))
+
+
+class IndependenceAndAcceptanceTests(unittest.TestCase):
+    def test_main_row_add_delete_shuffle_independence(self):
+        model = audit.build_context_prior_model(trackman_frame(True), seasons=(2022, 2023, 2024, 2025))
+        main = main_frame((2022, 2023, 2024))
+        expected = audit.apply_context_prior_features(main, model)
+        augmented = pd.concat([main, main_frame((2025,))], ignore_index=True)
+        augmented_result = audit.apply_context_prior_features(augmented, model)
+        pd.testing.assert_frame_equal(expected, augmented_result.iloc[: len(main)].reset_index(drop=True))
+        shuffled = main.sample(frac=1, random_state=7).reset_index(drop=True)
+        shuffled_result = audit.apply_context_prior_features(shuffled, model)
+        self.assertEqual(set(tuple(row) for row in expected[list(audit.FEATURE_COLUMNS)].to_numpy()), set(tuple(row) for row in shuffled_result[list(audit.FEATURE_COLUMNS)].to_numpy()))
+
+    def test_acceptance_does_not_fail_for_sparse_l1_alone(self):
+        trackman = trackman_frame(False)
+        main = pd.DataFrame([{"row_id": "x", "season": 2020, "balls_before": 1, "strikes_before": 0, "outs_before": 0}], columns=audit.MAIN_PROJECTION)
+        model = audit.build_context_prior_model(trackman, seasons=(2020,))
+        features = audit.apply_context_prior_features(main, model)
+        result = audit.evaluate_acceptance(main, features, trackman)
+        self.assertNotIn("NO_VALID_LEGAL_FALLBACK", result["p_fail_reasons"])
+        self.assertTrue(result["l1_support_below_threshold_is_not_failure"])
+
+    def test_context_variation_collapse_is_p_fail(self):
+        trackman = trackman_frame(False).copy()
+        trackman["pitch_type_group"] = "fastball"
+        model = audit.build_context_prior_model(trackman, seasons=(2020,))
+        main = main_frame((2020,))
+        features = audit.apply_context_prior_features(main, model)
+        result = audit.evaluate_acceptance(main, features, trackman)
+        self.assertIn("CONTEXT_VARIATION_COLLAPSED", result["p_fail_reasons"])
+
+    def test_canonical_report_hash_and_external_output_guard(self):
+        main = main_frame((2020,))
+        trackman = trackman_frame(False)
+        model = audit.build_context_prior_model(trackman, seasons=(2020,))
+        features = audit.apply_context_prior_features(main, model)
+        acceptance = audit.evaluate_acceptance(main, features, trackman)
+        taxonomy = audit.validate_trackman_taxonomy(trackman)
+        report = audit.build_report(main, trackman, features, acceptance, taxonomy, repo_root=ROOT, config_path=ROOT / "configs" / "trackman_crosswalk_free_context_priors_v1.json", script_path=ROOT / "scripts" / "audit_trackman_crosswalk_free_context_priors_v1.py", config=audit.load_contract_config(ROOT))
+        self.assertEqual(report["canonical_report_sha256"], audit.canonical_report_hash(report))
+        with self.assertRaises(audit.ContextPriorAuditError):
+            audit.write_outputs(report, audit.build_aggregate_lookup(model), ROOT / "forbidden-output", repo_root=ROOT)
+
+    def test_deterministic_aggregate_report(self):
+        trackman = trackman_frame(False)
+        main = main_frame((2020, 2022))
+        model = audit.build_context_prior_model(trackman, seasons=(2020, 2022))
+        features = audit.apply_context_prior_features(main, model)
+        acceptance = audit.evaluate_acceptance(main, features, trackman)
+        taxonomy = audit.validate_trackman_taxonomy(trackman)
+        config = audit.load_contract_config(ROOT)
+        kwargs = {"repo_root": ROOT, "config_path": ROOT / "configs" / "trackman_crosswalk_free_context_priors_v1.json", "script_path": ROOT / "scripts" / "audit_trackman_crosswalk_free_context_priors_v1.py", "config": config}
+        first = audit.build_report(main, trackman, features, acceptance, taxonomy, **kwargs)
+        second = audit.build_report(main, trackman, features, acceptance, taxonomy, **kwargs)
+        self.assertEqual(first["canonical_report_sha256"], second["canonical_report_sha256"])
+        json.dumps(first, allow_nan=False)
+
+    def test_invalid_domain_run_is_reportable_p_kill(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            main = main_frame((2022,)).copy()
+            main.loc[0, "balls_before"] = 4
+            main_path = directory / "main.csv"
+            tm_path = directory / "tm.csv"
+            output = directory / "output"
+            main.to_csv(main_path, index=False)
+            trackman_frame(False).to_csv(tm_path, index=False)
+            report, paths = audit.run_from_paths(main_path, tm_path, output, ROOT)
+            self.assertEqual(report["acceptance"]["verdict"], "P_KILL")
+            self.assertEqual(report["acceptance"]["kill_reasons"], ["CONTEXT_DOMAIN_NOT_PROVEN"])
+            self.assertFalse(report["feature_output_available"])
+            self.assertTrue(paths[0].exists())
+
+    def test_invalid_trackman_context_run_is_reportable_p_kill(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            main_path = directory / "main.csv"
+            tm_path = directory / "tm.csv"
+            main_frame((2022,)).to_csv(main_path, index=False)
+            invalid_trackman = trackman_frame(False).copy()
+            invalid_trackman.loc[0, "outs_before"] = 3
+            invalid_trackman.to_csv(tm_path, index=False)
+            report, _ = audit.run_from_paths(main_path, tm_path, directory / "output", ROOT)
+            self.assertEqual(report["acceptance"]["verdict"], "P_KILL")
+            self.assertEqual(report["acceptance"]["kill_reasons"], ["CONTEXT_DOMAIN_NOT_PROVEN"])
+
+    def test_raw_missing_trackman_family_is_taxonomy_kill_not_unexpected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            main_path = directory / "main.csv"
+            tm_path = directory / "tm.csv"
+            main_frame((2022,)).to_csv(main_path, index=False)
+            invalid_trackman = trackman_frame(False).copy()
+            invalid_trackman.loc[0, "pitch_type_group"] = None
+            invalid_trackman.to_csv(tm_path, index=False)
+            report, _ = audit.run_from_paths(main_path, tm_path, directory / "output", ROOT)
+            self.assertEqual(report["acceptance"]["verdict"], "P_KILL")
+            self.assertEqual(report["acceptance"]["kill_reasons"], ["TAXONOMY_NOT_PROVEN"])
+            self.assertEqual(report["taxonomy"]["missing_rows"], 1)
+            self.assertEqual(report["taxonomy"]["unexpected_rows"], 0)
+
+    def test_out_of_scope_season_is_temporal_kill(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            main_path = directory / "main.csv"
+            tm_path = directory / "tm.csv"
+            main_frame((2022,)).to_csv(main_path, index=False)
+            invalid_trackman = trackman_frame(False).copy()
+            invalid_trackman.loc[0, "season"] = 2025
+            invalid_trackman.to_csv(tm_path, index=False)
+            report, _ = audit.run_from_paths(main_path, tm_path, directory / "output", ROOT)
+            self.assertEqual(report["acceptance"]["verdict"], "P_KILL")
+            self.assertEqual(report["acceptance"]["kill_reasons"], ["TEMPORAL_CAUSALITY_NOT_PROVEN"])
+
+    def test_valid_run_report_records_determinism_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            main_path = directory / "main.csv"
+            tm_path = directory / "tm.csv"
+            main_frame((2020, 2022, 2024)).to_csv(main_path, index=False)
+            trackman_frame(True).to_csv(tm_path, index=False)
+            report, _ = audit.run_from_paths(main_path, tm_path, directory / "output", ROOT)
+            self.assertEqual(report["acceptance"]["verdict"], "P_PASS")
+            self.assertTrue(report["acceptance"]["determinism"]["tested"])
+            self.assertTrue(report["acceptance"]["determinism"]["complete_feature_output_equal"])
+
+
+if __name__ == "__main__":
+    unittest.main()

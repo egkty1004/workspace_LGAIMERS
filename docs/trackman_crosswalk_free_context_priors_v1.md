@@ -1,1 +1,112 @@
-‰×z-~)İ©~Šî±êÈ]zçŞÄ®º+r§‚)à‚º.¦‡é‰İ‚‚º.¥Ú²z-{¬´ŒQÉ…­5…¸É½ÍÍİ…±¬µÉ•”½¹Ñ•áĞAÉ¥½ÉÌØÄ()Q¡¥Ì‘½Õµ•¹Ğ™É••é•ÌÑ¡”µ½‘•°µ™É•”°•¹Ñ¥Ñäµ™É•”™•…ÑÕÉ”µ™•…Í¥‰¥±¥Ñä…Õ‘¥Ğ)™½È…¥µ•ÉÌäµÑÉ…­µ…¸µÉ½ÍÍİ…±¬µ™É•”µ½¹Ñ•áĞµÁÉ¥½ÉÌµØÅ€¸%Ğ¥Ì„¹•ÜÉ½ÕÑ”)…™Ñ•ÈÉ½ÍÍİ…±¬ØÄ…¹É•Á•ÉÑ½¥É”É½ÍÍİ…±¬ØÈ‰½Ñ ™…¥±•±½Í•ì¥Ğ‘½•Ì¹½Ğ)É•ÑÕ¹”•¥Ñ¡•ÈÉ½ÍÍİ…±¬…¹‘½•Ì¹½Ğ…ÕÑ¡½É¥é”QÉ…­5…¸µ½‘•±¥¹œ¸((ŒŒM½Á”…¹™¥É•İ…±°()Q¡”µ…¥¸ÁÉ½©•Ñ¥½¸¥Ì•á…Ñ±äÉ½İ}¥‘€°Í•…Í½¹€°‰…±±Í}‰•™½É•€°)ÍÑÉ¥­•Í}‰•™½É•€°…¹½ÕÑÍ}‰•™½É•€¸Q¡”QÉ…­5…¸ÁÉ½©•Ñ¥½¸¥Ì•á…Ñ±ä)Í•…Í½¹€°‰…±±Í}‰•™½É•€°ÍÑÉ¥­•Í}‰•™½É•€°½ÕÑÍ}‰•™½É•€°…¹)Á¥Ñ¡}ÑåÁ•}É½ÕÁ€¸9¼Á±…å•È½Ñ•…´½…µ”¥‘•¹Ñ¥Ñä°É…Ü%°Ñ…É•Ğ°Ñ•ÍĞÉ½Ü°)±•…‘•É‰½…É°•áÑ•É¹…°Í½ÕÉ”°QÉ…­5…¸Á¡åÍ¥Ì°½ÈÕÉÉ•¹ĞµÁ¥Ñ µ•…ÍÕÉ•µ•¹Ğ)¥ÌÉ•…¸!¥ÍÑ½É¥…°Á¥Ñ¡}ÑåÁ•}É½ÕÁ€¥ÌÕÍ•½¹±ä…Ì…¸…É•…Ñ”±…‰•°¸)1•Ù•°H•á…ĞÁ¥Ñ µÉ½Üµ…Ñ¡¥¹œÉ•µ…¥¹Ì½ÕĞ½˜Í½Á”¸((ŒŒÉ½é•¸½¹Ñ•áĞ…¹Ñ•µÁ½É…°½¹ÑÉ…Ğ()½È„µ…¥¸É½Ü¥¸Í•…Í½¸M€°½¹±äQÉ…­5…¸É½İÌİ¥Ñ Í•…Í½¸€ğM€…É”±•…°¸)Q¡”±½½­ÕÀ¥Ì­•å•‰äÑ¡”Í•…Í½¸½±Õµ¸ìÍ½ÕÉ”É½Ü½É‘•È¥Ì¹•Ù•ÈÑÉ•…Ñ•…Ì)¡É½¹½±½ä¸€ÈÀÄäÉ½Üİ¥Ñ ¹¼ÁÉ¥½È¡¥ÍÑ½Éä¡…Ìµ¥ÍÍ¥¹œÁÉ½‰…‰¥±¥ÑäÍÕµµ…É¥•Ì°)ÍÕÁÁ½ÉĞ€Á€°…¹9=}!%MQ=Ie€¸M…µ”µÍ•…Í½¸…¹™ÕÑÕÉ”µÍ•…Í½¸É½İÌ…É”¹•Ù•È)ÕÍ•¸()I•ÅÕ¥É•½¹Ñ•áÑÌ…É”¥¹Ñ••Èµ±¥­”…¹±•…°½¹±ä¥¸Ñ¡•Í”‘½µ…¥¹Ìè((´‰…±±Í}‰•™½É•€è€À¸¸Í€(´ÍÑÉ¥­•Í}‰•™½É•€è€À¸¸É€(´½ÕÑÍ}‰•™½É•€è€À¸¸É€()5¥ÍÍ¥¹œ½È½ÕĞµ½˜µ‘½µ…¥¸½¹Ñ•áĞ½‰Í•ÉÙ•¥¸Ñ¡”½™™¥¥…°ÁÉ½©•Ñ•‘…Ñ„¥Ì)=9QaQ}=5%9}9=Q}AI=Y9€…¹™…¥±Ì±½Í•¸±•…°‰ÕĞÍÁ…ÉÍ”½¹Ñ•áĞ¥Ì)¹½Ğ¥¹Ù…±¥…¹™½±±½İÌÑ¡”™É½é•¸0À€´ø0Ä€´ø±½‰…±€¡¥•É…É¡äè()9½¹¥¹Ñ•É…°°½ÕĞµ½˜µÍ½Á”°½È™ÕÑÕÉ”Í•…Í½¸Ù…±Õ•Ì…É”±¥­•İ¥Í”)Q5A=I1}UM1%Qe}9=Q}AI=Y9€ìÑ¡”ÉÕ¸É•Á½ÉÑÌÑ¡…ĞÁÉ•É•ÅÕ¥Í¥Ñ”…Ì…¸)…É•…Ñ”A}-%11€É…Ñ¡•ÈÑ¡…¸Í¥±•¹Ñ±ä™¥±Ñ•É¥¹œÑ¡”É½İÌ¸((Ä¸0À€ô€¡‰…±±Í}‰•™½É”°ÍÑÉ¥­•Í}‰•™½É”°½ÕÑÍ}‰•™½É”¥€İ¡•¸ÍÕÁÁ½ÉĞ¥Ì…Ğ±•…ÍĞ(€€€ÄÀÀì(È¸0Ä€ô€¡‰…±±Í}‰•™½É”°ÍÑÉ¥­•Í}‰•™½É”¥€İ¡•¸¥ÑÌÍÕÁÁ½ÉĞ¥Ì…Ğ±•…ÍĞ€ÄÀÀì(Ì¸½Ñ¡•Éİ¥Í”Ñ¡”ÍÑÉ¥ĞµÁÉ¥½È±½‰…°¡¥ÍÑ½Éä¸()Q¡”0ÄÑ¡É•Í¡½±¥Ì¹½Ğ…¸…•ÁÑ…¹”…Ñ”¸%¸Á…ÉÑ¥Õ±…È°0ÄÍÕÁÁ½ÉĞ‰•±½Ü(ÄÀÀ¥Ì…±±½İ•Ñ¼™…±°‰…¬Ñ¼±½‰…°°…¹„Íå¹Ñ¡•Ñ¥Œ€ÈÀÈÔ™¥áÑÕÉ”İ¥Ñ €ÄÈ)½Õ¹ĞÍÑ…Ñ•Ì‘½•Ì¹½ĞÉ•ÅÕ¥É”0ÄÍÕÁÁ½ÉĞ½˜€ÄÀÀ¸Ñµ}™}ÍÕÁÁ½ÉÑ€¥Ì•á…Ñ±äÑ¡”)¡¥ÍÑ½É¥…°QÉ…­5…¸É½Ü½Õ¹Ğ…ĞÑ¡”Í•±•Ñ•±•Ù•°è0ÀÍÕÁÁ½ÉĞ™½È0À°0Ä)ÍÕÁÁ½ÉĞ™½È0Ä°±½‰…°ÍÕÁÁ½ÉĞ™½È±½‰…°°…¹é•É¼™½È9=}!%MQ=Ie€¸Q¡”)Í•±•Ñ•±•Ù•°¥Ì…Õ‘¥Ğµ½¹±ä…¹¥Ì¹½Ğ„™¥ÉÍĞµµ½‘•°™•…ÑÕÉ”¸((ŒŒQ…á½¹½µä…¹™•…ÑÕÉ”™…µ¥±ä()Q¡”™½ÕÈQÉ…­5…¸™…µ¥±¥•Ì…É”É•Ñ…¥¹•‘¥É•Ñ±äè™…ÍÑ‰…±±€°‰É•…­¥¹€°)½™™ÍÁ••‘€°…¹½Ñ¡•É€¸5¥ÍÍ¥¹œ½ÈÕ¹•áÁ•Ñ•É½ÕÁÌ™…¥°±½Í•ì½Ñ¡•É€¥Ì)¹½ĞÉ•‘¥ÍÑÉ¥‰ÕÑ•¸Ğ„Í•±•Ñ•±•Ù•°°Ñ¡”™½ÕÈÁÉ½‰…‰¥±¥Ñ¥•Ì…É”•µÁ¥É¥…°)™…µ¥±ä½Õ¹ÑÌ‘¥Ù¥‘•‰äÍ•±•Ñ•µ±•Ù•°ÍÕÁÁ½ÉĞ¸Q¡”Í…µ”™…µ¥±ä¥Ù•Ìè((´Ñµ}™}Á}™…ÍÑ‰…±±€°Ñµ}™}Á}‰É•…­¥¹€°Ñµ}™}Á}½™™ÍÁ••‘€°(€Ñµ}™}Á}½Ñ¡•É€ì(´¹½Éµ…±¥é•™½ÕÈµ™…µ¥±ä•¹ÑÉ½Áä(€€µÍÕ´¡À©±½œ¡À¤¤½±½œ Ğ¥€°İ¥Ñ €À©±½œ À¤ôÁ€ì(´Ñµ}™}ÍÕÁÁ½ÉÑ€ì(´Ñµ}™}½¹Ñ•áÑ}ÙÍ}±½‰…±}ÑØ€ô€À¸Ô€¨ÍÕ´¡…‰Ì¡Á}Í•±•Ñ•€´Á}±½‰…°¤¥€¸()9¼¥É¥¡±•ĞÁÉ¥½È°Ñ…É•Ğµ‘•É¥Ù•Íµ½½Ñ¡¥¹œ°¥‘•¹Ñ¥Ñäµ…ÁÁ¥¹œ°Ñ•ÍĞµ‘•É¥Ù•)™…±±‰…¬°½ÈÉ½ÍÌµÉ½Ü…‘©ÕÍÑµ•¹Ğ¥ÌÕÍ•¸AÉ½‰…‰¥±¥Ñ¥•Ì…É”™¥¹¥Ñ”…¹ÍÕ´Ñ¼)½¹”İ¥Ñ¡¥¸Ñ¡”™É½é•¸Ñ½±•É…¹”İ¡•¹•Ù•È¡¥ÍÑ½Éä•á¥ÍÑÌì¹¼µ¡¥ÍÑ½ÉäÍÕµµ…É¥•Ì)…É”•áÁ±¥¥Ñ±ä¹Õ±°¸((ŒŒMÑÉÕÑÕÉ…°…•ÁÑ…¹”()Q¡”É•Á½ÉĞÁÉ½Ù¥‘•ÌÁ•ÈµÍ•…Í½¸0À½0Ä½±½‰…°½9=}!%MQ=Id½Õ¹ÑÌ…¹™É…Ñ¥½¹Ì°)ÍÕÁÁ½ÉĞ°™¥¹¥Ñ”½Í¥µÁ±•à°…¹µ¥ÍÍ¥¹¹•ÍÌ‘¥…¹½ÍÑ¥Ì¸Q¡”µ½‘•°µ™É•”É•ÍÕ±Ğ¥Ìè((´A}-%11€™½È…¸¥¹Ù…±¥É•ÅÕ¥É•‘½µ…¥¸°Ñ…á½¹½µä™…¥±ÕÉ”°Ñ•µÁ½É…°½™¥É•İ…±°(€™…¥±ÕÉ”°½È¥¹…‰¥±¥ÑäÑ¼•ÍÑ…‰±¥Í Ñ¡”…ÕÍ…°½¹ÑÉ…Ğì(´A}%1€½¹±äİ¡•¸±•…°É½İÌ…¹¹½ĞÉ••¥Ù”Ù…±¥™…±±‰…¬½ÕÑÁÕĞ°½¹Ñ•áÑÕ…°(€0À½0ÄÕÍ…”¥Ì±½‰…±±äé•É¼°•Ù•Éä½¹Ñ•áÑÕ…°ÁÉ¥½È½±±…ÁÍ•ÌÑ¼¥ÑÌ±½‰…°(€ÁÉ¥½È°½È™¥¹¥Ñ”½Í¥µÁ±•à½‘•Ñ•Éµ¥¹¥Í´¥¹Ù…É¥…¹ÑÌ™…¥°ì(´A}AMM€İ¡•¸Ñ¡”ÁÉ•É•ÅÕ¥Í¥Ñ•Ì…¹ÍÑÉÕÑÕÉ…°¥¹Ù…É¥…¹ÑÌÁ…ÍÌ¸()Q¡”½™™¥¥…°ÉÕ¸É•‰Õ¥±‘ÌÑ¡”½µÁ±•Ñ”™•…ÑÕÉ”½ÕÑÁÕĞ…™Ñ•È„™¥á•É•Ù•ÉÍ…°½˜)Ñ¡”QÉ…­5…¸¥¹ÁÕĞÉ½İÌ¸Q¡”½É¥¥¹…°…¹É•‰Õ¥±Ğ½ÕÑÁÕĞ¡…Í¡•Ì…É”É•½É‘•)Õ¹‘•È…•ÁÑ…¹”¹‘•Ñ•Éµ¥¹¥Íµ€ì„µ¥Íµ…Ñ …‘‘Ì)%9%Q}M%5A1a}=I}QI5%9%M5}%1UI€¸½µ…¥¸…¹Ñ…á½¹½µäÁÉ•É•ÅÕ¥Í¥Ñ•Ì…É”)É•Á½ÉÑ•…Ì…É•…Ñ”A}-%11€É•ÍÕ±ÑÌİ¥Ñ „‘•Ñ•Éµ¥¹¥ÍÑ¥ŒÉ•…Í½¸…¹‘¼¹½Ğ)•ĞÉ•¥¹Ñ•ÉÁÉ•Ñ•…Ì½É‘¥¹…ÉäA}%0½ÕÑ½µ•Ì¸=Ñ¡•ÈÉ•…‘•È½Í¡•µ„™…¥±ÕÉ•Ì)É•µ…¥¸•á•ÕÑ¥½¸•ÉÉ½ÉÌ¸()MÁ…ÉÍ”±•…°½¹Ñ•áÑÌ…É”¹½Ğ„™…¥±ÕÉ”µ•É•±ä‰•…ÕÍ”Ñ¡•¥È0ÄÍÕÁÁ½ÉĞ¥Ì)‰•±½Ü€ÄÀÀ¸Q¡”‰…­½™˜±•Ù•°¥ÌÉ•Ñ…¥¹•™½È…Õ‘¥Ğ‘¥…¹½ÍÑ¥Ì‰ÕĞ¥Ì•á±Õ‘•)™É½´Ñ¡”™¥ÉÍĞµ½‘•°™•…ÑÕÉ”Í•Ğ¸((ŒŒ=ÕÑÁÕÑÌ…¹™ÕÑÕÉ”ÍÑ…•Ì()Q¡”™ÕÑÕÉ”½™™¥¥…°ÉÕ¸İÉ¥Ñ•Ì…É•…Ñ”µ½¹±ä)M=8½5…É­‘½İ¸Á±ÕÌ„½µÁ…Ğ)½¹Ñ•áĞ±½½­ÕÀ½ÕÑÍ¥‘”Ñ¡”É•Á½Í¥Ñ½Éä¸Q¡”±½½­ÕÀ¥Ì„É•ÁÉ½‘Õ¥‰±”…É•…Ñ”)…ÉÑ¥™…Ğè™½È•Ù•ÉäÕÑ½™˜Í•…Í½¸¥Ğ½¹Ñ…¥¹Ì‘•Ñ•Éµ¥¹¥ÍÑ¥ŒÍÑÉ¥¹œµ•¹½‘•0À)…¹0Ä½¹Ñ•áĞ­•åÌ°±½‰…°½0À½0ÄÍÕÁÁ½ÉĞ°™½ÕÈ™…µ¥±ä½Õ¹ÑÌ°ÁÉ½‰…‰¥±¥Ñ¥•Ì°)•¹ÑÉ½Áä°…¹½¹Ñ•áĞµÙÌµ±½‰…°QX¸Íå¹Ñ¡•Ñ¥ŒÉ•…‘•È…¸É•ÁÉ½‘Õ”Ñ¡”)Í•±•Ñ•™•…ÑÕÉ”É•½É™É½´Ñ¡¥Ì±½½­ÕÀ¸%Ğ½¹Ñ…¥¹Ì¹¼É½Ü%Ì°•¹Ñ¥Ñ¥•Ì°½È)É…ÜÉ½İÌ¸Q¡”½ÕÑÁÕĞÉ•©•ÑÌ‘¥É•Ñ½É¥•Ì¥¹Í¥‘”Ñ¡”É•Á½Í¥Ñ½Éä…¹Í•É¥…±¥é•Ì)İ¥Ñ …±±½İ}¹…¸õ…±Í•€¸I•Á½ÉÑÌ½¹Ñ…¥¸¡…Í¡•Ì°½Õ¹ÑÌ°Í½Á”™±…Ì°…¹)ÍÕÁÁ½ÉĞ½‰…­½™˜…É•…Ñ•Ì°¹•Ù•ÈÉ½Üµ%±¥ÍÑÌ°Ñ…É•ÑÌ°•¹Ñ¥Ñ¥•Ì°Á¡åÍ¥Ì°½È)É…ÜÉ½İÌ¸()Q¡¥Ì¥µÁ±•µ•¹Ñ…Ñ¥½¸¥ÌÑ¡”µ½‘•°µ™É•”™•…Í¥‰¥±¥ÑäÁ¡…Í”½¹±ä¸A}AMM€‘½•Ì)¹½Ğ…ÕÑ¡½É¥é”„…Ñ	½½ÍĞ™•…ÑÕÉ”µ±…ˆÉÕ¸ìÑ¡…ĞÉ•ÅÕ¥É•Ì„Í•Á…É…Ñ”É•Ù¥•İ•)áÁ•É¥µ•¹Ğ	É¥•˜¸¹ä™•…ÑÕÉ”µ±…ˆÍÑ…”µÕÍĞÁÉ•Í•ÉÙ”É½Ü¥¹‘•Á•¹‘•¹”…¹)µÕÍĞ¹½Ğµ½‘¥™äÉ•½Ù•ÉäÁ½±¥ä°Ù…±¥‘…Ñ¥½¸•½µ•ÑÉä°É•¥ÍÑÉä°½È¡…µÁ¥½¸)ÍÑ…Ñ”¸(
+# TrackMan Crosswalk-Free Context Priors v1
+
+This document freezes the model-free, entity-free feature-feasibility audit
+for `aimers9-trackman-crosswalk-free-context-priors-v1`. It is a new route
+after Crosswalk v1 and repertoire Crosswalk v2 both failed closed; it does not
+retune either crosswalk and does not authorize TrackMan modeling.
+
+## Scope and firewall
+
+The main projection is exactly `row_id`, `season`, `balls_before`,
+`strikes_before`, and `outs_before`. The TrackMan projection is exactly
+`season`, `balls_before`, `strikes_before`, `outs_before`, and
+`pitch_type_group`. No player/team/game identity, raw ID, target, test row,
+leaderboard, external source, TrackMan physics, or current-pitch measurement
+is read. Historical `pitch_type_group` is used only as an aggregate label.
+Level R exact pitch-row matching remains out of scope.
+
+## Frozen context and temporal contract
+
+For a main row in season `S`, only TrackMan rows with `season < S` are legal.
+The lookup is keyed by the season column; source row order is never treated as
+chronology. A 2019 row with no prior history has missing probability summaries,
+support `0`, and `NO_HISTORY`. Same-season and future-season rows are never
+used.
+
+Required contexts are integer-like and legal only in these domains:
+
+- `balls_before`: `0..3`
+- `strikes_before`: `0..2`
+- `outs_before`: `0..2`
+
+Missing or out-of-domain context observed in the official projected data is
+`CONTEXT_DOMAIN_NOT_PROVEN` and fails closed. A legal but sparse context is
+not invalid and follows the frozen `L0 -> L1 -> global` hierarchy:
+
+Nonintegral, out-of-scope, or future season values are likewise
+`TEMPORAL_CAUSALITY_NOT_PROVEN`; the run reports that prerequisite as an
+aggregate `P_KILL` rather than silently filtering the rows.
+
+1. `L0 = (balls_before, strikes_before, outs_before)` when support is at least
+   100;
+2. `L1 = (balls_before, strikes_before)` when its support is at least 100;
+3. otherwise the strict-prior global history.
+
+The L1 threshold is not an acceptance gate. In particular, L1 support below
+100 is allowed to fall back to global, and a synthetic 2025 fixture with 12
+count states does not require L1 support of 100. `tm_cf_support` is exactly the
+historical TrackMan row count at the selected level: L0 support for L0, L1
+support for L1, global support for global, and zero for `NO_HISTORY`. The
+selected level is audit-only and is not a first-model feature.
+
+## Taxonomy and feature family
+
+The four TrackMan families are retained directly: `fastball`, `breaking`,
+`offspeed`, and `other`. Missing or unexpected groups fail closed; `other` is
+not redistributed. At a selected level, the four probabilities are empirical
+family counts divided by selected-level support. The same family gives:
+
+- `tm_cf_p_fastball`, `tm_cf_p_breaking`, `tm_cf_p_offspeed`,
+  `tm_cf_p_other`;
+- normalized four-family entropy
+  `-sum(p*log(p))/log(4)`, with `0*log(0)=0`;
+- `tm_cf_support`;
+- `tm_cf_context_vs_global_tv = 0.5 * sum(abs(p_selected - p_global))`.
+
+No Dirichlet prior, target-derived smoothing, identity mapping, test-derived
+fallback, or cross-row adjustment is used. Probabilities are finite and sum to
+one within the frozen tolerance whenever history exists; no-history summaries
+are explicitly null.
+
+## Structural acceptance
+
+The report provides per-season L0/L1/global/NO_HISTORY counts and fractions,
+support, finite/simplex, and missingness diagnostics. The model-free result is:
+
+- `P_KILL` for an invalid required domain, taxonomy failure, temporal/firewall
+  failure, or inability to establish the causal contract;
+- `P_FAIL` only when legal rows cannot receive valid fallback output, contextual
+  L0/L1 usage is globally zero, every contextual prior collapses to its global
+  prior, or finite/simplex/determinism invariants fail;
+- `P_PASS` when the prerequisites and structural invariants pass.
+
+The official run rebuilds the complete feature output after a fixed reversal of
+the TrackMan input rows. The original and rebuilt output hashes are recorded
+under `acceptance.determinism`; a mismatch adds
+`FINITE_SIMPLEX_OR_DETERMINISM_FAILURE`. Domain and taxonomy prerequisites are
+reported as aggregate `P_KILL` results with a deterministic reason and do not
+get reinterpreted as ordinary P_FAIL outcomes. Other reader/schema failures
+remain execution errors.
+
+Sparse legal contexts are not a failure merely because their L1 support is
+below 100. The backoff level is retained for audit diagnostics but is excluded
+from the first model feature set.
+
+## Outputs and future stages
+
+The future official run writes aggregate-only JSON/Markdown plus a compact
+context lookup outside the repository. The lookup is a reproducible aggregate
+artifact: for every cutoff season it contains deterministic string-encoded L0
+and L1 context keys, global/L0/L1 support, four family counts, probabilities,
+entropy, and context-vs-global TV. A synthetic reader can reproduce the
+selected feature record from this lookup. It contains no row IDs, entities, or
+raw rows. The output rejects directories inside the repository and serializes
+with `allow_nan=False`. Reports contain hashes, counts, scope flags, and
+support/backoff aggregates, never row-ID lists, targets, entities, physics, or
+raw rows.
+
+This implementation is the model-free feasibility phase only. A `P_PASS` does
+not authorize a CatBoost feature-lab run; that requires a separate reviewed
+Experiment Brief. Any feature-lab stage must preserve row independence and
+must not modify recovery policy, validation geometry, registry, or champion
+state.
