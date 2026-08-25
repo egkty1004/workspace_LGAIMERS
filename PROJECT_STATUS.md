@@ -66,6 +66,26 @@ Trackman conclusions:
 - `(trackman_game_id, pitch_no)` has two observed duplicates and remains `UNKNOWN` because official uniqueness is not documented.
 - Raw main/Trackman player IDs do not establish a crosswalk. Exact main-row joining and safe Trackman feature-usage levels remain `NOT_PROVEN`.
 - Do not infer Trackman unusability or authorize Trackman modeling from this audit alone.
+- The prior activity/calendar/team-fingerprint Crosswalk v1 result remains `P_KILL`; v2 does not overwrite that evidence.
+
+TrackMan repertoire-fingerprint Crosswalk v2 was then executed once as an
+official-data MEDIUM, model-free feasibility audit. It returned `P_KILL` with
+the exact reason `SEMANTIC_COMPATIBILITY_NOT_PROVEN`: TrackMan contained
+`other_rows = 22,298`, and main three-family denominator compatibility remained
+`NOT_PROVEN`. Main as-of materialization was `CUMULATIVE` for `1094/1094`
+observed transitions. Level R remained
+`NOT_RUN_SOURCE_ORDER_NOT_PROVEN` because source order is not proven chronology.
+
+This is not a conclusion that TrackMan is globally unusable. A possible next
+direction is a separate, reviewed crosswalk-free TrackMan feature experiment;
+the v2 result does not authorize TrackMan feature modeling or alter active
+policy. Aggregate provenance: JSON report SHA-256
+`349876b1eb49f8a4ddc8c1ea26f3a6a565c829bfc02039f5d10f61151ef76b74`, Markdown
+report SHA-256
+`6fa3e6da05a2c18f0222e194227ef1abeb47784ab946914c68d8b2ddf682c99e`, canonical
+report SHA-256
+`aceaba2fcdbc745f95fce374fddb7fec74faa3837a63d4847fc42bdcaba9072a`, and
+audit Git SHA `2f0fefd3d322fa4260f5b4d153e7411249436231`.
 
 The isolated `abs-2024-features` feature-only structural audit was completed from
 reviewed runner commit `c70c69a90d4796348700febc9137a2d6478994ed` and integrated by

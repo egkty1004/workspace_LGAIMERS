@@ -48,6 +48,29 @@ one of the three main families. Therefore `other` is excluded from the known
 family denominator and its support is retained only as an aggregate quality
 diagnostic.
 
+## Official MEDIUM audit result
+
+The prior activity/calendar/team-fingerprint Crosswalk v1 result remains
+`P_KILL`; this v2 result is a distinct hypothesis and does not retune v1.
+
+The single official-data MEDIUM execution returned `P_KILL` with the exact
+reason `SEMANTIC_COMPATIBILITY_NOT_PROVEN`. The audited TrackMan input had
+`other_rows = 22,298`; the main three-family denominator compatibility remained
+`NOT_PROVEN`. Main as-of materialization was `CUMULATIVE` for `1094/1094`
+observed transitions. Level R remained
+`NOT_RUN_SOURCE_ORDER_NOT_PROVEN`.
+
+This result does not establish that TrackMan is globally unusable. The next
+direction is a separately reviewed crosswalk-free TrackMan feature experiment;
+this audit does not authorize TrackMan feature modeling or change active policy.
+
+Aggregate run provenance:
+
+- JSON report SHA-256: `349876b1eb49f8a4ddc8c1ea26f3a6a565c829bfc02039f5d10f61151ef76b74`
+- Markdown report SHA-256: `6fa3e6da05a2c18f0222e194227ef1abeb47784ab946914c68d8b2ddf682c99e`
+- canonical report SHA-256: `aceaba2fcdbc745f95fce374fddb7fec74faa3837a63d4847fc42bdcaba9072a`
+- audit Git SHA: `2f0fefd3d322fa4260f5b4d153e7411249436231`
+
 ## Main representation and chronology
 
 The primary fingerprint is an order-independent annual three-family share
