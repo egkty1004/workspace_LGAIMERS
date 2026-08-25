@@ -95,7 +95,13 @@ selection evidence.
 The selection null candidate universe is the finite pre-origin hard-hand,
 finite-distance fit matrix itself. The verifier null uses the corresponding
 pre-origin hard-hand-compatible universe. Neither null includes impossible
-cross-hand assignments.
+cross-hand assignments. When the graph is not a complete identity matrix,
+degree-zero vertices are excluded and each null transformation is a
+deterministic maximum-cardinality one-to-one partial matching. The resulting
+cardinality `K` is frozen across calibration and evaluation; `K=0` produces no
+evidence and fails closed. Verifier context statistics evaluate only the
+assigned pairs in each partial null, never silently falling back to the frozen
+partner for an unassigned vertex.
 
 Candidate selection is mutual top-1, one-to-one, and ambiguity-safe. Exact ties,
 non-mutual top-1, one-to-many/many-to-one conflicts, and missing evidence remain

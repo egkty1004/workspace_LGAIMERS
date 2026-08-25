@@ -344,6 +344,27 @@ class SelectionVerificationTests(unittest.TestCase):
         self.assertEqual(result["observed"]["channel_statistics"]["game_month"], 0.9)
         self.assertEqual(result["required_channels"], list(audit.VERIFIER_CHANNELS))
 
+    def test_partial_oop_assignment_skips_unassigned_frozen_partners(self):
+        def context(month):
+            result = {field: audit.Counter({"same": 10}) for field in audit.VERIFIER_CHANNELS}
+            result["game_month"] = audit.Counter({str(month): 10})
+            return result
+
+        main = {
+            "m1": {"contexts": {2022: context(1)}},
+            "m2": {"contexts": {2022: context(2)}},
+        }
+        trackman = {
+            "t1": {"contexts": {2022: context(1)}},
+            "t2": {"contexts": {2022: context(9)}},
+        }
+        observed = audit._context_stat({"m1": "t1", "m2": "t2"}, main, trackman, 2022)
+        partial = audit._context_stat({"m1": "t1", "m2": "t2"}, main, trackman, 2022, right_assignment={"m1": "t2"})
+        self.assertEqual(observed["verified_pairs"], 2)
+        self.assertEqual(partial["verified_pairs"], 1)
+        self.assertEqual(partial["distributions"]["game_month"]["count"], 1)
+        self.assertEqual(partial["channel_statistics"]["game_month"], 1.0)
+
     def test_context_selection_conflict_cannot_make_high_confidence(self):
         selection = {"m1": "t1"}
         self.assertEqual(audit.verify_selection_map_oop(selection, self.main, self.tm, 2022)["selection_map_hash_before"], audit.selection_map_hash(selection))
@@ -396,6 +417,50 @@ class SelectionVerificationTests(unittest.TestCase):
 
 
 class NullAndPrivacyTests(unittest.TestCase):
+    def test_partial_matching_excludes_degree_zero_left_vertex(self):
+        result = audit.generate_unique_null_transformations(
+            ["A", "B", "C"], ["x", "y"], requested=10, namespace="partial-a",
+            allowed_pairs={"A": ["x", "y"], "B": ["x", "y"], "C": []},
+        )
+        self.assertEqual(result["matching_cardinality"], 2)
+        self.assertEqual(result["degree_zero_left_count"], 1)
+        self.assertGreater(result["generated_unique"], 0)
+        self.assertTrue(all(len(assignment) == 2 and all(left != "C" for left, _ in assignment) for assignment in result["assignments"]))
+
+    def test_partial_matching_handles_hand_imbalance_without_cross_hand_edges(self):
+        left = ["L1", "L2", "L3", "R1", "R2"]
+        right = ["LX", "LY", "RX", "RY", "RZ"]
+        allowed = {"L1": ["LX", "LY"], "L2": ["LX", "LY"], "L3": ["LX", "LY"], "R1": ["RX", "RY", "RZ"], "R2": ["RX", "RY", "RZ"]}
+        result = audit.generate_unique_null_transformations(left, right, requested=10, namespace="partial-b", allowed_pairs=allowed)
+        self.assertEqual(result["matching_cardinality"], 4)
+        self.assertEqual(result["degree_zero_left_count"], 0)
+        self.assertEqual(result["degree_zero_right_count"], 0)
+        self.assertTrue(all(len(assignment) == 4 for assignment in result["assignments"]))
+        self.assertTrue(all((left_id.startswith("L") and right_id.startswith("L")) or (left_id.startswith("R") and right_id.startswith("R")) for assignment in result["assignments"] for left_id, right_id in assignment))
+
+    def test_partial_matching_with_no_valid_edges_fails_closed(self):
+        result = audit.generate_unique_null_transformations(["A", "B"], ["x", "y"], requested=10, namespace="partial-c", allowed_pairs={"A": [], "B": []})
+        self.assertEqual(result["matching_cardinality"], 0)
+        self.assertEqual(result["generated_unique"], 0)
+        self.assertTrue(result["exhausted_space"])
+        self.assertEqual(result["pair_count"], 0)
+
+    def test_every_partial_transformation_has_frozen_maximum_cardinality(self):
+        ids = ["a", "b", "c", "d"]
+        allowed = {left: ids for left in ids}
+        result = audit.generate_unique_null_transformations(ids, ids, requested=10, namespace="partial-d", allowed_pairs=allowed)
+        self.assertGreater(result["matching_cardinality"], 0)
+        self.assertTrue(all(len(assignment) == result["matching_cardinality"] for assignment in result["assignments"]))
+
+    def test_partial_calibration_and_evaluation_are_disjoint(self):
+        ids = ["a", "b", "c", "d"]
+        allowed = {left: ids for left in ids}
+        calibration = audit.generate_unique_null_transformations(ids, ids, requested=3, namespace="partial-e-cal", allowed_pairs=allowed)
+        evaluation = audit.generate_unique_null_transformations(ids, ids, requested=3, namespace="partial-e-eval", allowed_pairs=allowed, forbidden=calibration["assignments"])
+        self.assertEqual(calibration["matching_cardinality"], evaluation["matching_cardinality"])
+        self.assertTrue(set(map(repr, calibration["assignments"])).isdisjoint(set(map(repr, evaluation["assignments"]))))
+        self.assertTrue(all(len(assignment) == calibration["matching_cardinality"] for assignment in (*calibration["assignments"], *evaluation["assignments"])))
+
     def test_self_id_negligible_identifiability_fails_null_envelope(self):
         null = {"passes_1pct_ceiling": True, "evaluation": {"unique_trials": 100, "accepted_count_p95": 0, "wilson_95_upper_bound_proxy": 0.005}}
         gate = audit.self_id_acceptance_gate(correct_accepted=1, wrong_accepted=0, eligible=500, null_contract=null)

@@ -156,7 +156,7 @@ def _runtime_contract() -> dict[str, Any]:
         "selection": {
             "channels": ["annual_mix_tv", "trajectory_delta_half_l1"],
             "distance": "annual_mix_tv_and_trajectory_delta_half_l1",
-            "hand": "hard_compatibility_only", "hand_temporal_basis": "hands_by_season_pre_origin_only", "unknown_or_ambiguous_hand": "incompatible", "trajectory_delta_pairs": "calendar_adjacent_only", "null_candidate_universe": "finite_pre_origin_hard_hand_fit_matrix", "support": "eligibility_and_quality_only",
+            "hand": "hard_compatibility_only", "hand_temporal_basis": "hands_by_season_pre_origin_only", "unknown_or_ambiguous_hand": "incompatible", "trajectory_delta_pairs": "calendar_adjacent_only", "null_candidate_universe": "finite_pre_origin_hard_hand_fit_matrix", "null_matching": "maximum_cardinality_one_to_one_over_allowed_edges", "degree_zero_vertices_excluded": True, "matching_cardinality_frozen_across_calibration_evaluation": True, "support": "eligibility_and_quality_only",
             "team": "not_used", "mutual_top1": True, "second_best_margin": True,
             "one_to_one": True, "ambiguous_ties_unmatched": True,
             "minimum_common_seasons": 2, "minimum_common_delta_seasons": 1,
@@ -168,6 +168,9 @@ def _runtime_contract() -> dict[str, Any]:
             "mapping_frozen_before_verification": True, "verifier_can_change_mapping": False,
             "verifier_confirmed_manifest": False, "null_risk_ceiling": 0.01,
             "null_candidate_universe": "pre_origin_hard_hand_compatible",
+            "null_matching": "maximum_cardinality_one_to_one_over_allowed_edges",
+            "degree_zero_vertices_excluded": True,
+            "matching_cardinality_frozen_across_calibration_evaluation": True,
             "aggregation": "per_channel_median_total_variation",
             "calibration_quantile": 0.01,
             "all_required_channels_conjunctive": True,
@@ -659,18 +662,117 @@ def _is_derangement(assignment: Iterable[tuple[str, str]]) -> bool:
     return all(str(left) != str(right) for left, right in assignment)
 
 
+def _maximum_bipartite_matching(left: Sequence[str], adjacency: Mapping[str, Sequence[str]], *, left_order: Sequence[str] | None = None, ordered_adjacency: Mapping[str, Sequence[str]] | None = None) -> tuple[tuple[str, str], ...]:
+    """Return one deterministic maximum-cardinality matching of an allowed graph."""
+    ordered_left = list(left_order if left_order is not None else sorted(left))
+    edges = {str(key): [str(value) for value in (ordered_adjacency or adjacency).get(key, ())] for key in ordered_left}
+    right_owner: dict[str, str] = {}
+
+    def augment(left_id: str, visited: set[str]) -> bool:
+        for right_id in edges.get(left_id, ()):
+            if right_id in visited:
+                continue
+            visited.add(right_id)
+            previous = right_owner.get(right_id)
+            if previous is None or augment(previous, visited):
+                right_owner[right_id] = left_id
+                return True
+        return False
+
+    for left_id in ordered_left:
+        augment(left_id, set())
+    return _assignment_key((left_id, right_id) for right_id, left_id in right_owner.items())
+
+
+def _enumerate_maximum_matchings(left: Sequence[str], adjacency: Mapping[str, Sequence[str]], cardinality: int) -> set[tuple[tuple[str, str], ...]]:
+    """Enumerate a small finite maximum-matching space exactly."""
+    ordered_left = sorted(map(str, left))
+    results: set[tuple[tuple[str, str], ...]] = set()
+
+    def visit(index: int, used_right: set[str], pairs: list[tuple[str, str]]) -> None:
+        remaining = len(ordered_left) - index
+        if len(pairs) > cardinality or len(pairs) + min(remaining, len(set(r for values in adjacency.values() for r in values) - used_right)) < cardinality:
+            return
+        if index == len(ordered_left):
+            if len(pairs) == cardinality:
+                results.add(_assignment_key(pairs))
+            return
+        left_id = ordered_left[index]
+        for right_id in sorted(set(map(str, adjacency.get(left_id, ()))) - used_right):
+            used_right.add(right_id)
+            pairs.append((left_id, right_id))
+            visit(index + 1, used_right, pairs)
+            pairs.pop()
+            used_right.remove(right_id)
+        # A maximum matching may leave a positive-degree left vertex unmatched.
+        visit(index + 1, used_right, pairs)
+
+    visit(0, set(), [])
+    return results
+
+
 def generate_unique_null_transformations(left_ids: Sequence[str], right_ids: Sequence[str], *, requested: int, namespace: str, forbidden: Iterable[tuple[tuple[str, str], ...]] = (), require_derangement: bool = False, forbidden_partners: Mapping[str, str] | None = None, allowed_pairs: Mapping[str, Iterable[str]] | None = None) -> dict[str, Any]:
     left, right = sorted(set(map(str, left_ids))), sorted(set(map(str, right_ids)))
-    pair_count = min(len(left), len(right))
-    canonical = _assignment_key(zip(left[:pair_count], right[:pair_count]))
     forbidden_keys = {_assignment_key(item) for item in forbidden}
     partner_map = {str(key): str(value) for key, value in (forbidden_partners or {}).items()}
-    allowed = {str(key): {str(value) for value in values} for key, values in (allowed_pairs or {}).items()}
+
+    if allowed_pairs is not None:
+        right_set = set(right)
+        raw_allowed = {left_id: {str(right_id) for right_id in allowed_pairs.get(left_id, ()) if str(right_id) in right_set} for left_id in left}
+        # Partner and derangement exclusions are part of the null graph, so
+        # the frozen K is the maximum feasible cardinality after every null
+        # constraint, not the raw identity count.
+        adjacency = {
+            left_id: tuple(sorted(right_id for right_id in raw_allowed[left_id] if partner_map.get(left_id) != right_id and (not require_derangement or left_id != right_id)))
+            for left_id in left
+        }
+        eligible_left = sorted(left_id for left_id in left if adjacency[left_id])
+        eligible_right = sorted({right_id for values in adjacency.values() for right_id in values})
+        degree_zero_left = len(left) - len(eligible_left)
+        degree_zero_right = len(right) - len(eligible_right)
+        canonical = _maximum_bipartite_matching(eligible_left, adjacency)
+        matching_cardinality = len(canonical)
+        edge_count = sum(len(adjacency[left_id]) for left_id in eligible_left)
+        enumerate_space = len(eligible_left) <= 8 and len(eligible_right) <= 8 and edge_count <= 32
+        if enumerate_space:
+            maximums = _enumerate_maximum_matchings(eligible_left, adjacency, matching_cardinality)
+            finite = len(maximums)
+            seen = set(forbidden_keys)
+            seen.add(canonical)
+            assignments = []
+            for item in sorted(maximums, key=lambda value: hashlib.sha256((namespace + "\0" + repr(value)).encode()).hexdigest()):
+                if item in seen:
+                    continue
+                seen.add(item)
+                assignments.append(item)
+                if len(assignments) >= max(0, int(requested)):
+                    break
+            exhausted = len(seen.intersection(maximums)) >= finite
+        else:
+            finite = None
+            seen = set(forbidden_keys)
+            seen.add(canonical)
+            assignments = []
+            for counter in range(max(256, int(requested) * 50)):
+                trial_left = _hash_order(eligible_left, namespace + "/left", counter)
+                trial_edges = {left_id: _hash_order(adjacency[left_id], namespace + "/edge/" + left_id, counter) for left_id in eligible_left}
+                item = _maximum_bipartite_matching(eligible_left, adjacency, left_order=trial_left, ordered_adjacency=trial_edges)
+                if len(item) != matching_cardinality or item in seen:
+                    continue
+                seen.add(item)
+                assignments.append(item)
+                if len(assignments) >= max(0, int(requested)):
+                    break
+            exhausted = False
+        return {"assignments": assignments, "requested": int(requested), "generated_unique": len(assignments), "pair_count": matching_cardinality, "matching_cardinality": matching_cardinality, "finite_space": finite, "exhausted_space": exhausted, "trial_unit": "unique_maximum_cardinality_partial_matching", "canonical_rejected": True, "require_derangement": bool(require_derangement), "forbidden_partner_map_applied": bool(partner_map), "allowed_pair_universe_applied": True, "partial_matching": True, "partial_matching_contract": "maximum_cardinality_one_to_one_over_allowed_edges", "eligible_left_count": len(eligible_left), "eligible_right_count": len(eligible_right), "degree_zero_left_count": degree_zero_left, "degree_zero_right_count": degree_zero_right, "namespace": namespace}
+
+    # Legacy full-identity behavior remains unchanged for self-ID and other
+    # callers that do not provide a restricted graph.
+    pair_count = min(len(left), len(right))
+    canonical = _assignment_key(zip(left[:pair_count], right[:pair_count]))
 
     def valid(item: tuple[tuple[str, str], ...]) -> bool:
         if require_derangement and not _is_derangement(item):
-            return False
-        if allowed_pairs is not None and any(right not in allowed.get(left, set()) for left, right in item):
             return False
         return all(partner_map.get(left) != right for left, right in item)
 
@@ -705,7 +807,7 @@ def generate_unique_null_transformations(left_ids: Sequence[str], right_ids: Seq
                 if len(assignments) >= requested:
                     break
         finite = None
-    return {"assignments": assignments, "requested": int(requested), "generated_unique": len(assignments), "pair_count": pair_count, "finite_space": finite, "exhausted_space": finite is not None and len(seen) >= finite, "trial_unit": "unique_null_transformation_derangement" if require_derangement else "unique_null_transformation", "canonical_rejected": True, "require_derangement": bool(require_derangement), "forbidden_partner_map_applied": bool(partner_map), "allowed_pair_universe_applied": allowed_pairs is not None, "namespace": namespace}
+    return {"assignments": assignments, "requested": int(requested), "generated_unique": len(assignments), "pair_count": pair_count, "matching_cardinality": pair_count, "finite_space": finite, "exhausted_space": finite is not None and len(seen) >= finite, "trial_unit": "unique_null_transformation_derangement" if require_derangement else "unique_null_transformation", "canonical_rejected": True, "require_derangement": bool(require_derangement), "forbidden_partner_map_applied": bool(partner_map), "allowed_pair_universe_applied": False, "partial_matching": False, "partial_matching_contract": "legacy_full_identity_assignment", "namespace": namespace}
 
 
 def wilson_upper_bound(successes: int, trials: int, confidence: float = 0.95) -> float | None:
@@ -802,7 +904,7 @@ def calibrate_selection_null(left_profiles: Mapping[str, Mapping[str, Any]], rig
         accepted_counts.append(accepted)
         outcomes.append(accepted > 0)
     evaluation_summary = null_false_accept_summary(outcomes, requested=requested, generated_unique=evaluation["generated_unique"], exhausted_space=evaluation["exhausted_space"], pair_count=evaluation["pair_count"], accepted_counts=accepted_counts)
-    return {"annual_mix_threshold": annual_threshold, "trajectory_delta_threshold": delta_threshold, "second_best_margin_threshold": margin_threshold, "threshold_quantile_risk": NULL_RISK_CEILING, "calibration": {k: v for k, v in cal.items() if k != "assignments"}, "evaluation": evaluation_summary, "calibration_statistics_count": len(annual_stats), "calibration_evaluation_disjoint": not bool(set(map(repr, cal["assignments"])) & set(map(repr, evaluation["assignments"]))), "hand_eligible_candidate_universe": True, "allowed_pair_count": sum(len(value) for value in allowed_pairs.values()), "familywise_statistic": "minimum false-pair channel statistic per unique transformation; maximum margin statistic", "margin_definition": "second-best distance minus assigned distance only for unique top-1 assigned pairs", "thresholds_null_derived": True}
+    return {"annual_mix_threshold": annual_threshold, "trajectory_delta_threshold": delta_threshold, "second_best_margin_threshold": margin_threshold, "threshold_quantile_risk": NULL_RISK_CEILING, "calibration": {k: v for k, v in cal.items() if k != "assignments"}, "evaluation": evaluation_summary, "calibration_statistics_count": len(annual_stats), "calibration_evaluation_disjoint": not bool(set(map(repr, cal["assignments"])) & set(map(repr, evaluation["assignments"]))), "hand_eligible_candidate_universe": True, "allowed_pair_count": sum(len(value) for value in allowed_pairs.values()), "matching_cardinality": cal["matching_cardinality"], "eligible_left_count": cal["eligible_left_count"], "eligible_right_count": cal["eligible_right_count"], "degree_zero_left_count": cal["degree_zero_left_count"], "degree_zero_right_count": cal["degree_zero_right_count"], "partial_matching_contract": cal["partial_matching_contract"], "familywise_statistic": "minimum false-pair channel statistic per unique transformation; maximum margin statistic", "margin_definition": "second-best distance minus assigned distance only for unique top-1 assigned pairs", "thresholds_null_derived": True}
 
 
 def _sorted_distance_items(values: Mapping[str, Mapping[str, Any]]) -> list[tuple[str, Mapping[str, Any]]]:
@@ -870,7 +972,9 @@ def _context_stat(selection_map: Mapping[str, str], main_profiles: Mapping[str, 
     scores: list[float] = []
     per_field: dict[str, list[float]] = {field: [] for field in VERIFIER_CHANNELS}
     for main_id, original_tm_id in sorted(selection_map.items()):
-        tm_id = right_assignment.get(main_id, original_tm_id) if right_assignment is not None else original_tm_id
+        if right_assignment is not None and main_id not in right_assignment:
+            continue
+        tm_id = right_assignment[main_id] if right_assignment is not None else original_tm_id
         left = main_profiles.get(main_id, {}).get("contexts", {}).get(origin, {})
         right = trackman_profiles.get(tm_id, {}).get("contexts", {}).get(origin, {})
         if not left or not right:
@@ -918,7 +1022,7 @@ def verify_selection_map_oop(selection_map: Mapping[str, str], main_profiles: Ma
     channel_pass = {field: bool(observed_channels[field] is not None and channel_thresholds[field] is not None and float(observed_channels[field]) <= float(channel_thresholds[field])) for field in VERIFIER_CHANNELS}
     observed_channels_pass = bool(all(channel_pass.values()))
     method_pass = bool(observed_channels_pass and all(value is not None for value in channel_thresholds.values()) and null["passes_1pct_ceiling"] and null["unique_trials"] > 0)
-    return {"method_level_only": True, "selection_map_hash_before": map_hash, "selection_map_hash_after": map_hash, "verifier_confirmed_manifest": False, "required_channels": list(VERIFIER_CHANNELS), "observed": {key: value for key, value in observed.items() if key != "values"}, "observed_channel_pass": channel_pass, "all_required_channels_pass": observed_channels_pass, "null": {"channel_thresholds": channel_thresholds, "calibration_unique_trials": len(calibration["assignments"]), "calibration_channel_statistics_count": {field: len(values) for field, values in calibration_channel_stats.items()}, "evaluation": null, "calibration_evaluation_disjoint": not bool(set(map(repr, calibration["assignments"])) & set(map(repr, evaluation["assignments"]))), "forbidden_partner_map_enforced": calibration["forbidden_partner_map_applied"] and evaluation["forbidden_partner_map_applied"], "allowed_pair_universe_applied": calibration["allowed_pair_universe_applied"] and evaluation["allowed_pair_universe_applied"], "null_trials_preserve_selected_partners": all(all(selection_map.get(left) != right for left, right in assignment) for assignment in (*calibration["assignments"], *evaluation["assignments"]))}, "distributions": observed["distributions"], "method_status": "PASS" if method_pass else "FAIL", "mapping_immutable": True}
+    return {"method_level_only": True, "selection_map_hash_before": map_hash, "selection_map_hash_after": map_hash, "verifier_confirmed_manifest": False, "required_channels": list(VERIFIER_CHANNELS), "observed": {key: value for key, value in observed.items() if key != "values"}, "observed_channel_pass": channel_pass, "all_required_channels_pass": observed_channels_pass, "null": {"channel_thresholds": channel_thresholds, "calibration_unique_trials": len(calibration["assignments"]), "calibration_channel_statistics_count": {field: len(values) for field, values in calibration_channel_stats.items()}, "matching_cardinality": calibration["matching_cardinality"], "eligible_left_count": calibration["eligible_left_count"], "eligible_right_count": calibration["eligible_right_count"], "degree_zero_left_count": calibration["degree_zero_left_count"], "degree_zero_right_count": calibration["degree_zero_right_count"], "partial_matching_contract": calibration["partial_matching_contract"], "evaluation": null, "calibration_evaluation_disjoint": not bool(set(map(repr, calibration["assignments"])) & set(map(repr, evaluation["assignments"]))), "forbidden_partner_map_enforced": calibration["forbidden_partner_map_applied"] and evaluation["forbidden_partner_map_applied"], "allowed_pair_universe_applied": calibration["allowed_pair_universe_applied"] and evaluation["allowed_pair_universe_applied"], "null_trials_preserve_selected_partners": all(all(selection_map.get(left) != right for left, right in assignment) for assignment in (*calibration["assignments"], *evaluation["assignments"]))}, "distributions": observed["distributions"], "method_status": "PASS" if method_pass else "FAIL", "mapping_immutable": True}
 
 
 def self_id_acceptance_gate(correct_accepted: int, wrong_accepted: int, eligible: int, null_contract: Mapping[str, Any]) -> dict[str, Any]:
