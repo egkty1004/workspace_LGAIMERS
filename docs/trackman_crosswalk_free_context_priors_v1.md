@@ -92,6 +92,57 @@ Sparse legal contexts are not a failure merely because their L1 support is
 below 100. The backoff level is retained for audit diagnostics but is excluded
 from the first model feature set.
 
+## Official audit evidence
+
+The official-data model-free audit was executed exactly once from Git SHA
+`a4f60fcc3ce7d2bce768905e6027d0465c551db6`. It returned `P_KILL` with the
+exact reason `CONTEXT_DOMAIN_NOT_PROVEN`. The result was not tuned or rerun.
+Taxonomy compatibility itself passed. The observed TrackMan family counts were
+`fastball=931120`, `breaking=512851`, `offspeed=326809`, and `other=22298`;
+missing and unexpected taxonomy counts were both `0`.
+
+The projected source counts and frame hashes were:
+
+- main: `1475092` rows,
+  `81c374224befe2247e0fad410c88e5549b752f0ddcf27e35a223f6513c4aaa7c`;
+- TrackMan: `1793078` rows,
+  `3530593d94f320b218b70fc226a045f73218d3b49049be61ea1edc2c217eb96d`.
+
+Because the context-domain prerequisite failed, no lookup or feature
+diagnostics were produced and determinism was not run. The preserved external
+artifacts were:
+
+- JSON literal SHA-256:
+  `654aea608c41f1f8506d0d55c04a12fb2692cc0e3efd6c1f7c042c3a3f0d0790`;
+- Markdown literal SHA-256:
+  `af0fda779f15ea8565e6ca744777d8b79d34a31a6651138bea059acdb9ec2d59`;
+- lookup literal SHA-256:
+  `f142a492ecf610a2aa1f5c24954c726a2d9a9a30bc8f7324c134c842ceddbd34`;
+- canonical report SHA-256:
+  `0d5fae309b4a816215956e28c18111fff08dd700f48e58395145fbca9020c7be`;
+- runner SHA-256:
+  `2562bd3b21dbe010526eb748add0baccab6b8e11b4ddf2a0c8f73baae4a4a293`;
+- config SHA-256:
+  `7cb0fd4b26b68fa59d7c726489343c5295af9bb5d2d914a82f27d5958a68d8f7`.
+
+Runtime was `0:48.45` wall time (`47.50s` user, `8.31s` system), with peak
+RSS `819080 KiB`. Scope remained aggregate-only: target access, test access,
+test-distribution access, Public/leaderboard access, external information,
+TrackMan entity access, TrackMan physics/current-pitch measurement access,
+model training/scoring, and GPU use were all `false`; the label-access ledger
+was `[]` and `branch_inert=true`. The explicit scope fields were
+`target_access=false`, `target_column_in_projection=false`, `test_access=false`,
+`test_distribution_access=false`, `public_access=false`,
+`public_leaderboard_evidence=false`, `external_information_access=false`,
+`trackman_entity_access=false`, `trackman_physics_access=false`,
+`current_pitch_measurement_access=false`, `model_training_or_scoring=false`,
+and `gpu_used=false`. The privacy contract was
+`aggregate_only=true`, `row_ids=false`, `entity_ids=false`,
+`target_values=false`, `physics=false`, and `raw_rows=false`. This result does not establish that
+crosswalk-free TrackMan context priors are unusable. It records only the
+failed observed-domain prerequisite, with no guess about which field or source
+caused it.
+
 ## Outputs and future stages
 
 The future official run writes aggregate-only JSON/Markdown plus a compact
