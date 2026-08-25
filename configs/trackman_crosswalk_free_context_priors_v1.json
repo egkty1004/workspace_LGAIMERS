@@ -1,0 +1,73 @@
+{
+  "contract_version": "aimers9-trackman-crosswalk-free-context-priors-v1",
+  "documentary_snapshot_checked_against_runtime_contract": true,
+  "scope": {
+    "main_seasons": [2019, 2020, 2021, 2022, 2023, 2024],
+    "inference_seasons": [2025],
+    "main_projection": ["row_id", "season", "balls_before", "strikes_before", "outs_before"],
+    "trackman_projection": ["season", "balls_before", "strikes_before", "outs_before", "pitch_type_group"],
+    "forbidden_main": ["control_success", "pitcher_id", "batter_id", "pitcher_team_id", "batter_team_id"],
+    "forbidden_trackman": ["pitcher_trackman_id", "batter_trackman_id", "trackman_id", "game_id", "trackman_game_id", "pitch_no", "tagged_pitch_type", "auto_pitch_type", "rel_speed", "spin_rate", "induced_vert_break", "horz_break", "extension", "rel_height", "rel_side", "zone_speed", "release", "movement"],
+    "target_free": true,
+    "test_free": true,
+    "leaderboard_free": true,
+    "external_free": true,
+    "future_safe": true
+  },
+  "context": {
+    "required_columns": ["balls_before", "strikes_before", "outs_before"],
+    "domains": {"balls_before": [0, 3], "strikes_before": [0, 2], "outs_before": [0, 2]},
+    "integer_like": true,
+    "invalid_domain_policy": "CONTEXT_DOMAIN_NOT_PROVEN",
+    "levels": ["L0", "L1", "global"],
+    "L0": ["balls_before", "strikes_before", "outs_before"],
+    "L1": ["balls_before", "strikes_before"],
+    "support_threshold": 100,
+    "sparse_context_policy": "legal_sparse_context_falls_back_L0_to_L1_to_global",
+    "backoff_level_audit_only": true
+  },
+  "taxonomy": {
+    "families": ["fastball", "breaking", "offspeed", "other"],
+    "other_policy": "retain_as_fourth_family",
+    "unexpected_or_missing_policy": "TAXONOMY_NOT_PROVEN",
+    "redistribution": false,
+    "simplex_tolerance": 0.000000001
+  },
+  "temporal": {
+    "rule": "main season S uses TrackMan season < S",
+    "prior_season_strict": true,
+    "same_season_forbidden": true,
+    "future_season_forbidden": true,
+    "no_history_policy": "missing_probabilities_support_zero_level_NO_HISTORY",
+    "season_order_source": "season_column_only"
+  },
+  "features": {
+    "columns": ["tm_cf_p_fastball", "tm_cf_p_breaking", "tm_cf_p_offspeed", "tm_cf_p_other", "tm_cf_entropy_norm4", "tm_cf_support", "tm_cf_context_vs_global_tv"],
+    "backoff_level_not_feature": true,
+    "probability_formula": "selected_level_family_count / selected_level_total_count",
+    "entropy_formula": "-sum(p*log(p))/log(4), with 0*log(0)=0",
+    "context_vs_global_tv_formula": "0.5*sum(abs(selected_probability-global_probability))"
+  },
+  "acceptance": {
+    "verdicts": ["P_PASS", "P_FAIL", "P_KILL"],
+    "kill_reasons": ["CONTEXT_DOMAIN_NOT_PROVEN", "TAXONOMY_NOT_PROVEN", "TEMPORAL_CAUSALITY_NOT_PROVEN", "FIREWALL_VIOLATION"],
+    "p_fail_reasons": ["NO_VALID_LEGAL_FALLBACK", "NO_CONTEXTUAL_USAGE", "CONTEXT_VARIATION_COLLAPSED", "FINITE_SIMPLEX_OR_DETERMINISM_FAILURE"],
+    "l1_support_below_100_is_not_failure": true,
+    "minimum_l1_support_gate": null,
+    "synthetic_2025_count_state_support_gate": "none",
+    "kill_outcome_reportable": true,
+    "execution_error_distinct_from_kill": true
+  },
+  "output": {
+    "aggregate_only": true,
+    "external_only": true,
+    "report_json": "trackman_crosswalk_free_context_priors_v1_report.json",
+    "report_markdown": "trackman_crosswalk_free_context_priors_v1_report.md",
+    "lookup_json": "trackman_crosswalk_free_context_priors_v1_lookup.json",
+    "allow_nan": false,
+    "include_row_ids": false,
+    "include_targets": false,
+    "include_physics": false,
+    "include_entity_ids": false
+  }
+}

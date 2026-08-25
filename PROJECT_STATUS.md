@@ -76,6 +76,12 @@ the exact reason `SEMANTIC_COMPATIBILITY_NOT_PROVEN`: TrackMan contained
 observed transitions. Level R remained
 `NOT_RUN_SOURCE_ORDER_NOT_PROVEN` because source order is not proven chronology.
 
+The crosswalk-free historical context-prior v1 audit was also executed once as
+an official-data, model-free audit. It returned `P_KILL` with the exact reason
+`CONTEXT_DOMAIN_NOT_PROVEN`; the TrackMan four-family taxonomy itself passed.
+This does not establish that TrackMan context priors are unusable. The next
+question requires a separate target-free context-domain characterization.
+
 This is not a conclusion that TrackMan is globally unusable. A possible next
 direction is a separate, reviewed crosswalk-free TrackMan feature experiment;
 the v2 result does not authorize TrackMan feature modeling or alter active
