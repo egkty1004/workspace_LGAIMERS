@@ -1,0 +1,248 @@
+{
+  "documentary_snapshot_checked_against_runtime_contract": true,
+  "acceptance": {
+    "execution_error_distinct_from_kill": true,
+    "kill_outcome_reportable": true,
+    "kill_reasons": [
+      "2025_LEGAL_STATE_PROOF_FAILED",
+      "CONTEXT_DOMAIN_NOT_PROVEN",
+      "FIREWALL_VIOLATION",
+      "PR13_SOURCE_AUTHORITY_DRIFT",
+      "PR13_SOURCE_HASH_DRIFT",
+      "SOURCE_QUALITY_RESIDUE_DRIFT",
+      "TAXONOMY_NOT_PROVEN",
+      "TEMPORAL_CAUSALITY_NOT_PROVEN",
+      "V1_SHARED_SEMANTICS_DRIFT",
+      "V1_SOURCE_AUTHORITY_DRIFT"
+    ],
+    "l1_support_below_100_is_not_failure": true,
+    "minimum_l1_support_gate": null,
+    "p_fail_reasons": [
+      "NO_VALID_LEGAL_FALLBACK",
+      "NO_CONTEXTUAL_USAGE",
+      "CONTEXT_VARIATION_COLLAPSED",
+      "FINITE_SIMPLEX_OR_DETERMINISM_FAILURE"
+    ],
+    "synthetic_2025_count_state_support_gate": "none",
+    "verdicts": [
+      "P_PASS",
+      "P_FAIL",
+      "P_KILL"
+    ]
+  },
+  "context": {
+    "L0": [
+      "balls_before",
+      "strikes_before",
+      "outs_before"
+    ],
+    "L1": [
+      "balls_before",
+      "strikes_before"
+    ],
+    "backoff_level_audit_only": true,
+    "domains": {
+      "balls_before": [
+        0,
+        3
+      ],
+      "outs_before": [
+        0,
+        2
+      ],
+      "strikes_before": [
+        0,
+        2
+      ]
+    },
+    "integer_like": true,
+    "invalid_domain_policy": "CONTEXT_DOMAIN_NOT_PROVEN",
+    "levels": [
+      "L0",
+      "L1",
+      "global"
+    ],
+    "required_columns": [
+      "balls_before",
+      "strikes_before",
+      "outs_before"
+    ],
+    "sparse_context_policy": "legal_sparse_context_falls_back_L0_to_L1_to_global",
+    "support_threshold": 100
+  },
+  "contract_version": "aimers9-trackman-crosswalk-free-context-priors-v2",
+  "features": {
+    "backoff_level_not_feature": true,
+    "columns": [
+      "tm_cf_p_fastball",
+      "tm_cf_p_breaking",
+      "tm_cf_p_offspeed",
+      "tm_cf_p_other",
+      "tm_cf_entropy_norm4",
+      "tm_cf_support",
+      "tm_cf_context_vs_global_tv"
+    ],
+    "context_vs_global_tv_formula": "0.5*sum(abs(selected_probability-global_probability))",
+    "entropy_formula": "-sum(p*log(p))/log(4), with 0*log(0)=0",
+    "probability_formula": "selected_level_family_count / selected_level_total_count"
+  },
+  "output": {
+    "aggregate_only": true,
+    "allow_nan": false,
+    "external_only": true,
+    "include_entity_ids": false,
+    "include_physics": false,
+    "include_row_ids": false,
+    "include_targets": false,
+    "lookup_json": "trackman_crosswalk_free_context_priors_v2_lookup.json",
+    "report_json": "trackman_crosswalk_free_context_priors_v2_report.json",
+    "report_markdown": "trackman_crosswalk_free_context_priors_v2_report.md"
+  },
+  "provenance": {
+    "expected_main_source_frame_sha256": "50a1fdeae8c0e1ece5302837e3fb748674f852d436c1931e2001d8a6b7c894e8",
+    "expected_trackman_source_frame_sha256": "934d5757241e78389f0736717c550be8e80c8948f156af0d5abc6e956acdd24c",
+    "pr13_config_sha256": "0334bbb8caa7f1915134a7f4dcbb66e5a26ceb08abbe8133a70f247c2643299f",
+    "pr13_runner_sha256": "370b5a09836cf95b7c4499ddea4ef881ee2fd5deb6155aca99c9ec00eb7e5090",
+    "source_hash_algorithm": "canonical-multiset-json-v1",
+    "source_hash_authority": "PR13_characterization_v1",
+    "source_projection": [
+      "season",
+      "balls_before",
+      "strikes_before",
+      "outs_before"
+    ],
+    "v1_config_path": "configs/trackman_crosswalk_free_context_priors_v1.json",
+    "v1_config_sha256": "7cb0fd4b26b68fa59d7c726489343c5295af9bb5d2d914a82f27d5958a68d8f7",
+    "v1_runner_path": "scripts/audit_trackman_crosswalk_free_context_priors_v1.py",
+    "v1_runner_sha256": "2562bd3b21dbe010526eb748add0baccab6b8e11b4ddf2a0c8f73baae4a4a293",
+    "v1_runtime_not_source_hash_authority": true
+  },
+  "scope": {
+    "external_free": true,
+    "forbidden_main": [
+      "batter_id",
+      "batter_team_id",
+      "control_success",
+      "pitcher_id",
+      "pitcher_team_id",
+      "row_id"
+    ],
+    "forbidden_trackman": [
+      "auto_pitch_type",
+      "batter_trackman_id",
+      "extension",
+      "game_id",
+      "horz_break",
+      "induced_vert_break",
+      "movement",
+      "pitch_no",
+      "pitcher_trackman_id",
+      "rel_height",
+      "rel_side",
+      "rel_speed",
+      "release",
+      "spin_rate",
+      "tagged_pitch_type",
+      "trackman_game_id",
+      "trackman_id",
+      "zone_speed"
+    ],
+    "future_safe": true,
+    "inference_seasons": [
+      2025
+    ],
+    "leaderboard_free": true,
+    "main_projection": [
+      "season",
+      "balls_before",
+      "strikes_before",
+      "outs_before"
+    ],
+    "main_seasons": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "target_free": true,
+    "test_free": true,
+    "trackman_projection": [
+      "season",
+      "balls_before",
+      "strikes_before",
+      "outs_before",
+      "pitch_type_group"
+    ]
+  },
+  "source_quality": {
+    "clipping": false,
+    "drift_policy": "P_KILL",
+    "eligible_source": "trackman_only",
+    "excluded_rows_reach_lookup": false,
+    "expected_excluded_rows": 97,
+    "expected_raw_rows": 1793078,
+    "expected_retained_rows": 1792981,
+    "normalization": false,
+    "predicate": "finite integer-like balls 0..3, strikes 0..2, outs 0..2",
+    "residue_manifest": [
+      {
+        "count": 1,
+        "field": "balls_before",
+        "reason": "out_of_domain",
+        "season": 2022,
+        "value": "4"
+      },
+      {
+        "count": 72,
+        "field": "outs_before",
+        "reason": "out_of_domain",
+        "season": 2022,
+        "value": "3"
+      },
+      {
+        "count": 12,
+        "field": "outs_before",
+        "reason": "out_of_domain",
+        "season": 2022,
+        "value": "4"
+      },
+      {
+        "count": 1,
+        "field": "strikes_before",
+        "reason": "out_of_domain",
+        "season": 2022,
+        "value": "3"
+      },
+      {
+        "count": 11,
+        "field": "outs_before",
+        "reason": "out_of_domain",
+        "season": 2023,
+        "value": "3"
+      }
+    ],
+    "rounding": false
+  },
+  "taxonomy": {
+    "families": [
+      "fastball",
+      "breaking",
+      "offspeed",
+      "other"
+    ],
+    "other_policy": "retain_as_fourth_family",
+    "redistribution": false,
+    "simplex_tolerance": 1e-9,
+    "unexpected_or_missing_policy": "TAXONOMY_NOT_PROVEN"
+  },
+  "temporal": {
+    "future_season_forbidden": true,
+    "no_history_policy": "missing_probabilities_support_zero_level_NO_HISTORY",
+    "prior_season_strict": true,
+    "rule": "main season S uses TrackMan season < S",
+    "same_season_forbidden": true,
+    "season_order_source": "season_column_only"
+  }
+}
