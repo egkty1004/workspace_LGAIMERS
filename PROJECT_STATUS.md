@@ -79,8 +79,35 @@ observed transitions. Level R remained
 The crosswalk-free historical context-prior v1 audit was also executed once as
 an official-data, model-free audit. It returned `P_KILL` with the exact reason
 `CONTEXT_DOMAIN_NOT_PROVEN`; the TrackMan four-family taxonomy itself passed.
-This does not establish that TrackMan context priors are unusable. The next
-question requires a separate target-free context-domain characterization.
+The separate target-free context-domain characterization was subsequently run
+exactly once from Git SHA
+`01440eb9f351dbc698ad42edabf25c9e7422bb87`. Its machine verdict was
+`SCAN_COMPLETE` with reasons `[]`, and it reproduced the earlier prerequisite
+failure as `V1_COMPATIBLE_INVALID_OBSERVED`. Main had zero invalid context rows
+across `1,475,092` rows. TrackMan had `97` invalid rows across `1,793,078`
+rows (approximately `0.0054097%`): `balls_before=4` on one row,
+`strikes_before=3` on one row, `outs_before=3` on 83 rows, and
+`outs_before=4` on 12 rows. These occurred only in 2022 (`86`) and 2023
+(`11`); the other audited seasons had zero.
+
+External review classified this aggregate evidence as `FILTERABLE_RESIDUE`.
+The frozen semantic domain remains unchanged, and this supports a small
+source-local historical TrackMan residue rather than broad domain
+incompatibility. It does not itself authorize filtering, context-prior
+modeling, or a PR #12/v1 rerun. Any future TrackMan filtering requires a
+separately reviewed v2 contract, and no main-row filtering is authorized.
+Aggregate provenance: JSON literal SHA-256
+`5a55510a68a55173ccd38c1563034766f0a4e9b5d9dec5456431c8626958d9e8`,
+Markdown literal SHA-256
+`6dab9c3038b15476e818298de4936ae8768710cffbb4bcf230abad86d2c84548`,
+canonical report SHA-256
+`5cc1ee2057b61fa91df3249a3f4a64617a9b48791936f308263d1ab751683e00`,
+runner SHA-256
+`370b5a09836cf95b7c4499ddea4ef881ee2fd5deb6155aca99c9ec00eb7e5090`,
+and config SHA-256
+`0334bbb8caa7f1915134a7f4dcbb66e5a26ceb08abbe8133a70f247c2643299f`.
+No target, test/test-distribution, Public/leaderboard, entity, physics,
+external-information, model, CV, or GPU access occurred.
 
 This is not a conclusion that TrackMan is globally unusable. A possible next
 direction is a separate, reviewed crosswalk-free TrackMan feature experiment;
