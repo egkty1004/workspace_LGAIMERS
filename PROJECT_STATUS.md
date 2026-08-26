@@ -109,6 +109,39 @@ and config SHA-256
 No target, test/test-distribution, Public/leaderboard, entity, physics,
 external-information, model, CV, or GPU access occurred.
 
+The separately reviewed crosswalk-free context-prior v2 official model-free
+audit was then executed exactly once from Git SHA
+`0ce000922810f946d6ff3ae651543ffb2fb821ba`. It returned `P_PASS` with no kill
+or structural-failure reasons. The frozen TrackMan-only predicate excluded the
+reviewed 97-row source-quality residue from 1,793,078 raw TrackMan rows and
+retained 1,792,981 rows; main rows were not filtered. Raw taxonomy passed with
+the fourth `other` family preserved. Every 2019–2025 lookup cutoff used only
+TrackMan seasons strictly before the main-row season. All 36 legal synthetic
+2025 L0 states were valid with exact support, the 2025 global support was
+1,792,981, reversed-source reconstruction was deterministic, and serialized
+lookup replay matched direct construction on all 1,475,092 main rows.
+
+The v2 aggregate evidence has canonical report SHA-256
+`67327fc36269e14a95006c9775cb9443d07d1ef7d65057b3cfdac1112443f444`,
+JSON literal SHA-256
+`1a07fdeb0b994ce3533371b7d2a1726b3d08f646a57d6cad346f6403614363ef`,
+Markdown literal SHA-256
+`b84279102569bff78cdb7e1f79cbfc8edbfe6bbf8d114f6fa99465c9f429a5c9`,
+serialized lookup literal SHA-256
+`27747c22e0ff25e86040f5825667f8d9c0b8d7e840037ad9df87072781160515`,
+runner SHA-256
+`db49237ed9c98ffad9cdb0bbaf1664bb12dc02c824bf4c4db7473dd20baf5293`,
+and config SHA-256
+`5232dc50706df44978f4acfc155dbd5feb43fa5d884699d65b3da55209bd84c3`.
+The audit used no target, test/test-distribution, Public/leaderboard, entity,
+physics/current-pitch, external-information, model, CV, or GPU access, and it
+was not rerun.
+
+This `P_PASS` is structural feasibility evidence only. It does not activate
+the seven `tm_cf_*` features, authorize model training or packaging, alter the
+active recovery pipeline, or establish predictive value. Any matched CatBoost
+leg experiment remains separate reviewed work.
+
 This is not a conclusion that TrackMan is globally unusable. A possible next
 direction is a separate, reviewed crosswalk-free TrackMan feature experiment;
 the v2 result does not authorize TrackMan feature modeling or alter active

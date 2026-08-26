@@ -117,3 +117,50 @@ match direct feature construction exactly.
 
 The official 2025 lookup, if later authorized, uses filtered 2019–2024
 TrackMan history only. No official-data run is implied by this implementation.
+
+## Official model-free MEDIUM evidence
+
+The official v2 audit was executed exactly once from reviewed Git SHA
+`0ce000922810f946d6ff3ae651543ffb2fb821ba`. It completed with `P_PASS`,
+`feature_output_available=true`, no kill reasons, and no structural-failure
+reasons. The audit was not rerun.
+
+The approved projections contained 1,475,092 main rows and 1,793,078 raw
+TrackMan rows. The frozen TrackMan-only source-quality predicate excluded
+exactly 97 rows and retained 1,792,981 rows. The observed residue matched the
+pre-registered manifest exactly: one 2022 `balls_before=4` row, one 2022
+`strikes_before=3` row, 72 2022 `outs_before=3` rows, 12 2022
+`outs_before=4` rows, and 11 2023 `outs_before=3` rows. No rounding,
+normalization, or clipping was applied. The raw four-family taxonomy passed
+with 931,120 fastball, 512,851 breaking, 326,809 offspeed, and 22,298 other
+rows; missing and unexpected taxonomy counts were zero.
+
+All cutoffs from 2019 through 2025 used only TrackMan seasons strictly before
+the main-row season. The 2025 lookup used only filtered 2019–2024 history. Its
+36 legal L0 states all produced valid simplexes with exact selected-level
+support, and its global support was exactly 1,792,981. Direct construction,
+reversed-source reconstruction, serialized-lookup replay, and complete feature
+output were deterministic and equal. Serialized replay covered all 1,475,092
+projected main rows with zero mismatches.
+
+Official aggregate provenance:
+
+- JSON literal SHA-256: `1a07fdeb0b994ce3533371b7d2a1726b3d08f646a57d6cad346f6403614363ef`;
+- Markdown literal SHA-256: `b84279102569bff78cdb7e1f79cbfc8edbfe6bbf8d114f6fa99465c9f429a5c9`;
+- serialized lookup literal SHA-256: `27747c22e0ff25e86040f5825667f8d9c0b8d7e840037ad9df87072781160515`;
+- canonical report SHA-256: `67327fc36269e14a95006c9775cb9443d07d1ef7d65057b3cfdac1112443f444`;
+- runner SHA-256: `db49237ed9c98ffad9cdb0bbaf1664bb12dc02c824bf4c4db7473dd20baf5293`;
+- config SHA-256: `5232dc50706df44978f4acfc155dbd5feb43fa5d884699d65b3da55209bd84c3`;
+- main projected-frame SHA-256: `50a1fdeae8c0e1ece5302837e3fb748674f852d436c1931e2001d8a6b7c894e8`;
+- TrackMan projected-frame SHA-256: `934d5757241e78389f0736717c550be8e80c8948f156af0d5abc6e956acdd24c`.
+
+Execution took 30:06.18 wall time (1,783.58 seconds user and 18.87 seconds
+system) with peak RSS 1,695,248 KiB. The audit accessed no target, test or test
+distribution, Public/leaderboard, external information, TrackMan entity or
+physics fields, current-pitch measurements, model scoring/training, or GPU.
+The label-access ledger was empty, and outputs were aggregate-only without row
+IDs, entities, targets, or raw rows.
+
+`P_PASS` establishes only model-free structural feasibility for the frozen v2
+context-prior lookup. It does not activate the seven features, authorize model
+training or packaging, change recovery policy, or establish predictive value.
