@@ -7,6 +7,7 @@ import pickle
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -137,6 +138,123 @@ class ConfigAndAuthorityTests(unittest.TestCase):
         self.assertEqual(set(positions), set(fit1) | set(es1))
         self.assertFalse(set(fit1) & set(es1))
 
+    def _extracted_authority_fixture(self):
+        config = copy.deepcopy(experiment.load_config())
+        root = Path(tempfile.mkdtemp())
+        model_dir = root / "model"
+        model_dir.mkdir()
+        expected = {}
+        for seed in config["catboost"]["seeds"]:
+            name = f"catboost_s{seed}.cbm"
+            payload = name.encode("utf-8")
+            path = model_dir / name
+            path.write_bytes(payload)
+            expected[name] = experiment.sha256_bytes(payload)
+        prep = model_dir / "catboost_prep.pkl"
+        prep.write_bytes(b"synthetic-prep")
+        config["authority"]["v93_catboost_prep_sha256"] = experiment.sha256_file(prep)
+        return root, config, expected
+
+    def test_verified_extracted_v93_directory_passes(self):
+        root, config, expected = self._extracted_authority_fixture()
+        try:
+            with patch.object(experiment, "_expected_model_hashes", return_value=expected):
+                result = experiment.verify_v93_extracted_catboost_authority(ROOT, config, root)
+            self.assertTrue(result["passed"])
+            self.assertEqual(11, len(result["asset_hashes"]))
+        finally:
+            for path in sorted(root.rglob("*"), reverse=True):
+                if path.is_file():
+                    path.unlink()
+                elif path.is_dir():
+                    path.rmdir()
+            root.rmdir()
+
+    def test_extracted_v93_model_mutation_fails_closed(self):
+        root, config, expected = self._extracted_authority_fixture()
+        try:
+            (root / "model" / "catboost_s42.cbm").write_bytes(b"mutated")
+            with patch.object(experiment, "_expected_model_hashes", return_value=expected):
+                with self.assertRaises(experiment.ExperimentError):
+                    experiment.verify_v93_extracted_catboost_authority(ROOT, config, root)
+        finally:
+            for path in sorted(root.rglob("*"), reverse=True):
+                if path.is_file():
+                    path.unlink()
+                elif path.is_dir():
+                    path.rmdir()
+            root.rmdir()
+
+    def test_extracted_v93_missing_model_fails_closed(self):
+        root, config, expected = self._extracted_authority_fixture()
+        try:
+            (root / "model" / "catboost_s51.cbm").unlink()
+            with patch.object(experiment, "_expected_model_hashes", return_value=expected):
+                with self.assertRaises(experiment.ExperimentError):
+                    experiment.verify_v93_extracted_catboost_authority(ROOT, config, root)
+        finally:
+            for path in sorted(root.rglob("*"), reverse=True):
+                if path.is_file():
+                    path.unlink()
+                elif path.is_dir():
+                    path.rmdir()
+            root.rmdir()
+
+    def test_extracted_v93_prep_mutation_fails_closed(self):
+        root, config, expected = self._extracted_authority_fixture()
+        try:
+            (root / "model" / "catboost_prep.pkl").write_bytes(b"mutated-prep")
+            with patch.object(experiment, "_expected_model_hashes", return_value=expected):
+                with self.assertRaises(experiment.ExperimentError):
+                    experiment.verify_v93_extracted_catboost_authority(ROOT, config, root)
+        finally:
+            for path in sorted(root.rglob("*"), reverse=True):
+                if path.is_file():
+                    path.unlink()
+                elif path.is_dir():
+                    path.rmdir()
+            root.rmdir()
+
+    def test_extracted_v93_extra_relevant_model_fails_closed(self):
+        root, config, expected = self._extracted_authority_fixture()
+        try:
+            (root / "model" / "catboost_s999.cbm").write_bytes(b"extra")
+            with patch.object(experiment, "_expected_model_hashes", return_value=expected):
+                with self.assertRaises(experiment.ExperimentError):
+                    experiment.verify_v93_extracted_catboost_authority(ROOT, config, root)
+        finally:
+            for path in sorted(root.rglob("*"), reverse=True):
+                if path.is_file():
+                    path.unlink()
+                elif path.is_dir():
+                    path.rmdir()
+            root.rmdir()
+
+    def test_execution_modes_keep_smoke_one_seed_and_full_screen_distinct(self):
+        config = experiment.load_config()
+        smoke = experiment.execution_mode_contract("smoke", config)
+        one_seed = experiment.execution_mode_contract("screen-one-seed", config)
+        screen = experiment.execution_mode_contract("screen", config)
+        self.assertEqual([42], smoke["seeds"])
+        self.assertEqual(8, smoke["parameter_overrides"]["iterations"])
+        self.assertFalse(smoke["package_gate"])
+        self.assertEqual([42], one_seed["seeds"])
+        self.assertTrue(one_seed["full_outer_panels"])
+        self.assertFalse(one_seed["package_gate"])
+        self.assertEqual(list(range(42, 52)), screen["seeds"])
+        self.assertTrue(screen["package_gate"])
+
+    def test_matched_contract_records_actual_mode_seed_and_overrides(self):
+        config = experiment.load_config()
+        evidence = experiment.assert_matched_training_contract(
+            config, [10, 11], [0.0, 1.0], [10], [11],
+            seeds=[42], parameter_overrides={"iterations": 8})
+        shared = evidence["identical_C0_C1"]
+        self.assertEqual([42], shared["seeds"])
+        self.assertEqual({"iterations": 8}, shared["parameter_overrides"])
+        self.assertNotEqual(experiment.canonical_hash(config["catboost"]),
+                            shared["parent_parameter_hash"])
+
 
 class FeatureFactoryTests(unittest.TestCase):
     def test_c1_adds_only_seven_numeric_trackman_features(self):
@@ -265,8 +383,24 @@ class ScoringAndGateTests(unittest.TestCase):
         self.assertEqual("reconstructed v93-style matched control", nonexact["control_label"])
         self.assertGreater(nonexact["rmse"], 0.0)
 
+    def test_probability_metrics_record_floored_unclamped_bss_and_hashes(self):
+        labels = np.array([0.0, 1.0, 0.0, 1.0])
+        probabilities = np.array([0.99, 0.99, 0.99, 0.99])
+        logits = np.array([4.59511985, 4.59511985, 4.59511985, 4.59511985])
+        result = experiment._probability_metrics(probabilities, labels, logits)
+        self.assertEqual(0.0, result["bss_floored"])
+        self.assertLess(result["bss_unclamped"], 0.0)
+        self.assertEqual(result["bss"], result["bss_floored"])
+        self.assertEqual(float(probabilities.mean()), result["prediction_mean"])
+        self.assertEqual(experiment.float_array_hash(probabilities), result["probability_sha256"])
+        self.assertEqual(experiment.float_array_hash(logits), result["logit_sha256"])
+
+    def test_probability_metrics_fail_closed_for_degenerate_target(self):
+        with self.assertRaises(experiment.ExperimentError):
+            experiment._probability_metrics([0.5, 0.5], [1.0, 1.0])
+
     def test_origin_gate_requires_raw_c1_and_both_composite_comparators(self):
-        y = np.ones(5)
+        y = np.array([0.0, 1.0, 1.0, 1.0, 1.0])
         result = experiment.evaluate_origin("r2022", y, np.zeros(5), np.zeros(5),
                                             np.zeros(5), np.ones(5), self.config)
         self.assertTrue(result["passed"])
@@ -277,11 +411,23 @@ class ScoringAndGateTests(unittest.TestCase):
                          result["deployed_abs_mean_shift_C1_vs_B0_original_v93"])
 
     def test_origin_gate_fails_when_c1_does_not_beat_original_b0(self):
-        y = np.ones(5)
+        y = np.array([0.0, 1.0, 1.0, 1.0, 1.0])
         result = experiment.evaluate_origin("r2022", y, np.full(5, 2.0), np.zeros(5),
                                             np.zeros(5), np.ones(5), self.config)
         self.assertFalse(result["checks"]["composite_c1_brier_lt_b0_original_v93"])
         self.assertFalse(result["passed"])
+
+    def test_smoke_metrics_do_not_emit_candidate_selection_gate(self):
+        y = np.array([0.0, 1.0, 1.0, 1.0, 1.0])
+        result = experiment.evaluate_origin(
+            "r2022", y, np.zeros(5), np.zeros(5), np.zeros(5), np.ones(5),
+            self.config, panel_scope="smoke_outer_validation_subset",
+            evaluate_candidate_gate=False)
+        self.assertFalse(result["candidate_gate_evaluated"])
+        self.assertNotIn("checks", result)
+        self.assertNotIn("passed", result)
+        self.assertEqual({"finite_outputs": True, "exact_row_identity": True},
+                         result["structural_checks"])
 
     def test_final_gate_is_conjunctive_without_origin_compensation(self):
         self.assertEqual("PACKAGE_GO", experiment.final_screen_verdict({

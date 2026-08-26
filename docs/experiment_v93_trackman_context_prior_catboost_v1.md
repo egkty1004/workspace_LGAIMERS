@@ -38,6 +38,14 @@ For each origin, `RandomState(12345).choice` selects exactly
 the complement is the fit set. C0 and C1 share every row, target, split,
 parameter, seed, preprocessing, and categorical contract.
 
+Before any original-v93 prediction, the runner independently verifies the
+extracted `--v93-dir/model`. Exactly `catboost_s42.cbm` through
+`catboost_s51.cbm` and `catboost_prep.pkl` must be present as regular files;
+each model is checked against the Task-3 model hash map and the prep against
+the pinned prep SHA-256. Missing, extra relevant, symlinked, or drifted
+CatBoost assets fail closed, and the verified asset-hash map is retained in
+future aggregate evidence.
+
 ## Arms and feature contract
 
 - **B0** is the hash-addressed actual original cached v93 deployed composite.
@@ -108,6 +116,33 @@ No origin average may compensate for a failure. The deployed mean shift of C1
 versus B0 is reported but is not a gate. BSS and means are reported alongside
 Brier; no bootstrap, recovery gate, terminal-label gate, or calibration search
 is part of this experiment.
+
+Each raw CatBoost and bounded deployed-composite metric record also contains
+the floored `common.score` BSS, the unclamped BSS, prediction mean, probability
+SHA-256, and the corresponding logit SHA-256. BSS is fail-closed for a
+degenerate target panel instead of serializing NaN or infinity.
+
+## Explicit execution ladder
+
+The CLI exposes three separate execution modes. Their contract is
+code-authoritative and cannot be changed by editing the JSON configuration:
+
+- `smoke` is MEDIUM-only: seed 42, the deterministic first 2,000 training and
+  first 2,000 validation rows per origin, eight iterations, and patience three.
+  It exercises feature construction, matched fitting, prediction, sealing,
+  scoped labels, reproduction diagnostics, and composite algebra. Its verdict
+  is always `SMOKE_DIAGNOSTIC_ONLY`; it does not compute candidate-selection
+  PASS/FAIL fields and cannot emit or satisfy a package gate.
+- `screen-one-seed` uses seed 42 and full r2022/r2023 panels with production
+  CatBoost parameters. Its verdict is `ONE_SEED_DIAGNOSTIC_ONLY`, not a final
+  package gate.
+- `screen` retains the full ten-seed (42--51) production run and is the only
+  mode that can emit `PACKAGE_GO` or `PACKAGE_STOP` after the conjunctive
+  B0/C0/C1 gate.
+
+All modes use the original ten-model v93 CatBoost leg when constructing the
+v93 substitution baseline, even when a diagnostic mode trains only seed 42.
+No mode is executed in the CHEAP phase.
 
 ## Package contract (future, not executed)
 

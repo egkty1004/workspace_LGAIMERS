@@ -38,6 +38,62 @@ TARGET = "control_success"
 DERIVED_BASE = ("platoon", "count_state")
 ORIGINS = ("r2022", "r2023")
 
+# Execution modes are deliberately code-authoritative so a future official
+# invocation cannot silently turn a smoke run into a production run by editing
+# the JSON.  ``screen`` remains the only mode that evaluates the final
+# package-worthiness gate.
+SMOKE_TRAIN_ROWS = 2_000
+SMOKE_VALIDATION_ROWS = 2_000
+SMOKE_ITERATIONS = 8
+SMOKE_EARLY_STOPPING_ROUNDS = 3
+
+
+def execution_mode_contract(mode: str, config: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the frozen execution contract for one explicit CLI mode."""
+    if mode == "smoke":
+        return {
+            "mode": "smoke",
+            "seeds": [42],
+            "full_outer_panels": False,
+            "train_rows": SMOKE_TRAIN_ROWS,
+            "validation_rows": SMOKE_VALIDATION_ROWS,
+            "parameter_overrides": {
+                "iterations": SMOKE_ITERATIONS,
+                "early_stopping_rounds": SMOKE_EARLY_STOPPING_ROUNDS,
+            },
+            "allow_validation_subset_seal": True,
+            "package_gate": False,
+            "diagnostic_only": True,
+        }
+    if mode == "screen-one-seed":
+        return {
+            "mode": "screen-one-seed",
+            "seeds": [42],
+            "full_outer_panels": True,
+            "train_rows": None,
+            "validation_rows": None,
+            "parameter_overrides": {},
+            "allow_validation_subset_seal": False,
+            "package_gate": False,
+            "diagnostic_only": True,
+        }
+    if mode == "screen":
+        seeds = list(config["catboost"]["seeds"])
+        if seeds != list(range(42, 52)):
+            raise ExperimentError("full screen must retain the ten-seed contract")
+        return {
+            "mode": "screen",
+            "seeds": seeds,
+            "full_outer_panels": True,
+            "train_rows": None,
+            "validation_rows": None,
+            "parameter_overrides": {},
+            "allow_validation_subset_seal": False,
+            "package_gate": True,
+            "diagnostic_only": False,
+        }
+    raise ExperimentError(f"unknown execution mode: {mode}")
+
 
 class ExperimentError(RuntimeError):
     """Fail-closed authority, parity, firewall, or execution error."""
@@ -241,6 +297,62 @@ def verify_external_authorities(
     }
 
 
+def verify_v93_extracted_catboost_authority(
+    repo_root: str | Path,
+    config: Mapping[str, Any],
+    v93_dir: str | Path,
+) -> dict[str, Any]:
+    """Verify an extracted v93 directory before any CatBoost prediction.
+
+    The archive check is insufficient once callers provide ``--v93-dir``.
+    This guard therefore validates the exact ten CatBoost model members and
+    the exact CatBoost preprocessor against the independently pinned Task-3
+    evidence/prep hashes.  Unrelated v93 assets may remain in the directory,
+    but any missing, extra, symlinked, or drifted CatBoost asset is fatal.
+    """
+    root = Path(repo_root).resolve()
+    extracted = Path(v93_dir).resolve()
+    model_dir = extracted / "model"
+    if not model_dir.is_dir():
+        raise ExperimentError("extracted v93 model directory is missing")
+    expected_models = _expected_model_hashes(root, config)
+    expected_names = {f"catboost_s{seed}.cbm" for seed in config["catboost"]["seeds"]}
+    if set(expected_models).intersection(expected_names) != expected_names:
+        raise ExperimentError("Task-3 CatBoost model identity map is incomplete")
+    expected_relevant = expected_names | {"catboost_prep.pkl"}
+    actual_relevant = {
+        path.name
+        for path in model_dir.iterdir()
+        if path.name.startswith("catboost_")
+    }
+    if actual_relevant != expected_relevant:
+        missing = sorted(expected_relevant - actual_relevant)
+        extra = sorted(actual_relevant - expected_relevant)
+        raise ExperimentError(f"extracted v93 CatBoost asset set drift: missing={missing}, extra={extra}")
+    asset_hashes: dict[str, str] = {}
+    for name in sorted(expected_names):
+        path = model_dir / name
+        if path.is_symlink() or not path.is_file():
+            raise ExperimentError(f"extracted v93 CatBoost model is not a regular file: {name}")
+        actual = sha256_file(path)
+        if actual != expected_models[name]:
+            raise ExperimentError(f"extracted v93 CatBoost model hash drift: {name}")
+        asset_hashes[f"model/{name}"] = actual
+    prep_path = model_dir / "catboost_prep.pkl"
+    if prep_path.is_symlink() or not prep_path.is_file():
+        raise ExperimentError("extracted v93 CatBoost prep is not a regular file")
+    prep_hash = sha256_file(prep_path)
+    if prep_hash != config["authority"]["v93_catboost_prep_sha256"]:
+        raise ExperimentError("extracted v93 CatBoost prep hash drift")
+    asset_hashes["model/catboost_prep.pkl"] = prep_hash
+    return {
+        "passed": True,
+        "asset_hashes": dict(sorted(asset_hashes.items())),
+        "verified_asset_names": sorted(expected_relevant),
+        "source": "pinned Task-3 model hash map + pinned CatBoost prep hash",
+    }
+
+
 def load_lookup(path: str | Path, config: Mapping[str, Any]) -> dict[str, Any]:
     lookup_path = Path(path)
     if sha256_file(lookup_path) != config["authority"]["trackman_lookup_sha256"]:
@@ -352,6 +464,22 @@ def bounded_positions(validation_positions: Sequence[int], budget: int = 30_000)
     return positions[: min(int(budget), len(positions))].copy()
 
 
+def mode_panel_positions(
+    frame: pd.DataFrame,
+    origin: str,
+    mode_contract: Mapping[str, Any],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return the exact full or deterministic smoke panels for one origin."""
+    train_positions, validation_positions = origin_positions(frame, origin)
+    if mode_contract["full_outer_panels"]:
+        return train_positions, validation_positions
+    train_rows = int(mode_contract["train_rows"])
+    validation_rows = int(mode_contract["validation_rows"])
+    if len(train_positions) < train_rows or len(validation_positions) < validation_rows:
+        raise ExperimentError(f"smoke panel is too small for {origin}")
+    return train_positions[:train_rows].copy(), validation_positions[:validation_rows].copy()
+
+
 def split_positions(source_positions: Sequence[int], config: Mapping[str, Any]) -> tuple[np.ndarray, np.ndarray]:
     positions = np.asarray(source_positions, dtype=np.int64)
     split = config["catboost"]["es_split"]
@@ -402,6 +530,7 @@ def read_fit_labels(
 @dataclass(frozen=True)
 class SealedOriginLogits:
     origin: str
+    validation_scope: str
     validation_positions: tuple[int, ...]
     position_hash: str
     row_id_hash: str
@@ -415,12 +544,20 @@ def seal_outer_logits(
     validation_positions: Sequence[int],
     c0_logits: Sequence[float],
     c1_logits: Sequence[float],
+    *,
+    allow_validation_subset: bool = False,
 ) -> SealedOriginLogits:
     if origin not in ORIGINS:
         raise ExperimentError("sealed origin must be r2022/r2023")
     _, expected_positions = origin_positions(feature_frame, origin)
     positions = np.asarray(validation_positions, dtype=np.int64)
-    if not np.array_equal(positions, expected_positions):
+    if len(np.unique(positions)) != len(positions):
+        raise ExperimentError("sealed positions contain duplicates")
+    if np.array_equal(positions, expected_positions):
+        validation_scope = "full_outer_validation"
+    elif allow_validation_subset and len(positions) > 0 and set(positions).issubset(set(expected_positions)):
+        validation_scope = "outer_validation_subset"
+    else:
         raise ExperimentError("sealed positions differ from the exact full outer validation")
     c0 = np.asarray(c0_logits, dtype=np.float64)
     c1 = np.asarray(c1_logits, dtype=np.float64)
@@ -430,6 +567,7 @@ def seal_outer_logits(
         raise ExperimentError("nonfinite outer logits cannot be sealed")
     return SealedOriginLogits(
         origin=origin,
+        validation_scope=validation_scope,
         validation_positions=tuple(int(value) for value in positions),
         position_hash=sequence_hash(positions.tolist()),
         row_id_hash=sequence_hash(feature_frame.iloc[positions][ROW_ID].astype(str).tolist()),
@@ -445,8 +583,14 @@ def read_outer_labels(
 ) -> np.ndarray:
     _, expected = origin_positions(feature_frame, sealed.origin)
     positions = np.asarray(sealed.validation_positions, dtype=np.int64)
-    if not np.array_equal(positions, expected):
-        raise ExperimentError("outer-label seal positions are stale")
+    if sealed.validation_scope == "full_outer_validation":
+        if not np.array_equal(positions, expected):
+            raise ExperimentError("outer-label seal positions are stale")
+    elif sealed.validation_scope == "outer_validation_subset":
+        if len(np.unique(positions)) != len(positions) or not set(positions).issubset(set(expected)):
+            raise ExperimentError("outer-label subset seal positions are stale")
+    else:
+        raise ExperimentError("unknown outer-label seal scope")
     if sealed.position_hash != sequence_hash(positions.tolist()):
         raise ExperimentError("outer-label position hash drift")
     expected_ids = feature_frame.iloc[positions][ROW_ID].astype(str).tolist()
@@ -494,15 +638,26 @@ def assert_matched_training_contract(
     target: Sequence[float],
     fit_positions: Sequence[int],
     es_positions: Sequence[int],
+    *,
+    seeds: Sequence[int] | None = None,
+    parameter_overrides: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     feature_contract = assert_feature_contracts(config)
+    run_seeds = list(config["catboost"]["seeds"] if seeds is None else seeds)
+    overrides = dict(parameter_overrides or {})
+    effective_parent = {
+        "catboost": config["catboost"],
+        "execution_seeds": run_seeds,
+        "parameter_overrides": overrides,
+    }
     common_fields = {
         "source_position_hash": sequence_hash(source_positions),
         "target_hash": float_array_hash(target),
         "fit_position_hash": sequence_hash(fit_positions),
         "es_position_hash": sequence_hash(es_positions),
-        "seeds": list(config["catboost"]["seeds"]),
-        "parent_parameter_hash": canonical_hash(config["catboost"]),
+        "seeds": run_seeds,
+        "parameter_overrides": overrides,
+        "parent_parameter_hash": canonical_hash(effective_parent),
         "base_feature_hash": canonical_hash(config["base_features"]),
         "categorical_feature_hash": canonical_hash(config["categorical_features"]),
         "base_preprocessing_hash": canonical_hash({
@@ -527,6 +682,9 @@ def train_catboost_ensemble(
     config: Mapping[str, Any],
     arm: str,
     output_dir: str | Path,
+    *,
+    seeds: Sequence[int] | None = None,
+    parameter_overrides: Mapping[str, Any] | None = None,
 ) -> tuple[np.ndarray, dict[str, Any]]:
     """Future model path; never called by static/CHEAP verification."""
     try:
@@ -555,14 +713,29 @@ def train_catboost_ensemble(
     if destination.exists():
         raise ExperimentError("model output directory exists; refusing overwrite")
     destination.mkdir(parents=True)
+    run_seeds = tuple(config["catboost"]["seeds"] if seeds is None else seeds)
+    if not run_seeds or len(set(run_seeds)) != len(run_seeds):
+        raise ExperimentError("training seed contract contains duplicates or no seeds")
+    allowed_seeds = set(config["catboost"]["seeds"])
+    if not set(run_seeds).issubset(allowed_seeds):
+        raise ExperimentError("training seed is outside the frozen v93 seed contract")
+    overrides = dict(parameter_overrides or {})
+    if "early_stopping_rounds" in overrides:
+        early_stopping_rounds = int(overrides.pop("early_stopping_rounds"))
+    else:
+        early_stopping_rounds = int(config["catboost"]["early_stopping_rounds"])
+    if early_stopping_rounds <= 0:
+        raise ExperimentError("early stopping rounds must be positive")
     logits: list[np.ndarray] = []
     per_seed: dict[str, Any] = {}
-    for seed in config["catboost"]["seeds"]:
-        model = CatBoostClassifier(**catboost_params(config, int(seed)))
+    for seed in run_seeds:
+        params = catboost_params(config, int(seed))
+        params.update(overrides)
+        model = CatBoostClassifier(**params)
         model.fit(
             Pool(feature_frame.iloc[fit_source][features], fit_target, cat_features=cat_indices),
             eval_set=Pool(feature_frame.iloc[es_source][features], es_target, cat_features=cat_indices),
-            early_stopping_rounds=int(config["catboost"]["early_stopping_rounds"]),
+            early_stopping_rounds=early_stopping_rounds,
             use_best_model=bool(config["catboost"]["use_best_model"]),
             verbose=False,
         )
@@ -586,6 +759,8 @@ def train_catboost_ensemble(
         "features": features,
         "categorical_features": categories,
         "per_seed": per_seed,
+        "seeds": list(run_seeds),
+        "parameter_overrides": dict(parameter_overrides or {}),
         "aggregate_logit_sha256": float_array_hash(aggregate),
         "no_post_es_refit": True,
     }
@@ -596,16 +771,28 @@ def original_v93_cat_logits(
     validation_positions: Sequence[int],
     config: Mapping[str, Any],
     v93_dir: str | Path,
+    *,
+    seeds: Sequence[int] | None = None,
+    verified_authority: Mapping[str, Any] | None = None,
+    repo_root: str | Path | None = None,
 ) -> np.ndarray:
     try:
         from catboost import CatBoostClassifier
     except ImportError as exc:  # pragma: no cover
         raise ExperimentError("CatBoost is unavailable") from exc
+    current_authority = verify_v93_extracted_catboost_authority(
+        PROJECT_ROOT if repo_root is None else repo_root, config, v93_dir,
+    )
+    if verified_authority is not None and current_authority.get("asset_hashes") != verified_authority.get("asset_hashes"):
+        raise ExperimentError("extracted v93 CatBoost authority changed after verification")
     model_dir = Path(v93_dir) / "model"
     features = list(config["base_features"])
     positions = np.asarray(validation_positions, dtype=np.int64)
+    run_seeds = tuple(config["catboost"]["seeds"] if seeds is None else seeds)
+    if not run_seeds or len(set(run_seeds)) != len(run_seeds) or not set(run_seeds).issubset(set(config["catboost"]["seeds"])):
+        raise ExperimentError("original v93 CatBoost seed subset drift")
     logits = []
-    for seed in config["catboost"]["seeds"]:
+    for seed in run_seeds:
         model = CatBoostClassifier()
         model.load_model(str(model_dir / f"catboost_s{seed}.cbm"))
         prediction = np.asarray(
@@ -700,16 +887,41 @@ def replace_catboost_leg(
     return result
 
 
-def _probability_metrics(probability: Sequence[float], target: Sequence[float]) -> dict[str, float]:
+def _probability_metrics(
+    probability: Sequence[float],
+    target: Sequence[float],
+    logits: Sequence[float] | None = None,
+) -> dict[str, float | str]:
     p = np.asarray(probability, dtype=np.float64)
     y = np.asarray(target, dtype=np.float64)
     if p.shape != y.shape or p.ndim != 1 or not np.isfinite(p).all():
         raise ExperimentError("metric row/finite failure")
-    return {
-        "brier": float(np.mean((p - y) ** 2)),
-        "bss": float(common.score(p, y)),
+    if not np.isfinite(y).all() or not np.isin(y, (0.0, 1.0)).all():
+        raise ExperimentError("metric target must be finite binary")
+    brier = float(np.mean((p - y) ** 2))
+    prevalence = float(y.mean())
+    denominator = prevalence * (1.0 - prevalence)
+    if not np.isfinite(denominator) or denominator <= 0.0:
+        raise ExperimentError("BSS is undefined for a degenerate target panel")
+    unclamped_bss = float(100_000.0 * (1.0 - brier / denominator))
+    floored_bss = float(common.score(p, y))
+    if not np.isfinite(floored_bss) or not np.isfinite(unclamped_bss):
+        raise ExperimentError("BSS metric is nonfinite")
+    result: dict[str, float | str] = {
+        "brier": brier,
+        "bss": floored_bss,
+        "bss_floored": floored_bss,
+        "bss_unclamped": unclamped_bss,
         "mean": float(p.mean()),
+        "prediction_mean": float(p.mean()),
+        "probability_sha256": float_array_hash(p),
     }
+    if logits is not None:
+        values = np.asarray(logits, dtype=np.float64)
+        if values.shape != p.shape or not np.isfinite(values).all():
+            raise ExperimentError("metric logit row/finite failure")
+        result["logit_sha256"] = float_array_hash(values)
+    return result
 
 
 def evaluate_origin(
@@ -720,6 +932,9 @@ def evaluate_origin(
     c0_full_logits: Sequence[float],
     c1_full_logits: Sequence[float],
     config: Mapping[str, Any],
+    *,
+    panel_scope: str = "full_outer_validation",
+    evaluate_candidate_gate: bool = True,
 ) -> dict[str, Any]:
     if origin not in ORIGINS:
         raise ExperimentError("only r2022/r2023 may be scored")
@@ -731,8 +946,8 @@ def evaluate_origin(
         raise ExperimentError("full-origin raw CatBoost row identity failure")
     if not all(np.isfinite(values).all() for values in (original, c0, c1, y)):
         raise ExperimentError("nonfinite full-origin values")
-    raw_c0 = _probability_metrics(common.sigmoid(c0), y)
-    raw_c1 = _probability_metrics(common.sigmoid(c1), y)
+    raw_c0 = _probability_metrics(common.sigmoid(c0), y, c0)
+    raw_c1 = _probability_metrics(common.sigmoid(c1), y, c1)
     n_bounded = len(np.asarray(b0_bounded_logits))
     if n_bounded != min(30_000, len(y)):
         raise ExperimentError("bounded B0 length differs from first-30k contract")
@@ -743,26 +958,34 @@ def evaluate_origin(
     b0_z = np.asarray(b0_bounded_logits, dtype=np.float64)
     c0_z = replace_catboost_leg(b0_z, c0_b, original_b, config)
     c1_z = replace_catboost_leg(b0_z, c1_b, original_b, config)
-    b0_metrics = _probability_metrics(deployed_probs(b0_z, config), yb)
-    c0_metrics = _probability_metrics(deployed_probs(c0_z, config), yb)
-    c1_metrics = _probability_metrics(deployed_probs(c1_z, config), yb)
-    checks = {
+    b0_metrics = _probability_metrics(deployed_probs(b0_z, config), yb, b0_z)
+    c0_metrics = _probability_metrics(deployed_probs(c0_z, config), yb, c0_z)
+    c1_metrics = _probability_metrics(deployed_probs(c1_z, config), yb, c1_z)
+    candidate_checks = {
         "raw_cat_c1_brier_lt_c0": bool(raw_c1["brier"] < raw_c0["brier"]),
         "composite_c1_brier_lt_c0": bool(c1_metrics["brier"] < c0_metrics["brier"]),
         "composite_c1_brier_lt_b0_original_v93": bool(c1_metrics["brier"] < b0_metrics["brier"]),
         "finite_outputs": True,
         "exact_row_identity": True,
     }
-    return {
+    result = {
         "origin": origin,
-        "raw_cat_panel": "full_outer_validation",
+        "raw_cat_panel": panel_scope,
         "raw_cat": {"C0": raw_c0, "C1": raw_c1},
         "bounded_fixed_deployed_composite": {"B0_original_v93": b0_metrics, "C0": c0_metrics, "C1": c1_metrics},
         "deployed_mean_shift_C1_vs_B0_original_v93": c1_metrics["mean"] - b0_metrics["mean"],
         "deployed_abs_mean_shift_C1_vs_B0_original_v93": abs(c1_metrics["mean"] - b0_metrics["mean"]),
-        "checks": checks,
-        "passed": bool(all(checks.values())),
+        "candidate_gate_evaluated": bool(evaluate_candidate_gate),
     }
+    if evaluate_candidate_gate:
+        result["checks"] = candidate_checks
+        result["passed"] = bool(all(candidate_checks.values()))
+    else:
+        result["structural_checks"] = {
+            "finite_outputs": True,
+            "exact_row_identity": True,
+        }
+    return result
 
 
 def final_screen_verdict(origin_results: Mapping[str, Mapping[str, Any]]) -> str:
@@ -784,9 +1007,10 @@ def canonical_report_hash(report: Mapping[str, Any]) -> str:
                            if key != "canonical_report_sha256"})
 
 
-def run_screen(args: argparse.Namespace) -> dict[str, Any]:
-    """Future MEDIUM/EXPENSIVE entry point; not invoked in this implementation turn."""
+def run_mode(args: argparse.Namespace, mode: str) -> dict[str, Any]:
+    """Run one explicit future mode; callers must opt into official execution."""
     config = load_config(args.config)
+    mode_contract = execution_mode_contract(mode, config)
     root = Path(args.repo_root).resolve()
     output = Path(args.output_dir).resolve()
     _outside_repo(output, root)
@@ -795,6 +1019,7 @@ def run_screen(args: argparse.Namespace) -> dict[str, Any]:
     verify_static_authorities(root, config)
     authority = verify_external_authorities(root, config, args.v93_archive,
                                              args.lookup_json, args.baseline_cache_dir)
+    v93_dir_authority = verify_v93_extracted_catboost_authority(root, config, args.v93_dir)
     frame = read_feature_projection(args.train_csv, config)
     lookup = load_lookup(args.lookup_json, config)
     c1_frame = apply_trackman_features(frame, lookup, config)
@@ -804,30 +1029,49 @@ def run_screen(args: argparse.Namespace) -> dict[str, Any]:
     reproduction: dict[str, Any] = {}
     label_ledger: list[dict[str, Any]] = []
     for origin in ORIGINS:
-        train_positions, validation_positions = origin_positions(frame, origin)
+        train_positions, validation_positions = mode_panel_positions(frame, origin, mode_contract)
         fit_positions, es_positions = split_positions(train_positions, config)
         train_target = read_fit_labels(args.train_csv, frame, train_positions, origin)
         label_ledger.append({"origin": origin, "role": "outer_train_for_fit_and_ES", "rows": len(train_target)})
-        parity = assert_matched_training_contract(config, train_positions, train_target,
-                                                  fit_positions, es_positions)
+        parity = assert_matched_training_contract(
+            config, train_positions, train_target, fit_positions, es_positions,
+            seeds=mode_contract["seeds"],
+            parameter_overrides=mode_contract["parameter_overrides"])
         c0_logits, c0_meta = train_catboost_ensemble(
             frame, train_positions, validation_positions, train_target, config,
-            "C0", output / "models" / origin / "C0")
+            "C0", output / "models" / origin / "C0",
+            seeds=mode_contract["seeds"],
+            parameter_overrides=mode_contract["parameter_overrides"])
         c1_logits, c1_meta = train_catboost_ensemble(
             c1_frame, train_positions, validation_positions, train_target, config,
-            "C1", output / "models" / origin / "C1")
-        sealed = seal_outer_logits(origin, frame, validation_positions, c0_logits, c1_logits)
-        original_cat = original_v93_cat_logits(frame, validation_positions, config, args.v93_dir)
+            "C1", output / "models" / origin / "C1",
+            seeds=mode_contract["seeds"],
+            parameter_overrides=mode_contract["parameter_overrides"])
+        sealed = seal_outer_logits(
+            origin, frame, validation_positions, c0_logits, c1_logits,
+            allow_validation_subset=mode_contract["allow_validation_subset_seal"])
+        original_cat = original_v93_cat_logits(
+            frame, validation_positions, config, args.v93_dir,
+            verified_authority=v93_dir_authority, repo_root=root)
         outer_target = read_outer_labels(args.train_csv, frame, sealed)
         label_ledger.append({"origin": origin, "role": "outer_validation_after_both_arms_sealed", "rows": len(outer_target)})
-        b0 = load_b0_logits(origin, args.baseline_cache_dir, config)
+        b0 = load_b0_logits(origin, args.baseline_cache_dir, config)[:len(validation_positions)]
         results[origin] = evaluate_origin(origin, outer_target, b0, original_cat,
-                                          c0_logits, c1_logits, config)
+                                          c0_logits, c1_logits, config,
+                                          panel_scope=("full_outer_validation" if mode_contract["full_outer_panels"]
+                                                       else "smoke_outer_validation_subset"),
+                                          evaluate_candidate_gate=(mode != "smoke"))
         reproduction[origin] = control_reproduction_diagnostics(original_cat,
                                                                  c0_logits, outer_target)
         training[origin] = {"parity": parity, "C0": c0_meta, "C1": c1_meta,
                             "sealed": {key: value for key, value in asdict(sealed).items()
                                        if key not in ("c0_logits", "c1_logits")}}
+    if mode == "screen":
+        verdict = final_screen_verdict(results)
+    elif mode == "screen-one-seed":
+        verdict = "ONE_SEED_DIAGNOSTIC_ONLY"
+    else:
+        verdict = "SMOKE_DIAGNOSTIC_ONLY"
     report: dict[str, Any] = {
         "contract_version": CONTRACT_VERSION,
         "protocol_role": config["protocol_role"],
@@ -835,12 +1079,15 @@ def run_screen(args: argparse.Namespace) -> dict[str, Any]:
         "git_sha": _git_sha(root),
         "runner_sha256": sha256_file(Path(__file__)),
         "authority": authority,
+        "v93_dir_catboost_authority": v93_dir_authority,
+        "execution_mode": mode_contract,
         "arms": config["arms"],
         "feature_contract": assert_feature_contracts(config),
         "training": training,
         "control_reproduction": reproduction,
         "origin_results": results,
-        "verdict": final_screen_verdict(results),
+        "verdict": verdict,
+        "package_gate_evaluated": bool(mode_contract["package_gate"]),
         "label_access_ledger": label_ledger,
         "scope": config["scope"],
         "notes": {
@@ -856,6 +1103,11 @@ def run_screen(args: argparse.Namespace) -> dict[str, Any]:
                     encoding="utf-8")
     return {"report": str(path), "verdict": report["verdict"],
             "canonical_report_sha256": report["canonical_report_sha256"]}
+
+
+def run_screen(args: argparse.Namespace) -> dict[str, Any]:
+    """Preserve the original full ten-seed screen as an explicit mode."""
+    return run_mode(args, "screen")
 
 
 def static_contract(repo_root: str | Path, config_path: str | Path = CONFIG_PATH) -> dict[str, Any]:
@@ -880,7 +1132,22 @@ def static_contract(repo_root: str | Path, config_path: str | Path = CONFIG_PATH
         "model_training_or_scoring": False,
         "gpu_used": False,
         "recovery_policy_modified": False,
+        "execution_modes": {
+            name: execution_mode_contract(name, config)
+            for name in ("smoke", "screen-one-seed", "screen")
+        },
     }
+
+
+def _add_execution_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--repo-root", type=Path, default=PROJECT_ROOT)
+    parser.add_argument("--config", type=Path, default=CONFIG_PATH)
+    parser.add_argument("--train-csv", type=Path, required=True)
+    parser.add_argument("--lookup-json", type=Path, required=True)
+    parser.add_argument("--v93-archive", type=Path, required=True)
+    parser.add_argument("--v93-dir", type=Path, required=True)
+    parser.add_argument("--baseline-cache-dir", type=Path, required=True)
+    parser.add_argument("--output-dir", type=Path, required=True)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -895,15 +1162,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     authority.add_argument("--v93-archive", type=Path, required=True)
     authority.add_argument("--lookup-json", type=Path, required=True)
     authority.add_argument("--baseline-cache-dir", type=Path, required=True)
+    smoke = sub.add_parser("smoke")
+    _add_execution_arguments(smoke)
+    one_seed = sub.add_parser("screen-one-seed")
+    _add_execution_arguments(one_seed)
     screen = sub.add_parser("screen")
-    screen.add_argument("--repo-root", type=Path, default=PROJECT_ROOT)
-    screen.add_argument("--config", type=Path, default=CONFIG_PATH)
-    screen.add_argument("--train-csv", type=Path, required=True)
-    screen.add_argument("--lookup-json", type=Path, required=True)
-    screen.add_argument("--v93-archive", type=Path, required=True)
-    screen.add_argument("--v93-dir", type=Path, required=True)
-    screen.add_argument("--baseline-cache-dir", type=Path, required=True)
-    screen.add_argument("--output-dir", type=Path, required=True)
+    _add_execution_arguments(screen)
     args = parser.parse_args(argv)
     try:
         if args.command == "static":
@@ -912,8 +1176,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             config = load_config(args.config)
             result = verify_external_authorities(args.repo_root, config, args.v93_archive,
                                                  args.lookup_json, args.baseline_cache_dir)
-        else:
-            result = run_screen(args)
+        elif args.command in ("smoke", "screen-one-seed", "screen"):
+            result = run_mode(args, args.command)
+        else:  # pragma: no cover - argparse enforces commands
+            raise ExperimentError("unknown command")
         print(json.dumps(result, sort_keys=True, allow_nan=False))
         return 0
     except (ExperimentError, OSError, ValueError, KeyError) as exc:
