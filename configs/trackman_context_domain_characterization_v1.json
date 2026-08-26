@@ -1,0 +1,61 @@
+{
+  "contract_version": "aimers9-trackman-context-domain-characterization-v1",
+  "documentary_snapshot_checked_against_runtime_contract": true,
+  "scope": {
+    "main_projection": ["season", "balls_before", "strikes_before", "outs_before"],
+    "trackman_projection": ["season", "balls_before", "strikes_before", "outs_before"],
+    "expected_seasons": [2019, 2020, 2021, 2022, 2023, 2024],
+    "target_free": true,
+    "test_free": true,
+    "leaderboard_free": true,
+    "external_free": true,
+    "row_id_free": true,
+    "entity_free": true,
+    "physics_free": true
+  },
+  "semantic_classifier": {
+    "authority": "PR12_integer_context_key_semantics",
+    "number_conversion": "float(value), finite only",
+    "integer_conversion": "finite number whose is_integer() is true",
+    "missing_semantics": "pandas.isna before float conversion",
+    "domains": {
+      "balls_before": [0, 1, 2, 3],
+      "strikes_before": [0, 1, 2],
+      "outs_before": [0, 1, 2]
+    },
+    "invalid_policy": "classify aggregate only; never normalize/filter",
+    "raw_lexical_diagnostics_are_not_classifier": true
+  },
+  "diagnostics": {
+    "season_stratification": "integer season values 2019-2024; invalid season is NOT_PROVEN",
+    "legal_domain_histograms": "overall and season-stratified sorted legal value counts for every projected field",
+    "invalid_concentration": "context-invalid counts/fractions by source, source x field, and source x season",
+    "row_signature": "source x season x invalid-fields x reason/value signature aggregate counts",
+    "row_order_invariant": true
+  },
+  "verdict": {
+    "machine_verdicts": ["SCAN_COMPLETE", "NOT_PROVEN"],
+    "not_proven_reasons": [
+      "PRIOR_KILL_NOT_REPRODUCED",
+      "SEASON_STRATIFICATION_NOT_PROVEN",
+      "PROJECTION_NOT_PROVEN",
+      "SCAN_NOT_COMPLETE"
+    ],
+    "automatic_filterable_or_incompatible_classification": false,
+    "external_review_interpretation_required": true,
+    "prior_expected_verdict": "P_KILL",
+    "prior_expected_reason": "CONTEXT_DOMAIN_NOT_PROVEN"
+  },
+  "output": {
+    "aggregate_only": true,
+    "external_only": true,
+    "report_json": "trackman_context_domain_characterization_v1_report.json",
+    "report_markdown": "trackman_context_domain_characterization_v1_report.md",
+    "allow_nan": false,
+    "include_row_ids": false,
+    "include_targets": false,
+    "include_entities": false,
+    "include_physics": false,
+    "include_raw_rows": false
+  }
+}
