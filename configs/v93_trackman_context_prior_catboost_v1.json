@@ -1,0 +1,187 @@
+{
+  "contract_version": "aimers9-v93-trackman-context-prior-catboost-v1",
+  "experiment_id": "v93-trackman-context-prior-catboost-v1",
+  "protocol_role": "leaderboard_track_model_experiment",
+  "recovery_promotion": false,
+  "arms": {
+    "B0": "actual_original_cached_v93_deployed_composite",
+    "C0": "reconstructed_v93_style_matched_control",
+    "C1": "reconstructed_v93_style_matched_control_plus_exactly_seven_tm_cf_features"
+  },
+  "authority": {
+    "merged_base_git_sha": "107c58c2e815abe352977da7546cd46e707cd614",
+    "v93_archive_sha256": "8157e144090bcccbf1c44367c75a2d2427e040b8353c8c1e17334b41324ac5fb",
+    "v93_catboost_prep_sha256": "0c434e65fd601806134f08e51b5cf5e72c5f43173a1715256ad1eeb1fc2e8653",
+    "v93_task3_evidence_path": ".omo/evidence/aimers9-top100-recovery/task-3-baseline-registry.json",
+    "v93_task3_evidence_sha256": "fa93d4c7f6b04e4621240df72038dd18d4b67cc94b1ca8a2bbc185f821db79b3",
+    "baseline_cache_key": "ee8ea9579969deaa3284ae6507ad28c1c2859fb507b956e2c0a4a93a28dc903f",
+    "baseline_cache_meta_sha256": "7b8ee3e04eff55e35bcd37374ceafc0db315b6812a288b738465198c5d81bc40",
+    "baseline_cache_logit_sha256": {
+      "r2022": "d3972a5cc7b5c70118e06bb25042b948c399646690ed531e2ddf783ebdda874e",
+      "r2023": "29d1dec441912b5cea97b1f222c94e34bc604ec7c0aacb361b649fe9991fb858"
+    },
+    "trackman_lookup_sha256": "27747c22e0ff25e86040f5825667f8d9c0b8d7e840037ad9df87072781160515",
+    "trackman_v2_runner_sha256": "db49237ed9c98ffad9cdb0bbaf1664bb12dc02c824bf4c4db7473dd20baf5293",
+    "trackman_v2_config_sha256": "5232dc50706df44978f4acfc155dbd5feb43fa5d884699d65b3da55209bd84c3",
+    "trackman_v2_canonical_report_sha256": "67327fc36269e14a95006c9775cb9443d07d1ef7d65057b3cfdac1112443f444"
+  },
+  "base_features": [
+    "season",
+    "game_month",
+    "game_dayofweek",
+    "inning",
+    "top_bottom",
+    "game_type",
+    "balls_before",
+    "strikes_before",
+    "outs_before",
+    "run_top_before",
+    "run_bot_before",
+    "run_total_before",
+    "score_diff_home",
+    "score_diff_pitcher_team",
+    "runner_on_1b",
+    "runner_on_2b",
+    "runner_on_3b",
+    "num_runners_on",
+    "base_state",
+    "home_win_expectancy",
+    "away_win_expectancy",
+    "li",
+    "pitcher_id",
+    "batter_id",
+    "pitcher_hand",
+    "batter_hand",
+    "pitcher_team_id",
+    "batter_team_id",
+    "asof_pitcher_n",
+    "asof_pitcher_success_rate",
+    "asof_pitcher_reverse_rate",
+    "asof_pitcher_middle_rate",
+    "asof_pitcher_ball_rate",
+    "asof_pitcher_strike_rate",
+    "asof_pitcher_prev1_game_success_rate",
+    "asof_pitcher_prev3_game_success_rate",
+    "asof_pitcher_prev5_game_success_rate",
+    "asof_pitcher_prev1_game_middle_rate",
+    "asof_pitcher_prev3_game_middle_rate",
+    "asof_pitcher_prev5_game_middle_rate",
+    "asof_batter_n",
+    "asof_batter_success_rate",
+    "asof_batter_middle_rate",
+    "asof_pitcher_pitchmix_n",
+    "asof_pitcher_fastball_rate",
+    "asof_pitcher_breaking_rate",
+    "asof_pitcher_offspeed_rate",
+    "platoon",
+    "count_state"
+  ],
+  "categorical_features": [
+    "top_bottom",
+    "game_type",
+    "base_state",
+    "platoon",
+    "count_state"
+  ],
+  "trackman_features": [
+    "tm_cf_p_fastball",
+    "tm_cf_p_breaking",
+    "tm_cf_p_offspeed",
+    "tm_cf_p_other",
+    "tm_cf_entropy_norm4",
+    "tm_cf_support",
+    "tm_cf_context_vs_global_tv"
+  ],
+  "forbidden_model_features": [
+    "__backoff_level"
+  ],
+  "catboost": {
+    "required_version": "1.2.10",
+    "seeds": [42, 43, 44, 45, 46, 47, 48, 49, 50, 51],
+    "params": {
+      "allow_writing_files": false,
+      "depth": 6,
+      "iterations": 2000,
+      "l2_leaf_reg": 5,
+      "learning_rate": 0.05,
+      "loss_function": "Logloss",
+      "thread_count": 16,
+      "verbose": 0
+    },
+    "early_stopping_rounds": 50,
+    "use_best_model": true,
+    "es_split": {
+      "algorithm": "numpy.random.RandomState(12345).choice(n_rows,size=int(n_rows*0.05),replace=False);sorted;complement_fit",
+      "seed": 12345,
+      "fit_fraction": 0.95,
+      "es_fraction": 0.05,
+      "no_post_es_refit": true
+    },
+    "prediction_type": "RawFormulaVal",
+    "seed_aggregation": "mean(logits)"
+  },
+  "geometry": {
+    "origins": ["r2022", "r2023"],
+    "r2022": {
+      "outer_train": "season<=2021 & game_type==R",
+      "outer_validation": "season==2022 & game_type==R"
+    },
+    "r2023": {
+      "outer_train": "season<=2022 & game_type==R",
+      "outer_validation": "season==2023 & game_type==R"
+    },
+    "raw_cat_panel": "full_outer_validation",
+    "deployed_composite_panel": "first_30000_true_positions_in_source_order",
+    "bounded_rows": 30000,
+    "candidate_a_geometry_active": false,
+    "source_order_is_not_proven_chronology": true,
+    "bounded_geometry_representativeness_limitation": true
+  },
+  "composite": {
+    "w_lgb": 0.65,
+    "lambda_ftt": 0.17991944576662527,
+    "lambda_armb": 0.43481381354434545,
+    "lambda_cat": 0.0701066994221915,
+    "c_logit": -0.0461645795229729,
+    "clip": [0.3, 0.7],
+    "replacement_formula": "z_new = z_B0 + lambda_cat * (z_new_cat - z_original_v93_cat)"
+  },
+  "package_worthiness": {
+    "per_origin_conjunctive": true,
+    "origin_average_compensation": false,
+    "raw_cat": "Brier(C1_cat) < Brier(C0_cat)",
+    "bounded_fixed_composite": [
+      "Brier(C1) < Brier(C0)",
+      "Brier(C1) < Brier(B0_original_v93)"
+    ],
+    "mean_shift": "record abs(mean(C1_deployed)-mean(B0_original_v93_deployed)); not a gate",
+    "control_reproduction_not_automatic_kill": true
+  },
+  "package": {
+    "inference_threads_max": 6,
+    "catboost_feature_count": 56,
+    "fixed_leg_feature_count": 49,
+    "serialized_lookup_name": "trackman_crosswalk_free_context_priors_v2_lookup.json",
+    "catboost_prep_name": "catboost_prep.pkl",
+    "catboost_model_pattern": "catboost_s{seed}.cbm",
+    "preserve_non_catboost_assets_byte_identically": true,
+    "fixed_legs": ["LGB", "MLP", "FTT", "ArmB"],
+    "no_raw_trackman_scan_at_inference": true,
+    "test_row_independent": true,
+    "refuse_overwrite": true
+  },
+  "scope": {
+    "official_data_only": true,
+    "target_origins": ["r2022", "r2023"],
+    "primary_access": false,
+    "r2024_access": false,
+    "target_2024_access": false,
+    "test_distribution_access": false,
+    "public_leaderboard_access": false,
+    "external_information_access": false,
+    "raw_trackman_access_during_model_or_inference": false,
+    "recovery_policy_modified": false,
+    "model_training_authorized_in_cheap_phase": false,
+    "gpu_authorized_in_cheap_phase": false
+  }
+}
