@@ -1,8 +1,8 @@
 # Project Status
 
-Updated: 2026-08-21 (repository-evidence snapshot)
+Updated: 2026-08-29 (repository-evidence snapshot)
 
-Evidence base: `master` at `d1b7f7fd735e748c0b24e5e4d48e6317fbc9d865`.
+Evidence base: `master` at `107c58c2e815abe352977da7546cd46e707cd614`.
 
 Update this document whenever the active ML policy, champion, leaderboard state, or recovery decision materially changes.
 
@@ -142,16 +142,44 @@ the seven `tm_cf_*` features, authorize model training or packaging, alter the
 active recovery pipeline, or establish predictive value. Any matched CatBoost
 leg experiment remains separate reviewed work.
 
-This is not a conclusion that TrackMan is globally unusable. A possible next
-direction is a separate, reviewed crosswalk-free TrackMan feature experiment;
-the v2 result does not authorize TrackMan feature modeling or alter active
-policy. Aggregate provenance: JSON report SHA-256
+This is not a conclusion that TrackMan is globally unusable. The then-proposed
+separate crosswalk-free TrackMan feature direction was subsequently explored
+through the reviewed Physics17/complementarity evidence summarized below; the
+v2 result itself did not authorize that modeling or alter active policy.
+Aggregate provenance: JSON report SHA-256
 `349876b1eb49f8a4ddc8c1ea26f3a6a565c829bfc02039f5d10f61151ef76b74`, Markdown
 report SHA-256
 `6fa3e6da05a2c18f0222e194227ef1abeb47784ab946914c68d8b2ddf682c99e`, canonical
 report SHA-256
 `aceaba2fcdbc745f95fce374fddb7fec74faa3837a63d4847fc42bdcaba9072a`, and
 audit Git SHA `2f0fefd3d322fa4260f5b4d153e7411249436231`.
+
+The reviewed TrackMan physics evidence is consolidated separately in
+`docs/trackman_physics_evidence_v1.md`. The target-free aggregate EDA used
+source SHA-256
+`f7818f9ee0ccefe7c2cf69fa99efe6e5cb882d8b886dd96d2394bcf3b53f33a9` and
+runner SHA-256
+`c7009bf6de36ff28e981677f50e3ef4f96ae31d7d93e5637df8339566fb1b5ff`.
+The Physics17 standalone model used the frozen C3 parent plus 17 strict-past
+historical physics features; its model SHA-256 is
+`2baa245e2b4892792b591f4fdfc85b129ba750e19be06b4b979276e6eb614f0b`
+and its lookup SHA-256 is
+`333da608fea0c3bd9e314262427d07b1d1385c5314c402d810a07e821efb55e2`.
+Its package validation passed. Matched r2022/r2023 historical-OOS evidence
+selected and froze the arithmetic probability blend
+`0.5*C3 + 0.5*Physics17`; the blend improved C3 Brier by `0.000192097431`
+and `0.000202621740`, respectively, without Public/test/primary/r2024 weight
+selection. The preserved blend ZIP SHA-256 is
+`e266b46cbf84b0683e7e031addf549e942a03200dced22f6e2c38459aab80a45`
+and package validation passed. User-reported Public BSS values are C3
+`821.1201237336`, Physics17 `791.3223702036`, and the frozen blend
+`842.8975664653`; they were not independently queried and did not retune the
+weight. These are historical aggregate diagnostics only and do not alter the
+v93 six-leg baseline, recovery policy, or active state. A future “v93 +
+Frozen TrackMan Residual Leg” would test the frozen `(Physics17-C3)` delta
+against the unchanged v93 prediction, but remains unapproved, requires a
+separate Experiment Brief and plan review, and may not select alpha from
+Public evidence.
 
 The isolated `abs-2024-features` feature-only structural audit was completed from
 reviewed runner commit `c70c69a90d4796348700febc9137a2d6478994ed` and integrated by
