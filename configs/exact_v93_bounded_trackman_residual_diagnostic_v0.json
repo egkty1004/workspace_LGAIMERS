@@ -1,0 +1,82 @@
+{
+  "experiment_id": "exact-v93-bounded-trackman-residual-diagnostic-v0",
+  "contract_version": "exact-v93-bounded-trackman-residual-diagnostic-v0",
+  "protocol_role": "bounded_exact_v93_diagnostic_only",
+  "diagnostic_only": true,
+  "recovery_promotion": false,
+  "origins": ["r2022", "r2023"],
+  "v93": {
+    "meta_path": "/home/2022113165/workspace_LGAIMERS/repro_979/cache/recovery_baseline/ee8ea9579969deaa3284ae6507ad28c1c2859fb507b956e2c0a4a93a28dc903f/meta.json",
+    "meta_sha256": "7b8ee3e04eff55e35bcd37374ceafc0db315b6812a288b738465198c5d81bc40",
+    "bounded_rows": 30000,
+    "logit_files": {
+      "r2022": {
+        "path": "/home/2022113165/workspace_LGAIMERS/repro_979/cache/recovery_baseline/ee8ea9579969deaa3284ae6507ad28c1c2859fb507b956e2c0a4a93a28dc903f/r2022.npy",
+        "sha256": "d3972a5cc7b5c70118e06bb25042b948c399646690ed531e2ddf783ebdda874e"
+      },
+      "r2023": {
+        "path": "/home/2022113165/workspace_LGAIMERS/repro_979/cache/recovery_baseline/ee8ea9579969deaa3284ae6507ad28c1c2859fb507b956e2c0a4a93a28dc903f/r2023.npy",
+        "sha256": "29d1dec441912b5cea97b1f222c94e34bc604ec7c0aacb361b649fe9991fb858"
+      }
+    },
+    "blend": {
+      "z_base": "0.65*z_lgb + 0.35*z_mlp",
+      "z_blend": "z_base + 0.17991944576662527*(z_ftt - z_base) + 0.43481381354434545*(z_armb - z_base) + 0.0701066994221915*(z_cat - z_base)"
+    },
+    "c_logit": -0.0461645795229729,
+    "clip": [0.3, 0.7]
+  },
+  "matched_predictions": {
+    "r2022": {
+      "path": "/tmp/aimers9-c3-trackman-physics-complementarity-v1/predictions/r2022_matched_predictions.npz",
+      "sha256": "78b216af2253f0b9bbb15004b153fcfa46360484afe938736114c1255b8f7164",
+      "full_origin_rows": 217024,
+      "full_position_hash": "3bb49f98844ddc2d5c758713549851f1ef64ec39534b90bc19fa313f66802033",
+      "full_row_id_hash": "1ec0c14d931972027f78c83aecb1a0a3a98103a62ddf97bd3f82e4d918bc9ecb"
+    },
+    "r2023": {
+      "path": "/tmp/aimers9-c3-trackman-physics-complementarity-v1/predictions/r2023_matched_predictions.npz",
+      "sha256": "e8e926bbd74bdc417476a7722c91936ac62cf72c788f44b24621ef7448e6a10f",
+      "full_origin_rows": 219839,
+      "full_position_hash": "7b4bbaf16cb3f90e441a37591da29e2e356bb5a8d21db1a594e6c3d7ace60d61",
+      "full_row_id_hash": "8101429dd64536483aae13fc12d2de55378c4998228db38cb93c569d3ee189a4"
+    },
+    "keys": ["c3", "physics17"]
+  },
+  "complementarity_report": {
+    "path": "/tmp/aimers9-c3-trackman-physics-complementarity-v1/c3_trackman_physics_complementarity_v1_report.json",
+    "sha256": "d6e7be274ad3dad90d83631b6da36560d8aabd235d46f650355426d42c3dccf7",
+    "canonical_report_sha256": "364595a50ce2f340702426af84b186b917ad6f2ed6d899c1cea497e09b52a06b",
+    "runner_sha256": "2fd8570e4b94644f3ddc4369af5d61b57c7e5a85c5a31decd26d7b0570f8bb2e"
+  },
+  "source": {
+    "identity_columns": ["row_id", "season", "game_type"],
+    "target_column": "control_success",
+    "regular_game_type": "R",
+    "origin_years": {"r2022": 2022, "r2023": 2023},
+    "bounded_scope": "first 30000 true regular-season positions in origin year source order"
+  },
+  "alpha_analysis": {
+    "domain": [0.0, 1.0],
+    "grid_points": 1001,
+    "right_derivative_step": 1.0e-6,
+    "derivative_tolerance": 1.0e-12,
+    "sign_tolerance": 1.0e-12,
+    "boundary_abs_tolerance": 1.0e-12,
+    "boundary_max_iterations": 80,
+    "boundary_method": "bisection_on_first_positive_to_nonpositive_bracket",
+    "component_rule": "only first positive connected component adjacent to zero"
+  },
+  "scope": {
+    "primary_target_access": false,
+    "r2024_target_access": false,
+    "test_access": false,
+    "test_distribution_access": false,
+    "public_access": false,
+    "external_information_access": false,
+    "model_fits": 0,
+    "gpu_used": false,
+    "package_built": false,
+    "branch_inert": true
+  }
+}

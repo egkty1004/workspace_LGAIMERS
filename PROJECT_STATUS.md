@@ -175,11 +175,26 @@ and package validation passed. User-reported Public BSS values are C3
 `821.1201237336`, Physics17 `791.3223702036`, and the frozen blend
 `842.8975664653`; they were not independently queried and did not retune the
 weight. These are historical aggregate diagnostics only and do not alter the
-v93 six-leg baseline, recovery policy, or active state. A future “v93 +
-Frozen TrackMan Residual Leg” would test the frozen `(Physics17-C3)` delta
-against the unchanged v93 prediction, but remains unapproved, requires a
-separate Experiment Brief and plan review, and may not select alpha from
-Public evidence.
+v93 six-leg baseline, recovery policy, or active state. Exact full-origin v93
+historical out-of-sample authority was not recoverable; the preserved
+first-30k caches were not treated as a substitute. The subsequent exact-v93
+first-30k bounded diagnostic was executed once and returned
+`BOUNDED_SIGNAL_ABSENT` on both `r2022` and `r2023`: the right directional
+derivatives at alpha zero were `-2.5462965069777965e-06` and
+`-3.726602360032416e-05`, respectively, so both origins failed with
+`right_derivative_not_improvement_directed`. There was no shared positive
+interval and no `alpha_diagnostic`. Authority and row-parity checks passed;
+zero models were fitted and no GPU was used. This residual direction is closed
+in its current form and does not change the v93 champion or recovery state.
+This remains first-30k diagnostic evidence, not representative full-origin
+evidence. The aggregate report is preserved outside the repository at
+`/tmp/aimers9-exact-v93-bounded-trackman-residual-v0-official/exact_v93_bounded_trackman_residual_diagnostic_v0_report.json`
+with literal SHA-256
+`1181f027a715f6138b18c5ed74b1126f404cb1b771b5c77f32a1e0a9acb3aa3d` and
+canonical SHA-256
+`758d1aeebfac17c52916a9e03f90871cf57842cdbdb76946be642ad7e6594ca9`. No
+further alpha/residual-form search, reconstructed-v93 training, full-origin
+reconstruction, package, or submission work is authorized from this result.
 
 The isolated `abs-2024-features` feature-only structural audit was completed from
 reviewed runner commit `c70c69a90d4796348700febc9137a2d6478994ed` and integrated by
